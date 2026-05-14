@@ -1,0 +1,3 @@
+-keep class net.sqlcipher.** { *; }
+-keep class com.google.mlkit.** { *; }
+-keepclassmembers class * extends androidx.room.RoomDatabase { *; }
