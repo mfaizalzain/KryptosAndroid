@@ -1,0 +1,14 @@
+com.fmz.kryptos
+color ic_launcher_background
+drawable ic_launcher_foreground
+drawable ic_launcher_monochrome
+mipmap ic_launcher
+mipmap ic_launcher_round
+string app_name
+string biometric_cancel
+string biometric_subtitle
+string biometric_title
+string google_web_client_id
+style Theme_Kryptos
+xml data_extraction_rules
+xml nfc_tech_filter

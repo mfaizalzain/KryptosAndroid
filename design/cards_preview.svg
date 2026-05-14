@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200" font-family="-apple-system, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="cc" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0F1730"/>
+      <stop offset="0.5" stop-color="#2E3A66"/>
+      <stop offset="1" stop-color="#1A2238"/>
+    </linearGradient>
+    <linearGradient id="id" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#EEF2FF"/>
+      <stop offset="1" stop-color="#C2CBF1"/>
+    </linearGradient>
+    <linearGradient id="passportCover" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1F2A4A"/>
+      <stop offset="1" stop-color="#0F1730"/>
+    </linearGradient>
+    <linearGradient id="bank" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0E5F4F"/>
+      <stop offset="1" stop-color="#12876E"/>
+    </linearGradient>
+    <linearGradient id="chip" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E6C77E"/>
+      <stop offset="0.5" stop-color="#B8923C"/>
+      <stop offset="1" stop-color="#E6C77E"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="1200" fill="#0E1424"/>
+
+  <!-- Credit card -->
+  <g transform="translate(60,60)">
+    <rect width="520" height="328" rx="32" fill="url(#cc)"/>
+    <text x="32" y="60" fill="#FFFFFF" font-size="22" font-weight="700" letter-spacing="2">VISA</text>
+    <rect x="430" y="36" width="60" height="42" rx="8" fill="url(#chip)"/>
+    <text x="32" y="208" fill="#FFFFFF" font-family="monospace" font-size="30" font-weight="700" letter-spacing="4">•••• •••• •••• 4242</text>
+    <text x="32" y="266" fill="#FFFFFFB3" font-size="12" letter-spacing="2">CARDHOLDER</text>
+    <text x="32" y="288" fill="#FFFFFF" font-size="18" font-weight="600">FAIZAL ZAIN</text>
+    <text x="340" y="266" fill="#FFFFFFB3" font-size="12" letter-spacing="2">EXPIRES</text>
+    <text x="340" y="288" fill="#FFFFFF" font-family="monospace" font-size="18" font-weight="600">12 / 28</text>
+    <text x="450" y="266" fill="#FFFFFFB3" font-size="12" letter-spacing="2">CVV</text>
+    <text x="450" y="288" fill="#FFFFFF" font-family="monospace" font-size="18" font-weight="600">•••</text>
+  </g>
+
+  <!-- ID Card -->
+  <g transform="translate(620,60)">
+    <rect width="520" height="328" rx="32" fill="url(#id)" stroke="#0000001A"/>
+    <rect x="0" y="36" width="520" height="22" fill="#2E5BFF22"/>
+    <text x="24" y="84" fill="#1A2238" font-weight="700" letter-spacing="3" font-size="15">IDENTITY CARD</text>
+    <text x="420" y="84" fill="#1A223899" font-size="14">Driver License</text>
+    <rect x="24" y="108" width="130" height="160" rx="10" fill="#1A223822"/>
+    <text x="84" y="194" fill="#1A223888" font-size="36" text-anchor="middle">👤</text>
+    <text x="174" y="130" fill="#1A223888" font-size="11" letter-spacing="2">FULL NAME</text>
+    <text x="174" y="154" fill="#0E152B" font-size="20" font-weight="700">Faizal Zain</text>
+    <text x="174" y="186" fill="#1A223888" font-size="11" letter-spacing="2">DATE OF BIRTH</text>
+    <text x="174" y="206" fill="#0E152B" font-family="monospace" font-size="16" font-weight="600">1990-04-12</text>
+    <text x="330" y="186" fill="#1A223888" font-size="11" letter-spacing="2">EXPIRY</text>
+    <text x="330" y="206" fill="#0E152B" font-family="monospace" font-size="16" font-weight="600">2031-04-12</text>
+    <text x="174" y="240" fill="#1A223888" font-size="11" letter-spacing="2">NATIONALITY</text>
+    <text x="174" y="260" fill="#0E152B" font-size="16" font-weight="600">Malaysian</text>
+    <text x="24" y="296" fill="#1A223888" font-size="11" letter-spacing="2">ID NUMBER</text>
+    <text x="24" y="316" fill="#0E152B" font-family="monospace" font-size="22" font-weight="700">900412-14-5678</text>
+  </g>
+
+  <!-- Passport -->
+  <g transform="translate(60,420)">
+    <rect width="520" height="380" rx="32" fill="#FAF6E8" stroke="#0000001A"/>
+    <rect width="520" height="92" rx="32" fill="url(#passportCover)"/>
+    <rect y="60" width="520" height="32" fill="url(#passportCover)"/>
+    <text x="24" y="42" fill="#E5C97A" font-size="12" font-weight="600" letter-spacing="3">MALAYSIA</text>
+    <text x="24" y="78" fill="#E5C97A" font-size="28" font-weight="800" letter-spacing="8">PASSPORT</text>
+    <rect x="24" y="116" width="110" height="138" rx="8" fill="#0000001A"/>
+    <text x="79" y="195" fill="#1A140499" font-size="36" text-anchor="middle">👤</text>
+    <text x="156" y="138" fill="#6B5E3B" font-size="11" letter-spacing="2">SURNAME</text>
+    <text x="156" y="160" fill="#1A1404" font-size="18" font-weight="600">ZAIN</text>
+    <text x="156" y="186" fill="#6B5E3B" font-size="11" letter-spacing="2">GIVEN NAMES</text>
+    <text x="156" y="208" fill="#1A1404" font-size="18" font-weight="600">FAIZAL</text>
+    <text x="156" y="232" fill="#6B5E3B" font-size="11" letter-spacing="2">DOB</text>
+    <text x="156" y="252" fill="#1A1404" font-family="monospace" font-size="14" font-weight="600">12 APR 1990</text>
+    <text x="280" y="232" fill="#6B5E3B" font-size="11" letter-spacing="2">SEX</text>
+    <text x="280" y="252" fill="#1A1404" font-size="14" font-weight="600">M</text>
+    <text x="340" y="232" fill="#6B5E3B" font-size="11" letter-spacing="2">EXPIRY</text>
+    <text x="340" y="252" fill="#1A1404" font-family="monospace" font-size="14" font-weight="600">2031-04</text>
+    <text x="24" y="294" fill="#6B5E3B" font-size="11" letter-spacing="2">PASSPORT NO.</text>
+    <text x="24" y="316" fill="#1A1404" font-family="monospace" font-size="20" font-weight="700">A12345678</text>
+    <rect y="334" width="520" height="46" fill="#EDE4C8"/>
+    <text x="24" y="356" fill="#1A1404" font-family="monospace" font-size="13">P&lt;MYSZAIN&lt;&lt;FAIZAL&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</text>
+    <text x="24" y="374" fill="#1A1404" font-family="monospace" font-size="13">A12345678&lt;MYS9004124M3104123&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</text>
+  </g>
+
+  <!-- Bank Account -->
+  <g transform="translate(620,420)">
+    <rect width="520" height="328" rx="32" fill="url(#bank)"/>
+    <text x="32" y="60" fill="#FFFFFF" font-size="22" font-weight="700">Maybank</text>
+    <text x="32" y="86" fill="#FFFFFFCC" font-size="14">Faizal Zain</text>
+    <text x="32" y="190" fill="#FFFFFFB3" font-size="11" letter-spacing="2">IBAN</text>
+    <text x="32" y="216" fill="#FFFFFF" font-family="monospace" font-size="20" font-weight="600">MY58 0500 0000 0000 1234</text>
+    <text x="32" y="262" fill="#FFFFFFB3" font-size="11" letter-spacing="2">ACCOUNT</text>
+    <text x="32" y="284" fill="#FFFFFF" font-family="monospace" font-size="16" font-weight="600">5140 2812 4567</text>
+    <text x="340" y="262" fill="#FFFFFFB3" font-size="11" letter-spacing="2">SWIFT / BIC</text>
+    <text x="340" y="284" fill="#FFFFFF" font-family="monospace" font-size="16" font-weight="600">MBBEMYKL</text>
+  </g>
+
+  <!-- API Key -->
+  <g transform="translate(60,820)">
+    <rect width="1080" height="220" rx="32" fill="#0B1020"/>
+    <circle cx="40" cy="44" r="6" fill="#FF5F57"/>
+    <circle cx="60" cy="44" r="6" fill="#FEBC2E"/>
+    <circle cx="80" cy="44" r="6" fill="#28C840"/>
+    <text x="1050" y="48" fill="#8FA8FF" font-family="monospace" font-size="14" text-anchor="end">OpenAI · production</text>
+    <text x="40" y="110" fill="#8FA8FF" font-family="monospace" font-size="16">export API_KEY=</text>
+    <text x="225" y="110" fill="#E5EEFF" font-family="monospace" font-size="16">••••••••••••••••••••••••</text>
+    <text x="40" y="158" fill="#8FA8FF" font-family="monospace" font-size="16">export API_SECRET=</text>
+    <text x="250" y="158" fill="#E5EEFF" font-family="monospace" font-size="16">sk_live_4Hb7Yc••••••••••••</text>
+  </g>
+</svg>
