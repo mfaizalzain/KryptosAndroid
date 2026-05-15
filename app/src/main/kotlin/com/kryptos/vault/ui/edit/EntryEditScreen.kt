@@ -1,64 +1,34 @@
 package com.kryptos.vault.ui.edit
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.DocumentScanner
-import androidx.compose.material.icons.filled.Nfc
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.SavedStateHandle
 import com.kryptos.vault.data.FieldsCodec
 import com.kryptos.vault.data.Template
@@ -120,8 +90,6 @@ fun EntryEditScreen(
     }
 
     LaunchedEffect(id) {
-        // Don't refetch / overwrite when we come back from a child screen (scan, NFC) — that
-        // would discard the user's in-progress edits and the freshly-merged scan results.
         if (loaded) return@LaunchedEffect
         if (id != 0L) {
             viewModel.get(id)?.let { e ->
@@ -141,8 +109,6 @@ fun EntryEditScreen(
         loaded = true
     }
 
-    // Merge results returned by ScanScreen via SavedStateHandle. The keys are observed as
-    // a StateFlow so the merge runs when scan pops back into this screen, then cleared.
     val parsedJsonState = savedStateHandle
         ?.getStateFlow<String?>(ScanResultKeys.PARSED_FIELDS_JSON, null)
         ?.collectAsState()
@@ -180,22 +146,42 @@ fun EntryEditScreen(
             TopAppBar(
                 title = { Text(if (id == 0L) "New entry" else "Edit entry") },
                 navigationIcon = {
-                    IconButton(onClick = onDone) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back") }
-                },
-                actions = {
-                    TextButton(
-                        onClick = { doSave() },
-                        enabled = title.isNotBlank()
-                    ) {
-                        Text(
-                            "Save",
-                            fontWeight = FontWeight.Bold,
-                            color = if (title.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                        )
-                    }
+                    IconButton(onClick = onDone) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
                 },
             )
         },
+        bottomBar = {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                tonalElevation = 3.dp,
+                shadowElevation = 12.dp
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.navigationBars)
+                        .padding(16.dp)
+                ) {
+                    Button(
+                        onClick = { doSave() },
+                        enabled = title.isNotBlank(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(28.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                    ) {
+                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(24.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            text = if (id == 0L) "Save Entry" else "Save Changes",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
     ) { padding ->
         if (!loaded) return@Scaffold
 
@@ -214,6 +200,8 @@ fun EntryEditScreen(
                     label = { Text("Title") },
                     shape = RoundedCornerShape(20.dp),
                     modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
                 )
             }
             item {
@@ -233,13 +221,19 @@ fun EntryEditScreen(
                                 }
                             },
                             label = { Text(prettyTemplate(t)) },
+                            leadingIcon = {
+                                Icon(
+                                    templateIcon(t),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+                            },
+                            shape = RoundedCornerShape(12.dp)
                         )
                     }
                 }
             }
 
-            // Primary scan actions — surface them right after picking the template,
-            // since scanning is the fastest way to populate physical-document entries.
             if (supportsCameraScan(template) || supportsNfcScan(template)) {
                 item {
                     Card(
@@ -273,22 +267,22 @@ fun EntryEditScreen(
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 if (supportsCameraScan(template)) {
-                                    androidx.compose.material3.Button(
+                                    Button(
                                         onClick = { onScan(template) },
                                         shape = RoundedCornerShape(12.dp),
                                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                                     ) {
                                         Icon(
-                                            Icons.Filled.DocumentScanner,
+                                            Icons.Default.DocumentScanner,
                                             contentDescription = null,
                                             modifier = Modifier.size(18.dp),
                                         )
-                                        androidx.compose.foundation.layout.Spacer(Modifier.width(8.dp))
+                                        Spacer(Modifier.width(8.dp))
                                         Text("Scan document")
                                     }
                                 }
                                 if (supportsNfcScan(template)) {
-                                    androidx.compose.material3.FilledTonalButton(
+                                    FilledTonalButton(
                                         onClick = {
                                             onNfcScan(template, FieldsCodec.encode(fields.toList()))
                                         },
@@ -296,11 +290,11 @@ fun EntryEditScreen(
                                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                                     ) {
                                         Icon(
-                                            Icons.Filled.Nfc,
+                                            Icons.Default.Nfc,
                                             contentDescription = null,
                                             modifier = Modifier.size(18.dp),
                                         )
-                                        androidx.compose.foundation.layout.Spacer(Modifier.width(8.dp))
+                                        Spacer(Modifier.width(8.dp))
                                         Text("Scan NFC")
                                     }
                                 }
@@ -311,7 +305,7 @@ fun EntryEditScreen(
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         HorizontalDivider(modifier = Modifier.weight(1f))
                         Text(
@@ -325,33 +319,67 @@ fun EntryEditScreen(
             }
 
             items(fields.size) { i ->
+                val name = fields[i].first
+                val isDefault = defaultFieldsFor(template).any { it.equals(name, ignoreCase = true) }
+                
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = fields[i].first,
-                        onValueChange = { fields[i] = it to fields[i].second },
-                        label = { Text("Field name") },
-                        shape = RoundedCornerShape(20.dp),
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                    )
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = if (isDefault) name.uppercase() else "CUSTOM FIELD",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                        IconButton(
+                            onClick = { fields.removeAt(i) },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Remove field",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+
+                    if (!isDefault) {
+                        OutlinedTextField(
+                            value = fields[i].first,
+                            onValueChange = { fields[i] = it to fields[i].second },
+                            label = { Text("Field name") },
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                        )
+                    }
+
                     OutlinedTextField(
                         value = fields[i].second,
                         onValueChange = { input ->
-                            val name = fields[i].first
-                            val isExpiry = template == Template.PAYMENT_CARD && (name.contains("expiry", ignoreCase = true) || name.contains("expires", ignoreCase = true))
+                            val currentName = fields[i].first
+                            val isExpiry = template == Template.PAYMENT_CARD && (currentName.contains("expiry", ignoreCase = true) || currentName.contains("expires", ignoreCase = true))
                             
-                            val filtered = if (isNumericField(name, template) || isExpiry) {
+                            val filtered = if (isNumericField(currentName, template) || isExpiry) {
                                 input.filter { it.isDigit() }.let { if (isExpiry) it.take(4) else it }
                             } else {
                                 input
                             }
-                            fields[i] = name to filtered
+                            fields[i] = currentName to filtered
                         },
-                        label = { Text("Value") },
+                        label = { if (!isDefault) Text("Value") },
                         shape = RoundedCornerShape(20.dp),
                         trailingIcon = if (isDateField(fields[i].first, template)) {
                             {
                                 IconButton(onClick = { datePickerTargetIndex = i }) {
-                                    Icon(Icons.Filled.CalendarToday, contentDescription = "Pick date")
+                                    Icon(Icons.Default.CalendarToday, contentDescription = "Pick date")
                                 }
                             }
                         } else null,
@@ -359,7 +387,8 @@ fun EntryEditScreen(
                             ExpiryVisualTransformation()
                         } else VisualTransformation.None,
                         keyboardOptions = KeyboardOptions(
-                            keyboardType = if (isNumericField(fields[i].first, template) || (template == Template.PAYMENT_CARD && fields[i].first.contains("expiry", ignoreCase = true))) KeyboardType.Number else KeyboardType.Text
+                            keyboardType = if (isNumericField(fields[i].first, template) || (template == Template.PAYMENT_CARD && fields[i].first.contains("expiry", ignoreCase = true))) KeyboardType.Number else KeyboardType.Text,
+                            imeAction = if (i < fields.size - 1) ImeAction.Next else ImeAction.Done
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -371,24 +400,24 @@ fun EntryEditScreen(
                             },
                         readOnly = isDateField(fields[i].first, template)
                     )
-                    if (i < fields.size - 1) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 8.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                        )
-                    }
+                    
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                    )
                 }
             }
             item {
                 AssistChip(
                     onClick = { fields.add("Field" to "") },
                     label = { Text("Add field") },
+                    leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
             }
         }
 
         duplicateToConfirm?.let { dup ->
-            androidx.compose.material3.AlertDialog(
+            AlertDialog(
                 onDismissRequest = { duplicateToConfirm = null },
                 title = { Text("Potential duplicate") },
                 text = {
@@ -432,6 +461,18 @@ fun EntryEditScreen(
             }
         }
     }
+}
+
+private fun templateIcon(t: Template): ImageVector = when (t) {
+    Template.ID_CARD -> Icons.Default.Badge
+    Template.PASSPORT -> Icons.Default.Public
+    Template.DRIVERS_LICENSE -> Icons.Default.DirectionsCar
+    Template.BIRTH_CERTIFICATE -> Icons.Default.ChildCare
+    Template.PAYMENT_CARD -> Icons.Default.CreditCard
+    Template.BANK_ACCOUNT -> Icons.Default.AccountBalance
+    Template.TAX_NUMBER -> Icons.Default.Description
+    Template.API_KEY -> Icons.Default.VpnKey
+    Template.NOTE -> Icons.Default.Description
 }
 
 private class ExpiryVisualTransformation : VisualTransformation {
