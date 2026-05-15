@@ -172,11 +172,20 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             // Header
-            Text(
-                "Settings",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Settings",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Filled.Close, contentDescription = "Close")
+                }
+            }
 
             // --- Account section ---
             val current = account
@@ -287,7 +296,7 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Button(
-                        onClick = { billing.purchasePremium() },
+                        onClick = { ctx.findActivity()?.let { billing.purchasePremium(it) } },
                         shape = RoundedCornerShape(28.dp),
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         colors = ButtonDefaults.buttonColors(

@@ -25,6 +25,7 @@ scuba = "0.0.23"
 bouncycastle = "1.78.1"
 coil = "2.7.0"
 playServicesAuth = "21.3.0"
+billing = "8.3.0"
 workmanager = "2.10.0"
 
 [libraries]
@@ -60,6 +61,7 @@ bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk15to18", version.ref 
 bouncycastle-util = { module = "org.bouncycastle:bcutil-jdk15to18", version.ref = "bouncycastle" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+billing-ktx = { module = "com.android.billingclient:billing-ktx", version.ref = "billing" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workmanager" }
 

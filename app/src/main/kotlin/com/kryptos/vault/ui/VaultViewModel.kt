@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import android.app.Activity
 import android.content.Context
 import com.kryptos.vault.KryptosApp
 import com.kryptos.vault.BillingManager
@@ -29,7 +30,7 @@ class VaultViewModel(
 
     val isPremium: StateFlow<Boolean> = billingManager.isPremium
 
-    fun purchasePremium() = billingManager.purchasePremium()
+    fun purchasePremium(activity: Activity) = billingManager.purchasePremium(activity)
 
     suspend fun get(id: Long) = repo.get(id)
 
