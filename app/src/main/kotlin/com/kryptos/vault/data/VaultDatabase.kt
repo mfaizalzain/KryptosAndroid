@@ -18,7 +18,6 @@ abstract class VaultDatabase : androidx.room.RoomDatabase() {
             val dbName = if (userId == null) "kryptos.db" else "kryptos_$userId.db"
             return Room.databaseBuilder(context, VaultDatabase::class.java, dbName)
                 .openHelperFactory(factory)
-                .fallbackToDestructiveMigration()
                 .build()
         }
     }

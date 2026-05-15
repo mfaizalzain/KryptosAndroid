@@ -55,7 +55,8 @@ class DriveBackupManager(private val context: Context) {
             "https://www.googleapis.com/drive/v3/files" +
                 "?spaces=appDataFolder" +
                 "&q=${java.net.URLEncoder.encode(query, "UTF-8")}" +
-                "&fields=files(id,modifiedTime)"
+                "&fields=files(id,modifiedTime)" +
+                "&orderBy=modifiedTime desc"
         )
         val conn = (url.openConnection() as HttpsURLConnection).apply {
             requestMethod = "GET"
