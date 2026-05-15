@@ -50,11 +50,20 @@ fun KryptosNavGraph(unlocked: MutableState<Boolean>) {
                 }
             })
         }
-        composable(Routes.LIST) {
+        composable(Routes.LIST) { entry ->
+            val quickQrData = entry.savedStateHandle.get<String>(ScanResultKeys.RAW_TEXT)
+            if (quickQrData != null) {
+                entry.savedStateHandle.remove<String>(ScanResultKeys.RAW_TEXT)
+                nav.navigate(Routes.edit(0))
+                nav.currentBackStackEntry?.savedStateHandle?.set(ScanResultKeys.RAW_TEXT, quickQrData)
+                nav.currentBackStackEntry?.savedStateHandle?.set(ScanResultKeys.PREFILL_TEMPLATE, Template.QR_CODE.name)
+            }
+
             VaultListScreen(
                 viewModel = vm,
                 onOpen = { nav.navigate(Routes.detail(it)) },
                 onAdd = { nav.navigate(Routes.edit(0)) },
+                onQrScan = { nav.navigate(Routes.QR_SCAN) },
                 onSignOut = {
                     unlocked.value = false
                     nav.navigate(Routes.LOCK) {

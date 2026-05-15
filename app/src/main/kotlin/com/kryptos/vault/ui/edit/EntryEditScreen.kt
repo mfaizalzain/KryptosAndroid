@@ -46,6 +46,7 @@ object ScanResultKeys {
     const val RAW_TEXT = "scan_raw_text"
     const val ATTACHMENT = "scan_attachment"
     const val NFC_PREFILL_FIELDS_JSON = "nfc_prefill_fields_json"
+    const val PREFILL_TEMPLATE = "prefill_template"
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -93,6 +94,10 @@ fun EntryEditScreen(
 
     LaunchedEffect(id) {
         if (loaded) return@LaunchedEffect
+        
+        val prefillTemplate = savedStateHandle?.get<String>(ScanResultKeys.PREFILL_TEMPLATE)
+            ?.let { runCatching { Template.valueOf(it) }.getOrNull() }
+
         if (id != 0L) {
             viewModel.get(id)?.let { e ->
                 title = e.title
@@ -105,10 +110,16 @@ fun EntryEditScreen(
                 fields.addAll(decoded)
                 existingAttachment = e.attachment
             }
-        } else if (fields.isEmpty()) {
-            defaultFieldsFor(template).forEach { fields.add(it to "") }
+        } else {
+            if (prefillTemplate != null) {
+                template = prefillTemplate
+            }
+            if (fields.isEmpty()) {
+                defaultFieldsFor(template).forEach { fields.add(it to "") }
+            }
         }
         loaded = true
+        savedStateHandle?.remove<String>(ScanResultKeys.PREFILL_TEMPLATE)
     }
 
     val parsedJsonState = savedStateHandle

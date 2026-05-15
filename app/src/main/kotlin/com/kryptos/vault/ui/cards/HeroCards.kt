@@ -1103,47 +1103,19 @@ private fun QrCodeHero(
             .fillMaxWidth()
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(24.dp)),
     ) {
-        Column(
-            modifier = Modifier.padding(18.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Icon(
-                    Icons.Filled.QrCode,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    title.ifBlank { "QR CODE" }.uppercase(),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp,
-                    modifier = Modifier.weight(1f)
-                )
-                if (interactive && onShare != null && data.isNotBlank()) {
-                    IconButton(onClick = { onShare(data, title) }, modifier = Modifier.size(24.dp)) {
-                        Icon(
-                            Icons.Default.Share,
-                            contentDescription = "Share",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-
+            // QR Code Section
             if (bmp != null) {
                 Image(
                     bitmap = bmp.asImageBitmap(),
                     contentDescription = "QR Code",
                     modifier = Modifier
-                        .size(160.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(8.dp))
                         .clickable(enabled = interactive) {
                             onCopy("QR Data", data)
                         }
@@ -1151,26 +1123,55 @@ private fun QrCodeHero(
             } else {
                 Box(
                     modifier = Modifier
-                        .size(160.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.surfaceContainer),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No data", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(
+                        Icons.Filled.QrCode,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                    )
                 }
             }
 
-            if (data.isNotBlank()) {
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = data,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
+            // Info Section
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        title.ifBlank { "QR CODE" }.uppercase(),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (interactive && onShare != null && data.isNotBlank()) {
+                        IconButton(onClick = { onShare(data, title) }, modifier = Modifier.size(32.dp)) {
+                            Icon(
+                                Icons.Default.Share,
+                                contentDescription = "Share",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+
+                if (data.isNotBlank()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = data,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        fontFamily = Mono
+                    )
+                }
             }
         }
     }

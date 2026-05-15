@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.WorkspacePremium
@@ -86,6 +87,7 @@ fun VaultListScreen(
     viewModel: VaultViewModel,
     onOpen: (Long) -> Unit,
     onAdd: () -> Unit,
+    onQrScan: () -> Unit,
     onSignOut: () -> Unit,
 ) {
     val entries by viewModel.entries.collectAsState()
@@ -242,7 +244,11 @@ fun VaultListScreen(
                 ) {
                     grouped.forEach { (template, items) ->
                         item(key = "header_${template.name}") {
-                            CategoryHeader(template = template, count = items.size)
+                            CategoryHeader(
+                                template = template,
+                                count = items.size,
+                                onScan = if (template == Template.QR_CODE) onQrScan else null
+                            )
                         }
                         if (items.size > STACK_THRESHOLD) {
                             item(key = "stack_${template.name}") {
@@ -272,7 +278,7 @@ fun VaultListScreen(
 }
 
 @Composable
-private fun CategoryHeader(template: Template, count: Int) {
+private fun CategoryHeader(template: Template, count: Int, onScan: (() -> Unit)? = null) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -300,6 +306,19 @@ private fun CategoryHeader(template: Template, count: Int) {
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
+        if (onScan != null) {
+            IconButton(
+                onClick = onScan,
+                modifier = Modifier.padding(start = 4.dp).size(32.dp)
+            ) {
+                Icon(
+                    Icons.Filled.QrCodeScanner,
+                    contentDescription = "Scan",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
         Spacer(Modifier.weight(1f))
         Surface(
             shape = CircleShape,

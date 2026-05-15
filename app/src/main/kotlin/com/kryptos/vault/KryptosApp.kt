@@ -84,8 +84,7 @@ class KryptosApp : Application() {
         super.onCreate()
         System.loadLibrary("sqlcipher")
         // JMRTD relies on full BouncyCastle for some MAC/ciphers Android's stripped BC lacks.
-        // Re-insert at highest priority so JCE picks our provider first.
-        Security.removeProvider("BC")
-        Security.insertProviderAt(BouncyCastleProvider(), 1)
+        // Add it to the end of providers so it doesn't override default System TLS/SSL.
+        Security.addProvider(BouncyCastleProvider())
     }
 }

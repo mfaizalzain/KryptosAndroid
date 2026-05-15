@@ -281,6 +281,12 @@ private fun AccountBadge(account: AuthManager.Account) {
                     model = account.photoUrl,
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize().clip(CircleShape),
+                    onError = { state ->
+                        android.util.Log.e("LockScreen", "Coil Error: ${state.result.throwable}")
+                    },
+                    onSuccess = {
+                        android.util.Log.d("LockScreen", "Coil Success")
+                    }
                 )
             } else {
                 Box(contentAlignment = Alignment.Center) {
