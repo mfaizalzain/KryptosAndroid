@@ -51,6 +51,7 @@ class DriveBackupManager(private val context: Context) {
 
     /** Lists existing files in AppData with [name]. */
     suspend fun findExisting(accessToken: String, name: String = BACKUP_NAME): BackupInfo? = withContext(Dispatchers.IO) {
+        android.util.Log.d("DriveBackup", "Searching for existing file: $name")
         val query = "name='$name' and trashed=false"
         val url = URL(
             "https://www.googleapis.com/drive/v3/files" +
@@ -59,29 +60,58 @@ class DriveBackupManager(private val context: Context) {
                 "&fields=files(id,modifiedTime)" +
                 "&orderBy=modifiedTime desc"
         )
-        val conn = (url.openConnection() as HttpsURLConnection).apply {
-            requestMethod = "GET"
-            setRequestProperty("Authorization", "Bearer $accessToken")
-            setRequestProperty("Accept", "application/json")
-            connectTimeout = 10000
-            readTimeout = 10000
-        }
-        val code = conn.responseCode
-        val text = (if (code in 200..299) conn.inputStream else conn.errorStream).use {
-            it.bufferedReader().readText()
-        }
-        if (code !in 200..299) {
-            throw IOException("Drive list failed: $code $text")
-        }
+        val text = executeWithRetry(accessToken, "GET", url)
         val arr = JSONObject(text).optJSONArray("files") ?: return@withContext null
-        if (arr.length() == 0) null
-        else {
+        if (arr.length() == 0) {
+            android.util.Log.d("DriveBackup", "No existing file found for $name")
+            null
+        } else {
             val o = arr.getJSONObject(0)
-            BackupInfo(
+            val info = BackupInfo(
                 fileId = o.getString("id"),
                 modifiedAtMillis = parseIso(o.optString("modifiedTime", "")),
             )
+            android.util.Log.d("DriveBackup", "Found existing file: ${info.fileId}")
+            info
         }
+    }
+
+    private suspend fun executeWithRetry(
+        accessToken: String,
+        method: String,
+        url: URL,
+        body: ByteArray? = null,
+        contentType: String? = null,
+        retries: Int = 3
+    ): String = withContext(Dispatchers.IO) {
+        var lastException: Exception? = null
+        repeat(retries) { attempt ->
+            try {
+                val conn = (url.openConnection() as HttpsURLConnection).apply {
+                    requestMethod = method
+                    setRequestProperty("Authorization", "Bearer $accessToken")
+                    setRequestProperty("Accept", "application/json")
+                    if (contentType != null) setRequestProperty("Content-Type", contentType)
+                    connectTimeout = 15000
+                    readTimeout = 20000
+                    if (body != null) {
+                        doOutput = true
+                        outputStream.use { it.write(body) }
+                    }
+                }
+                val code = conn.responseCode
+                val response = (if (code in 200..299) conn.inputStream else conn.errorStream).use {
+                    it.bufferedReader().readText()
+                }
+                if (code in 200..299) return@withContext response
+                throw IOException("Drive API error $code: $response")
+            } catch (e: Exception) {
+                lastException = e
+                android.util.Log.w("DriveBackup", "Attempt ${attempt + 1} failed: ${e.message}")
+                kotlinx.coroutines.delay(1000L * (attempt + 1))
+            }
+        }
+        throw lastException ?: IOException("Unknown Drive error")
     }
 
     /**
@@ -95,16 +125,20 @@ class DriveBackupManager(private val context: Context) {
         if (!dbFile.exists()) {
             throw IOException("No local vault file found at ${dbFile.name}. Add some entries first.")
         }
+        android.util.Log.i("DriveBackup", "Starting backup for user $userId (file: ${dbFile.name})")
 
         val existing = findExisting(accessToken, BACKUP_NAME)
         val fileId = if (existing != null) {
+            android.util.Log.d("DriveBackup", "Updating existing database backup...")
             updateContent(accessToken, existing.fileId, dbFile, "application/octet-stream")
             existing.fileId
         } else {
+            android.util.Log.d("DriveBackup", "Creating new database backup...")
             createNew(accessToken, dbFile, BACKUP_NAME, "application/octet-stream")
         }
 
         // Also back up the passphrase (32 random bytes, base64 inside JSON).
+        android.util.Log.d("DriveBackup", "Backing up encryption key...")
         val passphrase = KeyManager.getDatabasePassphrase(context)
         val keyJson = JSONObject().apply {
             put("v", 1)
@@ -118,6 +152,7 @@ class DriveBackupManager(private val context: Context) {
         }
 
         lastBackupAtMillis = System.currentTimeMillis()
+        android.util.Log.i("DriveBackup", "Backup completed successfully.")
         fileId
     }
 
