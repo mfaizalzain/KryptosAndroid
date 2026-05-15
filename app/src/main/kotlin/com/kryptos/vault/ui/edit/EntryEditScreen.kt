@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -51,7 +52,11 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.SavedStateHandle
 import com.kryptos.vault.data.FieldsCodec
@@ -122,7 +127,11 @@ fun EntryEditScreen(
                 title = e.title
                 template = e.template
                 fields.clear()
-                fields.addAll(FieldsCodec.decode(e.fieldsJson))
+                val decoded = FieldsCodec.decode(e.fieldsJson).map { (k, v) ->
+                    val isExpiry = e.template == Template.PAYMENT_CARD && (k.contains("expiry", ignoreCase = true) || k.contains("expires", ignoreCase = true))
+                    k to if (isExpiry) v.filter { it.isDigit() }.take(4) else v
+                }
+                fields.addAll(decoded)
                 existingAttachment = e.attachment
             }
         } else if (fields.isEmpty()) {
@@ -147,9 +156,12 @@ fun EntryEditScreen(
         if (parsed.isNotEmpty()) {
             parsed.forEach { (key, value) ->
                 if (value.isBlank()) return@forEach
+                val isExpiry = template == Template.PAYMENT_CARD && (key.contains("expiry", ignoreCase = true) || key.contains("expires", ignoreCase = true))
+                val sanitizedValue = if (isExpiry) value.filter { it.isDigit() }.take(4) else value
+                
                 val idx = fields.indexOfFirst { it.first.equals(key, ignoreCase = true) }
-                if (idx >= 0) fields[idx] = fields[idx].first to value
-                else fields.add(key to value)
+                if (idx >= 0) fields[idx] = fields[idx].first to sanitizedValue
+                else fields.add(key to sanitizedValue)
             }
         } else if (!rawText.isNullOrBlank()) {
             val idx = fields.indexOfFirst { it.first.equals("Scanned text", ignoreCase = true) }
@@ -221,6 +233,7 @@ fun EntryEditScreen(
             if (supportsCameraScan(template) || supportsNfcScan(template)) {
                 item {
                     Card(
+                        modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -238,43 +251,48 @@ fun EntryEditScreen(
                             Text(
                                 when (template) {
                                     Template.PASSPORT -> "Scan the photo page with your camera, or read the chip over NFC for the most accurate result."
-                                    Template.PAYMENT_CARD -> "Scan the card with your camera, or use NFC to securely read the card number and expiry directly from the chip."
+                                    Template.PAYMENT_CARD -> "Scan the card with your camera, or use NFC to securely read the card number and expiry directly from the chip. Note: Camera scan works best for embossed cards; for modern flat cards, use NFC scan instead."
                                     else -> "Point your camera at the document — the scanner auto-crops and fills the fields below."
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
                             FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 if (supportsCameraScan(template)) {
-                                    AssistChip(
+                                    androidx.compose.material3.Button(
                                         onClick = { onScan(template) },
-                                        label = { Text("Scan document") },
-                                        leadingIcon = {
-                                            Icon(
-                                                Icons.Filled.DocumentScanner,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(AssistChipDefaults.IconSize),
-                                            )
-                                        },
-                                    )
+                                        shape = RoundedCornerShape(12.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.DocumentScanner,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                        androidx.compose.foundation.layout.Spacer(Modifier.width(8.dp))
+                                        Text("Scan document")
+                                    }
                                 }
                                 if (supportsNfcScan(template)) {
-                                    AssistChip(
+                                    androidx.compose.material3.FilledTonalButton(
                                         onClick = {
                                             onNfcScan(template, FieldsCodec.encode(fields.toList()))
                                         },
-                                        label = { Text("Scan NFC chip") },
-                                        leadingIcon = {
-                                            Icon(
-                                                Icons.Filled.Nfc,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(AssistChipDefaults.IconSize),
-                                            )
-                                        },
-                                    )
+                                        shape = RoundedCornerShape(12.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.Nfc,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                        androidx.compose.foundation.layout.Spacer(Modifier.width(8.dp))
+                                        Text("Scan NFC")
+                                    }
                                 }
                             }
                         }
@@ -310,30 +328,40 @@ fun EntryEditScreen(
                         )
                         OutlinedTextField(
                             value = fields[i].second,
-                            onValueChange = { 
-                                val filtered = if (isNumericField(fields[i].first)) it.filter { c -> c.isDigit() } else it
-                                fields[i] = fields[i].first to filtered 
+                            onValueChange = { input ->
+                                val name = fields[i].first
+                                val isExpiry = template == Template.PAYMENT_CARD && (name.contains("expiry", ignoreCase = true) || name.contains("expires", ignoreCase = true))
+                                
+                                val filtered = if (isNumericField(name, template) || isExpiry) {
+                                    input.filter { it.isDigit() }.let { if (isExpiry) it.take(4) else it }
+                                } else {
+                                    input
+                                }
+                                fields[i] = name to filtered
                             },
                             label = { Text("Value") },
-                            trailingIcon = if (isDateField(fields[i].first)) {
+                            trailingIcon = if (isDateField(fields[i].first, template)) {
                                 {
                                     IconButton(onClick = { datePickerTargetIndex = i }) {
                                         Icon(Icons.Filled.CalendarToday, contentDescription = "Pick date")
                                     }
                                 }
                             } else null,
+                            visualTransformation = if (template == Template.PAYMENT_CARD && (fields[i].first.contains("expiry", ignoreCase = true) || fields[i].first.contains("expires", ignoreCase = true))) {
+                                ExpiryVisualTransformation()
+                            } else VisualTransformation.None,
                             keyboardOptions = KeyboardOptions(
-                                keyboardType = if (isNumericField(fields[i].first)) KeyboardType.Number else KeyboardType.Text
+                                keyboardType = if (isNumericField(fields[i].first, template) || (template == Template.PAYMENT_CARD && fields[i].first.contains("expiry", ignoreCase = true))) KeyboardType.Number else KeyboardType.Text
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .onFocusChanged {
-                                    if (it.isFocused && isDateField(fields[i].first)) {
+                                    if (it.isFocused && isDateField(fields[i].first, template)) {
                                         datePickerTargetIndex = i
                                         focusManager.clearFocus()
                                     }
                                 },
-                            readOnly = isDateField(fields[i].first)
+                            readOnly = isDateField(fields[i].first, template)
                         )
                     }
                 }
@@ -393,13 +421,41 @@ fun EntryEditScreen(
     }
 }
 
-private fun isDateField(name: String): Boolean {
+private class ExpiryVisualTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        // Only format if the input is digits; if slashes leaked in, strip them for the mask logic.
+        val digits = text.text.filter { it.isDigit() }.take(4)
+        var out = ""
+        for (i in digits.indices) {
+            out += digits[i]
+            if (i == 1 && digits.length > 2) out += "/"
+        }
+
+        val offsetMapping = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                if (offset <= 2) return offset
+                return offset + 1
+            }
+
+            override fun transformedToOriginal(offset: Int): Int {
+                if (offset <= 2) return offset
+                return offset - 1
+            }
+        }
+
+        return TransformedText(AnnotatedString(out), offsetMapping)
+    }
+}
+
+private fun isDateField(name: String, template: Template): Boolean {
     val n = name.lowercase()
+    if (template == Template.PAYMENT_CARD && (n.contains("expiry") || n.contains("expires"))) return false
     return n.contains("date") || n.contains("expiry") || n.contains("expires") || n.contains("dob")
 }
 
-private fun isNumericField(name: String): Boolean {
+private fun isNumericField(name: String, template: Template): Boolean {
     val n = name.lowercase()
+    if (template == Template.PAYMENT_CARD && (n.contains("expiry") || n.contains("expires"))) return true
     // Target fields that are strictly numeric in nature
     return n == "number" || n.contains("cvv") || n.contains("pin") || n.contains("cvc") || n == "account number"
 }

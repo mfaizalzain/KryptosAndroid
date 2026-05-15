@@ -41,8 +41,8 @@ object OcrParsers {
 
     // ---- Driver's license --------------------------------------------------
 
-    private val DL_NUMBER = Regex("""(?im)(?:DL|LIC(?:ENSE)?\.?\s*(?:NO|#)?)\s*[:#]?\s*([A-Z0-9\-]{5,20})""")
-    private val DL_CLASS = Regex("""(?im)(?:CLASS|CLS)\s*[:#]?\s*([A-Z0-9]{1,4})""")
+    private val DL_NUMBER = Regex("""(?im)(?:DL|LIC(?:ENSE)?\.?\s*(?:NO|#)?|4d|5)\s*[:#]?\s*([A-Z0-9\-]{5,25})""")
+    private val DL_CLASS = Regex("""(?im)(?:CLASS|CLS|KELAS|9)\s*[:#]?\s*([A-Z0-9/]{1,10})""")
 
     private fun parseDriversLicense(text: String): Map<String, String> {
         val out = mutableMapOf<String, String>()
@@ -50,12 +50,23 @@ object OcrParsers {
         DL_NUMBER.find(text)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }?.let {
             out["License number"] = it
         }
+        // If License number is still missing, and there's an NRIC-like number, use it.
+        if (!out.containsKey("License number")) {
+            MY_NRIC.find(text)?.let { out["License number"] = it.value }
+        }
+
         DL_CLASS.find(text)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }?.let {
             out["Class"] = it
         }
+        
         // Dates: prefer labelled DOB/EXP, else fall back to earliest/latest.
-        DOB_LABEL.find(text)?.groupValues?.get(1)?.let { out["Date of birth"] = normalizeDate(it) }
-        EXP_LABEL.find(text)?.groupValues?.get(1)?.let { out["Expiry"] = normalizeDate(it) }
+        // Also support AAMVA codes 3 (DOB) and 4b (EXP)
+        (DOB_LABEL.find(text) ?: Regex("""(?im)\b3\s+(\d{2}[\-/.]\d{2}[\-/.]\d{4})\b""").find(text))
+            ?.groupValues?.get(1)?.let { out["Date of birth"] = normalizeDate(it) }
+            
+        (EXP_LABEL.find(text) ?: Regex("""(?im)\b4b\s+(\d{2}[\-/.]\d{2}[\-/.]\d{4})\b""").find(text))
+            ?.groupValues?.get(1)?.let { out["Expiry"] = normalizeDate(it) }
+            
         if (!out.containsKey("Date of birth") || !out.containsKey("Expiry")) {
             val dates = (DATE_YMD.findAll(text) + DATE_DMY.findAll(text))
                 .map { it.groupValues[1] }
@@ -74,8 +85,10 @@ object OcrParsers {
         if (!name.isNullOrBlank()) out["Full name"] = titleCase(name)
 
         // Country/state often appears under a "STATE OF X" / "COUNTRY: Y" header.
-        Regex("""(?im)(?:STATE OF|STATE|COUNTRY|PROVINCE)\s*(?:OF\s+)?[:\-]?\s*([A-Z][A-Z' ]{2,})""")
-            .find(text)?.groupValues?.get(1)?.trim()?.let { out["Country/State"] = titleCase(it) }
+        Regex("""(?im)(?:STATE OF|STATE|COUNTRY|PROVINCE|MALAYSIA)\s*(?:OF\s+)?[:\-]?\s*([A-Z][A-Z' ]{2,})""")
+            .find(text)?.groupValues?.get(1)?.trim()?.let { 
+                if (it.uppercase() != "MALAYSIA") out["Country/State"] = titleCase(it) 
+            }
 
         return out.filterValues { it.isNotBlank() }
     }
@@ -219,7 +232,7 @@ object OcrParsers {
     // ---- Credit card -------------------------------------------------------
 
     private val CARD_NUMBER = Regex("""\b(?:\d[ -]?){13,19}\b""")
-    private val CARD_EXPIRY = Regex("""\b(0[1-9]|1[0-2])\s*[/\-]\s*(\d{2}|\d{4})\b""")
+    private val CARD_EXPIRY = Regex("""\b(0?[1-9]|1[0-2])\s*[/\-. ]\s*(\d{2}|\d{4})\b""")
     private val NAME_LINE = Regex("""^[A-Z][A-Z'\.\- ]{4,}$""")
 
     private fun parseCreditCard(text: String): Map<String, String> {
@@ -230,8 +243,10 @@ object OcrParsers {
             .firstOrNull { isPlausibleCardNumber(it) }
             ?.let { out["Number"] = it.filter { c -> c.isDigit() }.chunked(4).joinToString(" ") }
 
-        CARD_EXPIRY.find(text)?.let { m ->
-            val mm = m.groupValues[1]
+        // Use labelled expiry if available, otherwise fallback to any MM/YY pattern.
+        val expiryCandidate = EXP_LABEL.find(text)?.groupValues?.get(1) ?: text
+        CARD_EXPIRY.find(expiryCandidate)?.let { m ->
+            val mm = m.groupValues[1].padStart(2, '0')
             val yy = m.groupValues[2].takeLast(2)
             out["Expiry"] = "$mm/$yy"
         }
