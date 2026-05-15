@@ -108,7 +108,7 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
             return@rememberLauncherForActivityResult
         }
         pendingAccessToken = token
-        runDriveAction(scope, backup, token, action, account?.id,
+        runDriveAction(scope, backup, token, action, account?.id, app,
             onWorking = { working = it },
             onFeedback = { feedback = it })
         pendingAction = null
@@ -149,7 +149,7 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                         feedback = "Drive returned no access token."
                         pendingAction = null
                     } else {
-                        runDriveAction(scope, backup, token, action, account?.id,
+                        runDriveAction(scope, backup, token, action, account?.id, app,
                             onWorking = { working = it },
                             onFeedback = { feedback = it })
                         pendingAction = null
