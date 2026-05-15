@@ -5,18 +5,21 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Outer shield ring (evenOdd carves the inner shield out). -->
+    <!-- Vertical bar of the K, with a keyhole carved out (evenOdd). -->
     <path
         android:fillColor="#FFFFFFFF"
         android:fillType="evenOdd"
-        android:pathData="M54,26 L78,32 C80,32 81,33 81,35 L81,58 C81,72 70,82 54,88 C38,82 27,72 27,58 L27,35 C27,33 28,32 30,32 Z
-                          M54,34 L72,38.5 C73,38.5 73.5,39 73.5,40 L73.5,58 C73.5,69 65,77.5 54,82 C43,77.5 34.5,69 34.5,58 L34.5,40 C34.5,39 35,38.5 36,38.5 Z" />
+        android:pathData="M33,26 L45,26 L45,82 L33,82 Z
+                          M35.5,42 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0 Z
+                          M37,44 L41,44 L41,50 L37,50 Z" />
 
-    <!-- Layered chevrons (the “hidden” geometry — Kryptos = hidden). -->
+    <!-- Upper diagonal arm. -->
     <path
         android:fillColor="#FFFFFFFF"
-        android:pathData="M44,50 L54,57 L64,50 L64,56 L54,63 L44,56 Z" />
+        android:pathData="M45,54 L69,26 L78,26 L54,54 Z" />
+
+    <!-- Lower diagonal arm. -->
     <path
         android:fillColor="#FFFFFFFF"
-        android:pathData="M44,60 L54,67 L64,60 L64,66 L54,73 L44,66 Z" />
+        android:pathData="M45,54 L69,82 L78,82 L54,54 Z" />
 </vector>
