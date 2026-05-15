@@ -1,7 +1,22 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+}
+
+// Load upload-keystore credentials from either:
+//   1. KRYPTOS_KEYSTORE_PROPERTIES env var (path to props file), or
+//   2. ~/keystores/kryptos-upload.properties (default), or
+//   3. keystore.properties in project root (legacy)
+val keystoreProps = Properties().apply {
+    val candidates = listOfNotNull(
+        System.getenv("KRYPTOS_KEYSTORE_PROPERTIES")?.let { file(it) },
+        file("${System.getProperty("user.home")}/keystores/kryptos-upload.properties"),
+        rootProject.file("keystore.properties"),
+    )
+    candidates.firstOrNull { it.exists() }?.inputStream()?.use { load(it) }
 }
 
 android {
@@ -18,6 +33,17 @@ android {
         versionName = "1.0.0"
     }
 
+    signingConfigs {
+        if (keystoreProps.getProperty("storeFile") != null) {
+            create("release") {
+                storeFile = file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -28,6 +54,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
 
