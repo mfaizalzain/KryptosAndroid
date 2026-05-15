@@ -36,7 +36,8 @@ object ExpiryScheduler {
         Template.BANK_ACCOUNT,
         Template.TAX_NUMBER,
         Template.API_KEY,
-        Template.NOTE -> emptyList()
+        Template.NOTE,
+        Template.QR_CODE -> emptyList()
     }
 
     fun scheduleFor(context: Context, entry: VaultEntry) {

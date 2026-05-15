@@ -23,6 +23,7 @@ object OcrParsers {
             Template.TAX_NUMBER -> parseTaxNumber(text)
             Template.API_KEY -> emptyMap()
             Template.NOTE -> emptyMap()
+            Template.QR_CODE -> emptyMap()
         }
     }
 

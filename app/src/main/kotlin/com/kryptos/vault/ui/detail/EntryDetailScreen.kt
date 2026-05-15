@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -77,11 +78,17 @@ fun EntryDetailScreen(
                 },
                 actions = {
                     IconButton(onClick = {
-                        val allFields = FieldsCodec.decode(entry?.fieldsJson ?: "[]")
-                        val json = JSONObject().apply {
-                            allFields.forEach { put(it.first, it.second) }
+                        val current = entry ?: return@IconButton
+                        val allFields = FieldsCodec.decode(current.fieldsJson)
+                        if (current.template == Template.QR_CODE) {
+                            qrData = allFields.firstOrNull { it.first.equals("Data", ignoreCase = true) }?.second
+                                ?: allFields.firstOrNull()?.second
+                        } else {
+                            val json = JSONObject().apply {
+                                allFields.forEach { put(it.first, it.second) }
+                            }
+                            qrData = json.toString()
                         }
-                        qrData = json.toString()
                     }) {
                         Icon(Icons.Default.QrCode, contentDescription = "Share as QR")
                     }
@@ -156,6 +163,7 @@ fun EntryDetailScreen(
                         fields = allFields,
                         attachment = current.attachment,
                         onCopy = { label, value -> SecureClipboard.copy(ctx, label, value) },
+                        onShare = { data, _ -> qrData = data }
                     )
                 }
             }

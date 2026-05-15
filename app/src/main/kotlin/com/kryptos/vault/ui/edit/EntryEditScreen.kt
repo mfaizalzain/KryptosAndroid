@@ -151,9 +151,10 @@ fun EntryEditScreen(
                     else fields.add(key to value)
                 }
             } else {
-                val idx = fields.indexOfFirst { it.first.equals("Scanned text", ignoreCase = true) }
+                val targetField = if (template == Template.QR_CODE) "Data" else "Scanned text"
+                val idx = fields.indexOfFirst { it.first.equals(targetField, ignoreCase = true) }
                 if (idx >= 0) fields[idx] = fields[idx].first to rawText.trim()
-                else fields.add("Scanned text" to rawText.trim())
+                else fields.add(targetField to rawText.trim())
             }
         }
         if (attachment != null) existingAttachment = attachment
@@ -507,6 +508,7 @@ private fun templateIcon(t: Template): ImageVector = when (t) {
     Template.TAX_NUMBER -> Icons.Default.Description
     Template.API_KEY -> Icons.Default.VpnKey
     Template.NOTE -> Icons.Default.Description
+    Template.QR_CODE -> Icons.Default.QrCode
 }
 
 private class ExpiryVisualTransformation : VisualTransformation {
@@ -557,7 +559,8 @@ private fun supportsCameraScan(t: Template): Boolean = when (t) {
     Template.BANK_ACCOUNT,
     Template.TAX_NUMBER -> true
     Template.API_KEY,
-    Template.NOTE -> false
+    Template.NOTE,
+    Template.QR_CODE -> false
 }
 
 private fun supportsNfcScan(t: Template): Boolean = t == Template.PASSPORT || t == Template.PAYMENT_CARD
@@ -572,6 +575,7 @@ private fun prettyTemplate(t: Template): String = when (t) {
     Template.TAX_NUMBER -> "Tax number"
     Template.API_KEY -> "API key"
     Template.NOTE -> "Note"
+    Template.QR_CODE -> "QR code"
 }
 
 private val TemplateSaver: Saver<Template, String> = Saver(
@@ -603,4 +607,5 @@ private fun defaultFieldsFor(template: Template): List<String> = when (template)
     Template.TAX_NUMBER -> listOf("Full name", "Tax number", "Country")
     Template.API_KEY -> listOf("Service", "Environment", "Key", "Secret")
     Template.NOTE -> listOf("Content")
+    Template.QR_CODE -> listOf("Data")
 }

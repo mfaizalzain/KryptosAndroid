@@ -13,6 +13,7 @@ enum class Template {
     TAX_NUMBER,
     API_KEY,
     NOTE,
+    QR_CODE,
 }
 
 @Entity(tableName = "vault_entries")

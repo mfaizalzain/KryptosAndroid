@@ -1,3 +1,4 @@
+com.fmz.kryptos:xml/file_paths = 0x7f110001
 com.fmz.kryptos:xml/data_extraction_rules = 0x7f110000
 com.fmz.kryptos:styleable/ViewStubCompat = 0x7f100039
 com.fmz.kryptos:styleable/View = 0x7f100037
@@ -332,7 +333,7 @@ com.fmz.kryptos:layout/abc_list_menu_item_checkbox = 0x7f0c000e
 com.fmz.kryptos:layout/abc_expanded_menu_layout = 0x7f0c000d
 com.fmz.kryptos:layout/abc_dialog_title_material = 0x7f0c000c
 com.fmz.kryptos:layout/abc_alert_dialog_material = 0x7f0c0009
-com.fmz.kryptos:xml/nfc_tech_filter = 0x7f110001
+com.fmz.kryptos:xml/nfc_tech_filter = 0x7f110002
 com.fmz.kryptos:layout/abc_activity_chooser_view = 0x7f0c0006
 com.fmz.kryptos:style/Widget.AppCompat.Light.ActionBar.Solid = 0x7f0f0135
 com.fmz.kryptos:string/m3c_suggestions_available = 0x7f0e0080

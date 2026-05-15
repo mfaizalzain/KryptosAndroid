@@ -23,6 +23,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.PermIdentity
+import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.HorizontalDivider
@@ -44,10 +46,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kryptos.vault.data.Template
+import com.kryptos.vault.ui.scan.QrGenerator
 
 // --- Public API ------------------------------------------------------------
 
@@ -68,6 +72,7 @@ fun heroFieldKeys(template: Template): Set<String> = when (template) {
     Template.TAX_NUMBER -> setOf("full name", "tax number", "country")
     Template.API_KEY -> setOf("service", "key", "secret", "environment")
     Template.NOTE -> setOf("content")
+    Template.QR_CODE -> setOf("data")
 }
 
 @Composable
@@ -77,6 +82,7 @@ fun HeroCard(
     fields: List<Pair<String, String>>,
     attachment: ByteArray?,
     onCopy: (label: String, value: String) -> Unit,
+    onShare: ((data: String, title: String) -> Unit)? = null,
     interactive: Boolean = true,
 ) {
     // In non-interactive mode (used by the list as thumbnails) we drop all internal
@@ -92,6 +98,7 @@ fun HeroCard(
         Template.TAX_NUMBER -> TaxNumberHero(title, fields, effectiveCopy, interactive)
         Template.API_KEY -> ApiKeyHero(title, fields, effectiveCopy, interactive)
         Template.NOTE -> NoteHero(title, fields, effectiveCopy, interactive)
+        Template.QR_CODE -> QrCodeHero(title, fields, effectiveCopy, onShare, interactive)
     }
 }
 
@@ -1073,6 +1080,97 @@ private fun TaxNumberHero(
                         letterSpacing = 2.sp
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QrCodeHero(
+    title: String,
+    fields: List<Pair<String, String>>,
+    onCopy: (String, String) -> Unit,
+    onShare: ((String, String) -> Unit)? = null,
+    interactive: Boolean,
+) {
+    val data = fields.value("Data")
+    val bmp = remember(data) { if (data.isNotBlank()) QrGenerator.generate(data) else null }
+
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(24.dp)),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Icon(
+                    Icons.Filled.QrCode,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    title.ifBlank { "QR CODE" }.uppercase(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.weight(1f)
+                )
+                if (interactive && onShare != null && data.isNotBlank()) {
+                    IconButton(onClick = { onShare(data, title) }, modifier = Modifier.size(24.dp)) {
+                        Icon(
+                            Icons.Default.Share,
+                            contentDescription = "Share",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            if (bmp != null) {
+                Image(
+                    bitmap = bmp.asImageBitmap(),
+                    contentDescription = "QR Code",
+                    modifier = Modifier
+                        .size(160.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable(enabled = interactive) {
+                            onCopy("QR Data", data)
+                        }
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(160.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No data", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+
+            if (data.isNotBlank()) {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = data,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
             }
         }
     }

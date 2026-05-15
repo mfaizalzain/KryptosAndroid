@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.WorkspacePremium
@@ -432,6 +433,7 @@ private fun labelFor(t: Template) = when (t) {
     Template.TAX_NUMBER -> "Tax Numbers"
     Template.API_KEY -> "API Keys"
     Template.NOTE -> "Notes"
+    Template.QR_CODE -> "QR Codes"
 }
 
 private fun iconFor(t: Template): ImageVector = when (t) {
@@ -444,6 +446,7 @@ private fun iconFor(t: Template): ImageVector = when (t) {
     Template.TAX_NUMBER -> Icons.Filled.Assignment
     Template.API_KEY -> Icons.Filled.Key
     Template.NOTE -> Icons.Filled.Description
+    Template.QR_CODE -> Icons.Filled.QrCode
 }
 
 private fun VaultEntry.matches(q: String): Boolean {

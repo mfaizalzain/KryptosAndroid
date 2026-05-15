@@ -12,4 +12,5 @@ string biometric_title
 string google_web_client_id
 style Theme.Kryptos
 xml data_extraction_rules
+xml file_paths
 xml nfc_tech_filter

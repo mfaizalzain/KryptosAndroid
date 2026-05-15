@@ -22,5 +22,9 @@
     {
         "merged": "com.fmz.kryptos.app-debug-83:/xml_data_extraction_rules.xml.flat",
         "source": "com.fmz.kryptos.app-main-85:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.fmz.kryptos.app-debug-83:/xml_file_paths.xml.flat",
+        "source": "com.fmz.kryptos.app-main-85:/xml/file_paths.xml"
     }
 ]
