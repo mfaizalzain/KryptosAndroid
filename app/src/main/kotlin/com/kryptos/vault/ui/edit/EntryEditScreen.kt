@@ -35,6 +35,7 @@ import com.kryptos.vault.data.Template
 import com.kryptos.vault.data.VaultEntry
 import com.kryptos.vault.ui.VaultViewModel
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -54,6 +55,7 @@ fun EntryEditScreen(
     viewModel: VaultViewModel,
     onDone: () -> Unit,
     onScan: (Template) -> Unit,
+    onQrScan: () -> Unit = {},
     onNfcScan: (Template, String) -> Unit = { _, _ -> },
     savedStateHandle: SavedStateHandle? = null,
 ) {
@@ -131,9 +133,28 @@ fun EntryEditScreen(
                 else fields.add(key to sanitizedValue)
             }
         } else if (!rawText.isNullOrBlank()) {
-            val idx = fields.indexOfFirst { it.first.equals("Scanned text", ignoreCase = true) }
-            if (idx >= 0) fields[idx] = fields[idx].first to rawText.trim()
-            else fields.add("Scanned text" to rawText.trim())
+            val qrParsed = runCatching {
+                val json = JSONObject(rawText)
+                val map = mutableListOf<Pair<String, String>>()
+                val keys = json.keys()
+                while (keys.hasNext()) {
+                    val key = keys.next()
+                    map.add(key to json.get(key).toString())
+                }
+                map
+            }.getOrNull()
+
+            if (qrParsed != null) {
+                qrParsed.forEach { (key, value) ->
+                    val idx = fields.indexOfFirst { it.first.equals(key, ignoreCase = true) }
+                    if (idx >= 0) fields[idx] = fields[idx].first to value
+                    else fields.add(key to value)
+                }
+            } else {
+                val idx = fields.indexOfFirst { it.first.equals("Scanned text", ignoreCase = true) }
+                if (idx >= 0) fields[idx] = fields[idx].first to rawText.trim()
+                else fields.add("Scanned text" to rawText.trim())
+            }
         }
         if (attachment != null) existingAttachment = attachment
         handle.remove<String>(ScanResultKeys.PARSED_FIELDS_JSON)
@@ -256,7 +277,7 @@ fun EntryEditScreen(
                                 when (template) {
                                     Template.PASSPORT -> "Scan the photo page with your camera, or read the chip over NFC for the most accurate result."
                                     Template.PAYMENT_CARD -> "Scan the card with your camera, or use NFC to securely read the card number and expiry directly from the chip. Note: Camera scan works best for embossed cards; for modern flat cards, use NFC scan instead."
-                                    else -> "Point your camera at the document — the scanner auto-crops and fills the fields below."
+                                    else -> "Use your camera to scan the document for auto-fill, or scan a QR code to quickly import data."
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -297,6 +318,19 @@ fun EntryEditScreen(
                                         Spacer(Modifier.width(8.dp))
                                         Text("Scan NFC")
                                     }
+                                }
+                                FilledTonalButton(
+                                    onClick = onQrScan,
+                                    shape = RoundedCornerShape(12.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.QrCodeScanner,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Scan QR")
                                 }
                             }
                         }

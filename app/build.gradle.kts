@@ -114,6 +114,7 @@ dependencies {
     implementation(libs.google.id)
 
     implementation(libs.mlkit.text.recognition)
+    implementation(libs.mlkit.barcode.scanning)
     implementation(libs.mlkit.document.scanner)
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)

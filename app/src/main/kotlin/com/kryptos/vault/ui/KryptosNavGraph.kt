@@ -18,6 +18,7 @@ import com.kryptos.vault.ui.lock.LockScreen
 import com.kryptos.vault.ui.scan.ScanScreen
 import com.kryptos.vault.ui.nfc.NfcPassportScanScreen
 import com.kryptos.vault.ui.nfc.NfcCardScanScreen
+import com.kryptos.vault.ui.scan.QrScanScreen
 import com.kryptos.vault.ui.VaultViewModel
 
 private object Routes {
@@ -26,6 +27,7 @@ private object Routes {
     const val DETAIL = "detail/{id}"
     const val EDIT = "edit/{id}"
     const val SCAN = "scan/{template}"
+    const val QR_SCAN = "qr_scan"
     const val NFC = "nfc/{template}"
     const val CARD_NFC = "card_nfc"
     fun detail(id: Long) = "detail/$id"
@@ -84,6 +86,7 @@ fun KryptosNavGraph(unlocked: MutableState<Boolean>) {
                 savedStateHandle = entry.savedStateHandle,
                 onDone = { nav.popBackStack() },
                 onScan = { template -> nav.navigate(Routes.scan(template)) },
+                onQrScan = { nav.navigate(Routes.QR_SCAN) },
                 onNfcScan = { template, prefillJson ->
                     if (template == Template.PAYMENT_CARD) {
                         nav.navigate(Routes.CARD_NFC)
@@ -112,6 +115,16 @@ fun KryptosNavGraph(unlocked: MutableState<Boolean>) {
                     prev?.set(ScanResultKeys.ATTACHMENT, attachment)
                     nav.popBackStack()
                 },
+            )
+        }
+        composable(Routes.QR_SCAN) {
+            QrScanScreen(
+                onCancel = { nav.popBackStack() },
+                onResult = { value ->
+                    val prev = nav.previousBackStackEntry?.savedStateHandle
+                    prev?.set(ScanResultKeys.RAW_TEXT, value)
+                    nav.popBackStack()
+                }
             )
         }
         composable(
