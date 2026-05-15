@@ -30,8 +30,9 @@ class KryptosApp : Application() {
         
         // If we have a userId but no per-user DB yet, check if there's a legacy global DB to migrate.
         if (userId != null) {
+            val sanitizedId = userId.replace(Regex("[^a-zA-Z0-9]"), "_")
             val legacyDb = getDatabasePath("kryptos.db")
-            val userDb = getDatabasePath("kryptos_$userId.db")
+            val userDb = getDatabasePath("kryptos_$sanitizedId.db")
             if (legacyDb.exists() && !userDb.exists()) {
                 legacyDb.renameTo(userDb)
                 // Also move WAL/SHM if they exist

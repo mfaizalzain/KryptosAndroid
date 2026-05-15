@@ -15,7 +15,8 @@ abstract class VaultDatabase : androidx.room.RoomDatabase() {
         fun build(context: Context, userId: String? = null): VaultDatabase {
             val passphrase = KeyManager.getDatabasePassphrase(context)
             val factory = SupportOpenHelperFactory(passphrase)
-            val dbName = if (userId == null) "kryptos.db" else "kryptos_$userId.db"
+            val sanitizedId = userId?.replace(Regex("[^a-zA-Z0-9]"), "_")
+            val dbName = if (sanitizedId == null) "kryptos.db" else "kryptos_$sanitizedId.db"
             return Room.databaseBuilder(context, VaultDatabase::class.java, dbName)
                 .openHelperFactory(factory)
                 .build()

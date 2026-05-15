@@ -44,7 +44,8 @@ class DriveBackupManager(private val context: Context) {
 
     /** Locates the SQLCipher database file Room writes to. */
     private fun getDbFile(userId: String?): File {
-        val dbName = if (userId == null) "kryptos.db" else "kryptos_$userId.db"
+        val sanitizedId = userId?.replace(Regex("[^a-zA-Z0-9]"), "_")
+        val dbName = if (sanitizedId == null) "kryptos.db" else "kryptos_$sanitizedId.db"
         return context.getDatabasePath(dbName)
     }
 
