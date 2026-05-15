@@ -53,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
@@ -182,7 +183,16 @@ fun EntryEditScreen(
                     IconButton(onClick = onDone) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back") }
                 },
                 actions = {
-                    TextButton(onClick = { doSave() }) { Text("Save") }
+                    TextButton(
+                        onClick = { doSave() },
+                        enabled = title.isNotBlank()
+                    ) {
+                        Text(
+                            "Save",
+                            fontWeight = FontWeight.Bold,
+                            color = if (title.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        )
+                    }
                 },
             )
         },
