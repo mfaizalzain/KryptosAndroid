@@ -63,6 +63,8 @@ class DriveBackupManager(private val context: Context) {
             requestMethod = "GET"
             setRequestProperty("Authorization", "Bearer $accessToken")
             setRequestProperty("Accept", "application/json")
+            connectTimeout = 10000
+            readTimeout = 10000
         }
         val code = conn.responseCode
         val text = (if (code in 200..299) conn.inputStream else conn.errorStream).use {
@@ -153,6 +155,8 @@ class DriveBackupManager(private val context: Context) {
         val conn = (url.openConnection() as HttpsURLConnection).apply {
             requestMethod = "GET"
             setRequestProperty("Authorization", "Bearer $accessToken")
+            connectTimeout = 10000
+            readTimeout = 10000
         }
         val response = conn.inputStream.use { it.bufferedReader().readText() }
         val arr = JSONObject(response).optJSONArray("files") ?: return null
@@ -175,6 +179,8 @@ class DriveBackupManager(private val context: Context) {
             requestMethod = "POST"
             setRequestProperty("Authorization", "Bearer $accessToken")
             setRequestProperty("Content-Type", "application/json")
+            connectTimeout = 10000
+            readTimeout = 10000
             doOutput = true
         }
         conn.outputStream.use { it.write(metadata.toByteArray()) }
@@ -203,6 +209,8 @@ class DriveBackupManager(private val context: Context) {
             requestMethod = "POST"
             setRequestProperty("Authorization", "Bearer $accessToken")
             setRequestProperty("Content-Type", "multipart/related; boundary=$boundary")
+            connectTimeout = 10000
+            readTimeout = 30000
             doOutput = true
         }
         conn.outputStream.use { it.write(body.toByteArray()) }
@@ -247,6 +255,8 @@ class DriveBackupManager(private val context: Context) {
         val conn = (url.openConnection() as HttpsURLConnection).apply {
             requestMethod = "GET"
             setRequestProperty("Authorization", "Bearer $accessToken")
+            connectTimeout = 10000
+            readTimeout = 10000
         }
         val code = conn.responseCode
         if (code !in 200..299) {
@@ -261,6 +271,8 @@ class DriveBackupManager(private val context: Context) {
         val conn = (url.openConnection() as HttpsURLConnection).apply {
             requestMethod = "GET"
             setRequestProperty("Authorization", "Bearer $accessToken")
+            connectTimeout = 10000
+            readTimeout = 10000
         }
         val code = conn.responseCode
         if (code !in 200..299) {
@@ -294,6 +306,8 @@ class DriveBackupManager(private val context: Context) {
             requestMethod = "POST"
             setRequestProperty("Authorization", "Bearer $accessToken")
             setRequestProperty("Content-Type", "multipart/related; boundary=$boundary")
+            connectTimeout = 10000
+            readTimeout = 30000
             doOutput = true
         }
         conn.outputStream.use { it.write(body.toByteArray()) }
@@ -314,6 +328,8 @@ class DriveBackupManager(private val context: Context) {
             requestMethod = "PATCH"
             setRequestProperty("Authorization", "Bearer $accessToken")
             setRequestProperty("Content-Type", mime)
+            connectTimeout = 10000
+            readTimeout = 30000
             doOutput = true
         }
         conn.outputStream.use { it.write(bytes) }
