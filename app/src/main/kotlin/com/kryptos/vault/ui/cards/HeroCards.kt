@@ -72,7 +72,7 @@ fun heroFieldKeys(template: Template): Set<String> = when (template) {
     Template.TAX_NUMBER -> setOf("full name", "tax number", "country")
     Template.API_KEY -> setOf("service", "key", "secret", "environment")
     Template.NOTE -> setOf("content")
-    Template.QR_CODE -> setOf("data")
+    Template.QR_CODE -> setOf("content", "data")
 }
 
 @Composable
@@ -1093,7 +1093,7 @@ private fun QrCodeHero(
     onShare: ((String, String) -> Unit)? = null,
     interactive: Boolean,
 ) {
-    val data = fields.value("Data")
+    val data = fields.value("Content").ifBlank { fields.value("Data") }
     val bmp = remember(data) { if (data.isNotBlank()) QrGenerator.generate(data) else null }
 
     Surface(

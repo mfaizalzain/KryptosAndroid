@@ -47,6 +47,7 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
 
     var account by remember { mutableStateOf<AuthManager.Account?>(auth.currentAccount) }
     val isPremium by billing.isPremium.collectAsState()
+    val remindersEnabled by billing.remindersEnabled.collectAsState()
     var working by remember { mutableStateOf<String?>(null) }
     var feedback by remember { mutableStateOf<String?>(null) }
     var pendingAccessToken by remember { mutableStateOf<String?>(null) }
@@ -308,6 +309,12 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                         Spacer(Modifier.width(12.dp))
                         Text("Upgrade to Pro (One-time)")
                     }
+                    TextButton(
+                        onClick = { billing.restorePurchases() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Already purchased? Restore Purchase")
+                    }
                 }
             }
 
@@ -381,10 +388,38 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
 
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
 
+            // --- Notifications ---
+            Section("General") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Expiry Reminders",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            "Get notified before your documents and cards expire.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = remindersEnabled,
+                        onCheckedChange = { billing.setRemindersEnabled(it) }
+                    )
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+
             // --- Danger zone ---
             Section("Danger zone") {
                 Text(
-                    "Permanently deletes every entry and encryption keys from this device.",
+                    "Permanently deletes every entry, encryption keys, and sign you out of your account on this device.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -397,9 +432,9 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                         contentColor = MaterialTheme.colorScheme.onErrorContainer,
                     ),
                 ) {
-                    Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.DeleteForever, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(12.dp))
-                    Text("Delete all vault data")
+                    Text("Delete vault and account")
                 }
             }
         }
@@ -408,11 +443,11 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete everything?") },
+            title = { Text("Delete vault and account?") },
             text = {
                 Text(
-                    "This wipes every entry, encryption keys, and account state from this device. " +
-                            "This cannot be undone."
+                    "This will permanently wipe every entry, encryption keys, and sign you out of your account on this device. " +
+                            "Your local data will be completely erased. This cannot be undone."
                 )
             },
             confirmButton = {
@@ -420,7 +455,7 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                     confirmDelete = false
                     app.nukeAllData()
                     android.os.Process.killProcess(android.os.Process.myPid())
-                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+                }) { Text("Delete Everything", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
                 TextButton(onClick = { confirmDelete = false }) { Text("Cancel") }

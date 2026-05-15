@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.kryptos.vault.KryptosApp
 import com.kryptos.vault.data.FieldsCodec
 import com.kryptos.vault.data.Template
 import com.kryptos.vault.data.VaultEntry
@@ -20,7 +21,7 @@ import java.util.concurrent.TimeUnit
 object ExpiryScheduler {
 
     /** Per-template warning periods. Order matters for unique notification ids per entry. */
-    private fun thresholdsFor(template: Template): List<Pair<Period, String>> =when (template) {
+    private fun thresholdsFor(template: Template): List<Pair<Period, String>> = when (template) {
         Template.PASSPORT -> listOf(
             Period.ofMonths(6) to "Passport expires in 6 months",
             Period.ofMonths(1) to "Passport expires in 1 month",
@@ -31,19 +32,19 @@ object ExpiryScheduler {
         Template.PAYMENT_CARD -> listOf(
             Period.ofMonths(1) to "Card expires in 1 month",
         )
-        Template.ID_CARD,
-        Template.BIRTH_CERTIFICATE,
-        Template.BANK_ACCOUNT,
-        Template.TAX_NUMBER,
-        Template.API_KEY,
-        Template.NOTE,
-        Template.QR_CODE -> emptyList()
+        else -> listOf(
+            Period.ofMonths(1) to "Entry expires in 1 month",
+            Period.ofWeeks(1) to "Entry expires in 1 week",
+        )
     }
 
     fun scheduleFor(context: Context, entry: VaultEntry) {
         val wm = WorkManager.getInstance(context)
         val tag = tagFor(entry.id)
         wm.cancelAllWorkByTag(tag)
+
+        val app = context.applicationContext as KryptosApp
+        if (!app.billingManager.remindersEnabled.value) return
 
         val thresholds = thresholdsFor(entry.template)
         if (thresholds.isEmpty()) return
@@ -91,7 +92,8 @@ object ExpiryScheduler {
     /** Extracts the "Expiry" field, handling both YYYY-MM-DD and MM/YY (credit card) formats. */
     private fun extractExpiry(entry: VaultEntry): LocalDate? {
         val fields = FieldsCodec.decode(entry.fieldsJson)
-        val raw = fields.firstOrNull { it.first.equals("Expiry", ignoreCase = true) }
+        val expiryFieldNames = setOf("expiry", "expires", "expiration", "expiration date")
+        val raw = fields.firstOrNull { it.first.lowercase() in expiryFieldNames }
             ?.second?.trim()
             ?: return null
         if (raw.isBlank()) return null

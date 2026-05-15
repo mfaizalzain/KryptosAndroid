@@ -81,7 +81,7 @@ fun EntryDetailScreen(
                         val current = entry ?: return@IconButton
                         val allFields = FieldsCodec.decode(current.fieldsJson)
                         if (current.template == Template.QR_CODE) {
-                            qrData = allFields.firstOrNull { it.first.equals("Data", ignoreCase = true) }?.second
+                            qrData = allFields.firstOrNull { it.first.equals("Content", ignoreCase = true) || it.first.equals("Data", ignoreCase = true) }?.second
                                 ?: allFields.firstOrNull()?.second
                         } else {
                             val json = JSONObject().apply {

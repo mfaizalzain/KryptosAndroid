@@ -32,6 +32,8 @@ class VaultViewModel(
 
     fun purchasePremium(activity: Activity) = billingManager.purchasePremium(activity)
 
+    fun restorePurchases() = billingManager.restorePurchases()
+
     suspend fun get(id: Long) = repo.get(id)
 
     fun delete(entry: VaultEntry) = viewModelScope.launch {
@@ -61,7 +63,7 @@ class VaultViewModel(
             Template.TAX_NUMBER -> listOf("Tax number")
             Template.API_KEY -> listOf("Key")
             Template.NOTE -> emptyList()
-            Template.QR_CODE -> listOf("Data")
+            Template.QR_CODE -> listOf("Content", "Data")
         }
 
         val identifiers = keys.mapNotNull { k ->

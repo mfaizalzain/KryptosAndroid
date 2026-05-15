@@ -34,8 +34,16 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
     private val _isPremium = MutableStateFlow(prefs.getBoolean(KEY_IS_PREMIUM, false))
     val isPremium: StateFlow<Boolean> = _isPremium
 
+    private val _remindersEnabled = MutableStateFlow(prefs.getBoolean(KEY_REMINDERS_ENABLED, true))
+    val remindersEnabled: StateFlow<Boolean> = _remindersEnabled
+
     init {
         startConnection()
+    }
+
+    fun setRemindersEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_REMINDERS_ENABLED, enabled).apply()
+        _remindersEnabled.value = enabled
     }
 
     private fun startConnection() {
@@ -127,6 +135,11 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
         }
     }
 
+    fun restorePurchases() {
+        android.util.Log.d("BillingMgr", "restorePurchases manually triggered")
+        queryPurchases()
+    }
+
     private fun setPremium(value: Boolean) {
         prefs.edit().putBoolean(KEY_IS_PREMIUM, value).apply()
         _isPremium.value = value
@@ -134,6 +147,7 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
 
     companion object {
         private const val KEY_IS_PREMIUM = "is_premium"
+        private const val KEY_REMINDERS_ENABLED = "reminders_enabled"
         const val FREE_ENTRY_LIMIT = 10
         // The real Product ID from Google Play Console
         const val PRODUCT_ID_PRO = "kryptos_pro_upgrade"

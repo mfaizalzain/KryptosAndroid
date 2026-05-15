@@ -162,7 +162,7 @@ fun EntryEditScreen(
                     else fields.add(key to value)
                 }
             } else {
-                val targetField = if (template == Template.QR_CODE) "Data" else "Scanned text"
+                val targetField = if (template == Template.QR_CODE) "Content" else "Scanned text"
                 val idx = fields.indexOfFirst { it.first.equals(targetField, ignoreCase = true) }
                 if (idx >= 0) fields[idx] = fields[idx].first to rawText.trim()
                 else fields.add(targetField to rawText.trim())
@@ -267,7 +267,7 @@ fun EntryEditScreen(
                 }
             }
 
-            if (supportsCameraScan(template) || supportsNfcScan(template)) {
+            if (supportsCameraScan(template) || supportsNfcScan(template) || template == Template.QR_CODE) {
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -281,7 +281,7 @@ fun EntryEditScreen(
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             Text(
-                                "Fill from ${prettyTemplate(template).lowercase()}",
+                                if (template == Template.QR_CODE) "Import QR data" else "Fill from ${prettyTemplate(template).lowercase()}",
                                 style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
@@ -289,6 +289,7 @@ fun EntryEditScreen(
                                 when (template) {
                                     Template.PASSPORT -> "Scan the photo page with your camera, or read the chip over NFC for the most accurate result."
                                     Template.PAYMENT_CARD -> "Scan the card with your camera, or use NFC to securely read the card number and expiry directly from the chip. Note: Camera scan works best for embossed cards; for modern flat cards, use NFC scan instead."
+                                    Template.QR_CODE -> "Scan an existing QR code to import its content and use this entry as a duplicator."
                                     else -> "Use your camera to scan the document for auto-fill, or scan a QR code to quickly import data."
                                 },
                                 style = MaterialTheme.typography.bodySmall,
@@ -348,19 +349,20 @@ fun EntryEditScreen(
                         }
                     }
                 }
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        HorizontalDivider(modifier = Modifier.weight(1f))
-                        Text(
-                            "  Or fill manually  ",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        HorizontalDivider(modifier = Modifier.weight(1f))
-                    }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    HorizontalDivider(modifier = Modifier.weight(1f))
+                    Text(
+                        "  Or fill manually  ",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    HorizontalDivider(modifier = Modifier.weight(1f))
                 }
             }
 
@@ -446,6 +448,15 @@ fun EntryEditScreen(
                             },
                         readOnly = isDateField(fields[i].first, template)
                     )
+
+                    if (isDateField(fields[i].first, template) && fields[i].second.isNotBlank()) {
+                        Text(
+                            text = "Kryptos will notify you before this expires.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                        )
+                    }
                     
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 4.dp),
@@ -609,7 +620,7 @@ private val FieldsListSaver: Saver<SnapshotStateList<Pair<String, String>>, Any>
     )
 
 private fun defaultFieldsFor(template: Template): List<String> = when (template) {
-    Template.ID_CARD -> listOf("Full name", "ID number", "Date of birth", "Nationality")
+    Template.ID_CARD -> listOf("Full name", "ID number", "Date of birth", "Nationality", "Expiry")
     Template.PASSPORT -> listOf("Surname", "Given names", "Passport number", "Nationality", "Date of birth", "Sex", "Expiry")
     Template.DRIVERS_LICENSE -> listOf("Full name", "License number", "Class", "Date of birth", "Expiry", "Country/State")
     Template.BIRTH_CERTIFICATE -> listOf("Full name", "Date of birth", "Place of birth", "Father's name", "Mother's name", "Registration number", "Date of issue")
@@ -618,5 +629,5 @@ private fun defaultFieldsFor(template: Template): List<String> = when (template)
     Template.TAX_NUMBER -> listOf("Full name", "Tax number", "Country")
     Template.API_KEY -> listOf("Service", "Environment", "Key", "Secret")
     Template.NOTE -> listOf("Content")
-    Template.QR_CODE -> listOf("Data")
+    Template.QR_CODE -> listOf("Content")
 }

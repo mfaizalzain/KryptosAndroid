@@ -87,7 +87,6 @@ fun VaultListScreen(
     viewModel: VaultViewModel,
     onOpen: (Long) -> Unit,
     onAdd: () -> Unit,
-    onQrScan: () -> Unit,
     onSignOut: () -> Unit,
 ) {
     val entries by viewModel.entries.collectAsState()
@@ -247,7 +246,6 @@ fun VaultListScreen(
                             CategoryHeader(
                                 template = template,
                                 count = items.size,
-                                onScan = if (template == Template.QR_CODE) onQrScan else null
                             )
                         }
                         if (items.size > STACK_THRESHOLD) {
@@ -278,7 +276,7 @@ fun VaultListScreen(
 }
 
 @Composable
-private fun CategoryHeader(template: Template, count: Int, onScan: (() -> Unit)? = null) {
+private fun CategoryHeader(template: Template, count: Int) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -306,19 +304,6 @@ private fun CategoryHeader(template: Template, count: Int, onScan: (() -> Unit)?
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
-        if (onScan != null) {
-            IconButton(
-                onClick = onScan,
-                modifier = Modifier.padding(start = 4.dp).size(32.dp)
-            ) {
-                Icon(
-                    Icons.Filled.QrCodeScanner,
-                    contentDescription = "Scan",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
         Spacer(Modifier.weight(1f))
         Surface(
             shape = CircleShape,

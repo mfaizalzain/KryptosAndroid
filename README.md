@@ -4,17 +4,27 @@ Kryptos is a zero-knowledge personal vault for Android, designed to securely sto
 
 ## Features
 
--   **Zero-Knowledge Security**: Your data is encrypted locally using SQLCipher with AES-256 encryption. We never see your plaintext data.
+-   **Zero-Knowledge Security**: Your data is encrypted locally using SQLCipher with AES-256 encryption. Encryption keys are stored securely in the Android Keystore.
 -   **Smart Document Scanning**:
-    -   **OCR Integration**: Automatically extract fields from physical documents using Google ML Kit.
-    -   **NFC Chip Reading**: Securely read electronic passport (ePassport) chips and EMV payment cards directly via NFC.
--   **Beautiful Hero Cards**: Dedicated, high-fidelity UI representations for different document types (Passports, Driver's Licenses, Credit Cards, etc.).
--   **Multi-User Isolation**: Supporting multiple Google accounts on a single device with isolated, per-user encrypted databases.
+    -   **AI-Powered OCR**: Automatically extract fields from physical documents using Google ML Kit.
+    -   **NFC Chip Reading**: Securely read electronic passport (ePassport) chips and EMV payment cards directly via NFC for 100% accuracy.
+    -   **QR Code Duplicator**: Scan and store existing QR codes to use Kryptos as a digital duplicator.
+-   **Universal Expiry Reminders**: 
+    -   Automatically detects expiry dates in any entry.
+    -   Get notified 6 months, 1 month, or 1 week before expiration (customizable per category).
+    -   Toggle reminders on or off via the settings.
+-   **Beautiful Hero Cards**: High-fidelity UI representations for all document types including Passports, Driver's Licenses, Credit Cards, and API keys.
 -   **Cloud Backup & Restore**:
-    -   **Hidden AppData Backup**: Automatic zero-knowledge backup to a private, hidden folder in your Google Drive.
-    -   **Pro: Backup to My Drive**: Premium feature to back up your encrypted vault to a visible "KryptosBackups" folder for easier management.
--   **Expiry Reminders**: Integrated with WorkManager to notify you before your documents (passports, cards, licenses) expire.
--   **Biometric Protection**: Secure your vault with Android Biometrics (Fingerprint/Face Unlock).
+    -   **Encrypted AppData Backup**: Securely back up your vault to a private, hidden folder in your Google Drive.
+    -   **Cross-Device Restore**: Seamlessly restore your vault on new devices using your Google account.
+-   **Pro Version (One-Time Upgrade)**:
+    -   **Unlimited Entries**: Remove the free tier limit.
+    -   **Advanced Backup**: Backup your encrypted vault directly to a visible folder in "My Drive" for easier manual management.
+    -   **Support Development**: Help us build more privacy-focused features.
+-   **Privacy First**:
+    -   **Biometric Protection**: Secure your vault with Fingerprint or Face Unlock.
+    -   **Auto-Clear Clipboard**: Sensitive data is automatically cleared from the clipboard after 30 seconds.
+    -   **Multi-User Isolation**: Supports multiple Google accounts with completely isolated encrypted databases.
 
 ## Tech Stack
 
@@ -24,13 +34,14 @@ Kryptos is a zero-knowledge personal vault for Android, designed to securely sto
 -   **OCR/Scanning**: Google ML Kit & Google Document Scanner
 -   **NFC**: JMRTD (Passport) & EMV reading
 -   **Auth**: Google Identity (Credential Manager)
--   **Architecture**: MVVM with Clean Architecture principles
+-   **Billing**: Google Play Billing Library
+-   **Background Tasks**: WorkManager for reliable notifications
 
 ## Getting Started
 
 1.  Clone the repository.
 2.  Add your `google-services.json` to the `app/` directory.
-3.  Add your Google Web Client ID to `strings.xml`.
+3.  Ensure your environment has the necessary Google Play Services dependencies.
 4.  Build and run using Android Studio.
 
 ## License
