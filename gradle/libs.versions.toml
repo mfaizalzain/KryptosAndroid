@@ -13,6 +13,7 @@ sqliteKtx = "2.4.0"
 biometric = "1.2.0-alpha05"
 mlkitText = "16.0.1"
 mlkitBarcode = "17.3.0"
+zxing = "3.5.3"
 mlkitDocScanner = "16.0.0-beta1"
 camerax = "1.4.1"
 coroutines = "1.9.0"
@@ -59,6 +60,7 @@ bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk15to18", version.ref 
 bouncycastle-util = { module = "org.bouncycastle:bcutil-jdk15to18", version.ref = "bouncycastle" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workmanager" }
 
 mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "mlkitText" }
