@@ -43,7 +43,10 @@ class DriveBackupManager(private val context: Context) {
         private set(value) = prefs.edit().putLong(KEY_LAST_BACKUP, value).apply()
 
     /** Locates the SQLCipher database file Room writes to. */
-    private val dbFile: File get() = context.getDatabasePath("kryptos.db")
+    private fun getDbFile(userId: String?): File {
+        val dbName = if (userId == null) "kryptos.db" else "kryptos_$userId.db"
+        return context.getDatabasePath(dbName)
+    }
 
     /** Lists existing files in AppData with [name]. */
     suspend fun findExisting(accessToken: String, name: String = BACKUP_NAME): BackupInfo? = withContext(Dispatchers.IO) {
@@ -83,7 +86,8 @@ class DriveBackupManager(private val context: Context) {
      * required for true cross-device restore. Drive AppData visibility is scoped to this
      * OAuth client, so the key file is only readable by Kryptos.
      */
-    suspend fun backup(accessToken: String): String = withContext(Dispatchers.IO) {
+    suspend fun backup(accessToken: String, userId: String?): String = withContext(Dispatchers.IO) {
+        val dbFile = getDbFile(userId)
         if (!dbFile.exists()) throw IOException("No local vault to back up yet.")
 
         val existing = findExisting(accessToken, BACKUP_NAME)
@@ -115,7 +119,8 @@ class DriveBackupManager(private val context: Context) {
      * Premium feature: Back up the vault to a visible folder named "KryptosBackups" in the user's
      * My Drive. This allows the user to see their backup file, although it remains SQLCipher-encrypted.
      */
-    suspend fun backupToOwnDrive(accessToken: String): String = withContext(Dispatchers.IO) {
+    suspend fun backupToOwnDrive(accessToken: String, userId: String?): String = withContext(Dispatchers.IO) {
+        val dbFile = getDbFile(userId)
         if (!dbFile.exists()) throw IOException("No local vault to back up yet.")
 
         val folderId = getOrCreateKryptosFolder(accessToken)
@@ -206,7 +211,8 @@ class DriveBackupManager(private val context: Context) {
      * storage, and atomically replaces the live DB. Caller should restart the process so Room
      * reopens with the restored credentials.
      */
-    suspend fun restore(accessToken: String): Boolean = withContext(Dispatchers.IO) {
+    suspend fun restore(accessToken: String, userId: String?): Boolean = withContext(Dispatchers.IO) {
+        val dbFile = getDbFile(userId)
         val dbEntry = findExisting(accessToken, BACKUP_NAME) ?: return@withContext false
 
         // Restore the passphrase first — failing here means we'd be left with a DB we can't open.
@@ -225,8 +231,8 @@ class DriveBackupManager(private val context: Context) {
 
         val tmp = File(dbFile.parentFile, "kryptos.db.restore")
         downloadToFile(accessToken, dbEntry.fileId, tmp)
-        File(dbFile.parentFile, "kryptos.db-wal").delete()
-        File(dbFile.parentFile, "kryptos.db-shm").delete()
+        File(dbFile.parentFile, "${dbFile.name}-wal").delete()
+        File(dbFile.parentFile, "${dbFile.name}-shm").delete()
         if (dbFile.exists()) dbFile.delete()
         tmp.renameTo(dbFile)
         true

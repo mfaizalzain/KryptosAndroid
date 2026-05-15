@@ -108,7 +108,7 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
             return@rememberLauncherForActivityResult
         }
         pendingAccessToken = token
-        runDriveAction(scope, backup, token, action,
+        runDriveAction(scope, backup, token, action, account?.id,
             onWorking = { working = it },
             onFeedback = { feedback = it })
         pendingAction = null
@@ -149,7 +149,7 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                         feedback = "Drive returned no access token."
                         pendingAction = null
                     } else {
-                        runDriveAction(scope, backup, token, action,
+                        runDriveAction(scope, backup, token, action, account?.id,
                             onWorking = { working = it },
                             onFeedback = { feedback = it })
                         pendingAction = null
@@ -462,6 +462,7 @@ private fun runDriveAction(
     backup: DriveBackupManager,
     accessToken: String,
     action: BackupAction,
+    userId: String?,
     onWorking: (String?) -> Unit,
     onFeedback: (String?) -> Unit,
 ) {
@@ -469,15 +470,15 @@ private fun runDriveAction(
         try {
             when (action) {
                 BackupAction.BACKUP -> {
-                    backup.backup(accessToken)
+                    backup.backup(accessToken, userId)
                     onFeedback("Backup complete.")
                 }
                 BackupAction.BACKUP_OWN -> {
-                    backup.backupToOwnDrive(accessToken)
+                    backup.backupToOwnDrive(accessToken, userId)
                     onFeedback("Backup to My Drive complete.")
                 }
                 BackupAction.RESTORE -> {
-                    val ok = backup.restore(accessToken)
+                    val ok = backup.restore(accessToken, userId)
                     onFeedback(
                         if (ok) "Restore complete. Restarting in 1 second…"
                         else "No backup found in Drive."
