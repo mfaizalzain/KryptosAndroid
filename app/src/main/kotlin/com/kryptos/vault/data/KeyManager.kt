@@ -48,6 +48,6 @@ object KeyManager {
         )
         prefs.edit()
             .putString(KEY, android.util.Base64.encodeToString(passphrase, android.util.Base64.NO_WRAP))
-            .apply()
+            .commit()
     }
 }
