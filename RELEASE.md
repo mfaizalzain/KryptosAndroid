@@ -8,8 +8,8 @@ Everything needed to build, sign, and ship a Kryptos release to Google Play.
 
 | | |
 |---|---|
-| **Version name** | 1.0.2 |
-| **Version code** | 3 |
+| **Version name** | 1.0.3 |
+| **Version code** | 4 |
 | **Application ID** | `com.fmz.kryptos` |
 | **Min SDK** | 26 (Android 8.0) |
 | **Target SDK** | 35 (Android 15) |
