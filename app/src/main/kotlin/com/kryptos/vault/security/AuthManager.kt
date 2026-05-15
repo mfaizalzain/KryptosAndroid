@@ -4,11 +4,11 @@ import android.content.Context
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.NoCredentialException
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.fmz.kryptos.R
 
 /**
@@ -46,39 +46,57 @@ class AuthManager(private val context: Context) {
     suspend fun signIn(activityContext: Context): Result<Account> {
         val manager = CredentialManager.create(activityContext)
         val webClientId = context.getString(R.string.google_web_client_id)
-        val option = GetGoogleIdOption.Builder()
+        
+        val googleIdOption = GetGoogleIdOption.Builder()
             .setServerClientId(webClientId)
             .setFilterByAuthorizedAccounts(false)
             .setAutoSelectEnabled(false)
             .build()
-        val request = GetCredentialRequest.Builder().addCredentialOption(option).build()
+            
+        val request = GetCredentialRequest.Builder()
+            .addCredentialOption(googleIdOption)
+            .build()
 
-        return try {
-            val response = manager.getCredential(activityContext, request)
-            val cred = response.credential
-            if (cred.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-                return Result.failure(IllegalStateException("Unexpected credential type: ${cred.type}"))
+        var lastException: Exception? = null
+        // Try up to 2 times to handle the "No credential" issue on first launch.
+        repeat(2) { attempt ->
+            try {
+                val response = manager.getCredential(activityContext, request)
+                val cred = response.credential
+                
+                if (cred.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                    val gid = GoogleIdTokenCredential.createFrom(cred.data)
+                    val account = Account(
+                        id = gid.id,
+                        email = gid.id.takeIf { it.contains('@') },
+                        displayName = gid.displayName,
+                        photoUrl = gid.profilePictureUri?.toString(),
+                    )
+                    prefs.edit()
+                        .putString(KEY_ID, account.id)
+                        .putString(KEY_EMAIL, account.email)
+                        .putString(KEY_NAME, account.displayName)
+                        .putString(KEY_PHOTO, account.photoUrl)
+                        .putString(KEY_TOKEN, gid.idToken)
+                        .apply()
+                    return Result.success(account)
+                }
+            } catch (e: NoCredentialException) {
+                lastException = e
+                android.util.Log.w("AuthManager", "No credential found (attempt ${attempt + 1})")
+                if (attempt == 0) {
+                    kotlinx.coroutines.delay(500) // Brief pause before retry
+                }
+            } catch (e: GetCredentialException) {
+                android.util.Log.e("AuthManager", "Sign-in error", e)
+                return Result.failure(Exception("Sign-in failed: ${e.message}"))
+            } catch (e: Exception) {
+                android.util.Log.e("AuthManager", "Unexpected error", e)
+                return Result.failure(e)
             }
-            val gid = GoogleIdTokenCredential.createFrom(cred.data)
-            val account = Account(
-                id = gid.id,
-                email = gid.id.takeIf { it.contains('@') },
-                displayName = gid.displayName,
-                photoUrl = gid.profilePictureUri?.toString(),
-            )
-            prefs.edit()
-                .putString(KEY_ID, account.id)
-                .putString(KEY_EMAIL, account.email)
-                .putString(KEY_NAME, account.displayName)
-                .putString(KEY_PHOTO, account.photoUrl)
-                .putString(KEY_TOKEN, gid.idToken)
-                .apply()
-            Result.success(account)
-        } catch (e: GetCredentialException) {
-            Result.failure(e)
-        } catch (e: GoogleIdTokenParsingException) {
-            Result.failure(e)
         }
+        
+        return Result.failure(lastException ?: Exception("No credentials available. Please ensure you have a Google account on this device."))
     }
 
     suspend fun signOut() {
