@@ -52,6 +52,10 @@ android {
         resValues = true
     }
     buildTypes {
+        create("signedDebug") {
+            initWith(getByName("debug"))
+            signingConfigs.findByName("release")?.let { signingConfig = it }
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true

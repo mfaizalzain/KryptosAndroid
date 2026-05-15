@@ -41,12 +41,13 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
     private fun startConnection() {
         billingClient.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(billingResult: BillingResult) {
+                android.util.Log.d("BillingMgr", "Connected: code=${billingResult.responseCode}, msg=${billingResult.debugMessage}")
                 if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
                     queryPurchases()
                 }
             }
             override fun onBillingServiceDisconnected() {
-                // Retry connection in a real app with backoff
+                android.util.Log.w("BillingMgr", "Billing service disconnected")
             }
         })
     }
@@ -57,10 +58,12 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
             .build()
             
         billingClient.queryPurchasesAsync(params) { result, purchases ->
+            android.util.Log.d("BillingMgr", "queryPurchases: code=${result.responseCode}, msg=${result.debugMessage}, count=${purchases?.size}")
             if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                 val hasPro = purchases.any { purchase ->
                     purchase.products.contains(PRODUCT_ID_PRO) && purchase.purchaseState == Purchase.PurchaseState.PURCHASED
                 }
+                android.util.Log.d("BillingMgr", "Has pro purchase: $hasPro")
                 setPremium(hasPro)
             }
         }
@@ -77,8 +80,10 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
 
         billingClient.queryProductDetailsAsync(params) { billingResult, queryProductDetailsResult ->
             val productDetailsList = queryProductDetailsResult.productDetailsList
-            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && productDetailsList != null && productDetailsList.isNotEmpty()) {
+            android.util.Log.d("BillingMgr", "queryProductDetails: code=${billingResult.responseCode}, msg=${billingResult.debugMessage}, products=${productDetailsList?.size}")
+            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && !productDetailsList.isNullOrEmpty()) {
                 val productDetails = productDetailsList[0]
+                android.util.Log.d("BillingMgr", "Launching billing flow for ${productDetails.productId}")
                 val flowParams = BillingFlowParams.newBuilder()
                     .setProductDetailsParamsList(listOf(
                         BillingFlowParams.ProductDetailsParams.newBuilder()
@@ -87,17 +92,23 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
                     ))
                     .build()
                 billingClient.launchBillingFlow(activity, flowParams)
+            } else {
+                android.util.Log.e("BillingMgr", "Product query failed or empty: code=${billingResult.responseCode}, msg=${billingResult.debugMessage}")
             }
         }
     }
 
     override fun onPurchasesUpdated(billingResult: BillingResult, purchases: List<Purchase>?) {
-        if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && purchases != null) {
+        android.util.Log.d("BillingMgr", "onPurchasesUpdated: code=${billingResult.responseCode}, msg=${billingResult.debugMessage}, purchases=${purchases?.size}")
+        if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && !purchases.isNullOrEmpty()) {
             for (purchase in purchases) {
+                android.util.Log.d("BillingMgr", "Purchase: ${purchase.products}, state=${purchase.purchaseState}, ack=${purchase.isAcknowledged}")
                 if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
                     handlePurchase(purchase)
                 }
             }
+        } else if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
+            android.util.Log.e("BillingMgr", "Purchase update error: ${billingResult.debugMessage}")
         }
     }
 
