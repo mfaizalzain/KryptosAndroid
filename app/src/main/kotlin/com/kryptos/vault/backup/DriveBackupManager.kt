@@ -58,9 +58,17 @@ class DriveBackupManager(private val context: Context) {
 
     suspend fun backup(accessToken: String, userId: String?): String = withContext(Dispatchers.IO) {
         val dbFile = getDbFile(userId)
-        if (!dbFile.exists()) throw IOException("No vault file found for backup.")
+        
+        // Force Room to create the file and checkpoint WAL if it exists
+        val app = context.applicationContext as? com.kryptos.vault.KryptosApp
+        app?.getRepository(userId)?.checkpoint()
 
-        android.util.Log.i("DriveBackup", "Starting backup...")
+        if (!dbFile.exists()) {
+            android.util.Log.e("DriveBackup", "Database file does not exist at: ${dbFile.absolutePath}")
+            throw IOException("No vault file found to back up. Add an entry first.")
+        }
+
+        android.util.Log.i("DriveBackup", "Starting backup of ${dbFile.length()} bytes...")
         val existing = findExisting(accessToken, BACKUP_NAME)
         val fileId = if (existing != null) {
             updateBytes(accessToken, existing.fileId, dbFile.readBytes(), "application/octet-stream")
@@ -90,6 +98,11 @@ class DriveBackupManager(private val context: Context) {
 
     suspend fun backupToOwnDrive(accessToken: String, userId: String?): String = withContext(Dispatchers.IO) {
         val dbFile = getDbFile(userId)
+        
+        // Force Room to create the file and checkpoint WAL if it exists
+        val app = context.applicationContext as? com.kryptos.vault.KryptosApp
+        app?.getRepository(userId)?.checkpoint()
+
         if (!dbFile.exists()) throw IOException("No vault file found.")
 
         val folderId = getOrCreateKryptosFolder(accessToken)
@@ -160,6 +173,10 @@ class DriveBackupManager(private val context: Context) {
             val obj = JSONObject(String(keyBytes))
             val passphrase = android.util.Base64.decode(obj.getString("passphrase"), android.util.Base64.NO_WRAP)
             KeyManager.setDatabasePassphrase(context, passphrase)
+        } else {
+            // If no key backup found, we must clear local passphrase to allow fresh start
+            // or hope it matches. In real apps, we'd prompt user.
+            KeyManager.clearPassphrase(context)
         }
 
         val downloadUrl = URL("https://www.googleapis.com/drive/v3/files/${dbEntry.fileId}?alt=media")
@@ -168,6 +185,11 @@ class DriveBackupManager(private val context: Context) {
         File(dbFile.parentFile, "${dbFile.name}-wal").delete()
         File(dbFile.parentFile, "${dbFile.name}-shm").delete()
         dbFile.writeBytes(dbBytes)
+        
+        // Finalize
+        val app = context.applicationContext as? com.kryptos.vault.KryptosApp
+        app?.getRepository(userId)?.checkpoint()
+
         true
     }
 

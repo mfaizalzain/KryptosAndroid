@@ -42,7 +42,7 @@ class KryptosApp : Application() {
         }
 
         val db = VaultDatabase.build(this, userId)
-        val repo = VaultRepository(db.vaultDao())
+        val repo = VaultRepository(db)
         
         currentDatabase = db
         currentRepository = repo

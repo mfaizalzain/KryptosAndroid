@@ -50,4 +50,18 @@ object KeyManager {
             .putString(KEY, android.util.Base64.encodeToString(passphrase, android.util.Base64.NO_WRAP))
             .commit()
     }
+
+    fun clearPassphrase(context: Context) {
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        val prefs = EncryptedSharedPreferences.create(
+            context,
+            PREFS,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+        )
+        prefs.edit().remove(KEY).commit()
+    }
 }
