@@ -325,53 +325,56 @@ fun EntryEditScreen(
             }
 
             items(fields.size) { i ->
-                Card(
-                    shape = RoundedCornerShape(28.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-                ) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = fields[i].first,
-                            onValueChange = { fields[i] = it to fields[i].second },
-                            label = { Text("Field name") },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        OutlinedTextField(
-                            value = fields[i].second,
-                            onValueChange = { input ->
-                                val name = fields[i].first
-                                val isExpiry = template == Template.PAYMENT_CARD && (name.contains("expiry", ignoreCase = true) || name.contains("expires", ignoreCase = true))
-                                
-                                val filtered = if (isNumericField(name, template) || isExpiry) {
-                                    input.filter { it.isDigit() }.let { if (isExpiry) it.take(4) else it }
-                                } else {
-                                    input
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = fields[i].first,
+                        onValueChange = { fields[i] = it to fields[i].second },
+                        label = { Text("Field name") },
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = fields[i].second,
+                        onValueChange = { input ->
+                            val name = fields[i].first
+                            val isExpiry = template == Template.PAYMENT_CARD && (name.contains("expiry", ignoreCase = true) || name.contains("expires", ignoreCase = true))
+                            
+                            val filtered = if (isNumericField(name, template) || isExpiry) {
+                                input.filter { it.isDigit() }.let { if (isExpiry) it.take(4) else it }
+                            } else {
+                                input
+                            }
+                            fields[i] = name to filtered
+                        },
+                        label = { Text("Value") },
+                        shape = RoundedCornerShape(20.dp),
+                        trailingIcon = if (isDateField(fields[i].first, template)) {
+                            {
+                                IconButton(onClick = { datePickerTargetIndex = i }) {
+                                    Icon(Icons.Filled.CalendarToday, contentDescription = "Pick date")
                                 }
-                                fields[i] = name to filtered
+                            }
+                        } else null,
+                        visualTransformation = if (template == Template.PAYMENT_CARD && (fields[i].first.contains("expiry", ignoreCase = true) || fields[i].first.contains("expires", ignoreCase = true))) {
+                            ExpiryVisualTransformation()
+                        } else VisualTransformation.None,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = if (isNumericField(fields[i].first, template) || (template == Template.PAYMENT_CARD && fields[i].first.contains("expiry", ignoreCase = true))) KeyboardType.Number else KeyboardType.Text
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onFocusChanged {
+                                if (it.isFocused && isDateField(fields[i].first, template)) {
+                                    datePickerTargetIndex = i
+                                    focusManager.clearFocus()
+                                }
                             },
-                            label = { Text("Value") },
-                            trailingIcon = if (isDateField(fields[i].first, template)) {
-                                {
-                                    IconButton(onClick = { datePickerTargetIndex = i }) {
-                                        Icon(Icons.Filled.CalendarToday, contentDescription = "Pick date")
-                                    }
-                                }
-                            } else null,
-                            visualTransformation = if (template == Template.PAYMENT_CARD && (fields[i].first.contains("expiry", ignoreCase = true) || fields[i].first.contains("expires", ignoreCase = true))) {
-                                ExpiryVisualTransformation()
-                            } else VisualTransformation.None,
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = if (isNumericField(fields[i].first, template) || (template == Template.PAYMENT_CARD && fields[i].first.contains("expiry", ignoreCase = true))) KeyboardType.Number else KeyboardType.Text
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .onFocusChanged {
-                                    if (it.isFocused && isDateField(fields[i].first, template)) {
-                                        datePickerTargetIndex = i
-                                        focusManager.clearFocus()
-                                    }
-                                },
-                            readOnly = isDateField(fields[i].first, template)
+                        readOnly = isDateField(fields[i].first, template)
+                    )
+                    if (i < fields.size - 1) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                         )
                     }
                 }
