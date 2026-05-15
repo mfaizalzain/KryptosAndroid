@@ -1,26 +1,26 @@
 [
     {
-        "merged": "/Users/faizalzain/.gradle/daemon/9.4.1/com.fmz.kryptos.app-debug-83:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
-        "source": "/Users/faizalzain/.gradle/daemon/9.4.1/com.fmz.kryptos.app-main-85:/mipmap-anydpi-v26/ic_launcher_round.xml"
+        "merged": "com.fmz.kryptos.app-debug-83:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.fmz.kryptos.app-main-85:/drawable/ic_launcher_foreground.xml"
     },
     {
-        "merged": "/Users/faizalzain/.gradle/daemon/9.4.1/com.fmz.kryptos.app-debug-83:/mipmap-anydpi-v26_ic_launcher.xml.flat",
-        "source": "/Users/faizalzain/.gradle/daemon/9.4.1/com.fmz.kryptos.app-main-85:/mipmap-anydpi-v26/ic_launcher.xml"
+        "merged": "com.fmz.kryptos.app-debug-83:/drawable_ic_launcher_monochrome.xml.flat",
+        "source": "com.fmz.kryptos.app-main-85:/drawable/ic_launcher_monochrome.xml"
+    },
+    {
+        "merged": "com.fmz.kryptos.app-debug-83:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.fmz.kryptos.app-main-85:/mipmap-anydpi-v26/ic_launcher_round.xml"
     },
     {
         "merged": "com.fmz.kryptos.app-debug-83:/xml_nfc_tech_filter.xml.flat",
         "source": "com.fmz.kryptos.app-main-85:/xml/nfc_tech_filter.xml"
     },
     {
-        "merged": "/Users/faizalzain/.gradle/daemon/9.4.1/com.fmz.kryptos.app-debug-83:/drawable_ic_launcher_foreground.xml.flat",
-        "source": "/Users/faizalzain/.gradle/daemon/9.4.1/com.fmz.kryptos.app-main-85:/drawable/ic_launcher_foreground.xml"
+        "merged": "com.fmz.kryptos.app-debug-83:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.fmz.kryptos.app-main-85:/mipmap-anydpi-v26/ic_launcher.xml"
     },
     {
-        "merged": "/Users/faizalzain/.gradle/daemon/9.4.1/com.fmz.kryptos.app-debug-83:/xml_data_extraction_rules.xml.flat",
-        "source": "/Users/faizalzain/.gradle/daemon/9.4.1/com.fmz.kryptos.app-main-85:/xml/data_extraction_rules.xml"
-    },
-    {
-        "merged": "/Users/faizalzain/.gradle/daemon/9.4.1/com.fmz.kryptos.app-debug-83:/drawable_ic_launcher_monochrome.xml.flat",
-        "source": "/Users/faizalzain/.gradle/daemon/9.4.1/com.fmz.kryptos.app-main-85:/drawable/ic_launcher_monochrome.xml"
+        "merged": "com.fmz.kryptos.app-debug-83:/xml_data_extraction_rules.xml.flat",
+        "source": "com.fmz.kryptos.app-main-85:/xml/data_extraction_rules.xml"
     }
 ]

@@ -463,6 +463,7 @@ private fun runDriveAction(
     accessToken: String,
     action: BackupAction,
     userId: String?,
+    app: com.kryptos.vault.KryptosApp,
     onWorking: (String?) -> Unit,
     onFeedback: (String?) -> Unit,
 ) {
@@ -478,6 +479,7 @@ private fun runDriveAction(
                     onFeedback("Backup to My Drive complete.")
                 }
                 BackupAction.RESTORE -> {
+                    app.closeDatabase()
                     val ok = backup.restore(accessToken, userId)
                     onFeedback(
                         if (ok) "Restore complete. Restarting in 1 second…"

@@ -88,7 +88,9 @@ class DriveBackupManager(private val context: Context) {
      */
     suspend fun backup(accessToken: String, userId: String?): String = withContext(Dispatchers.IO) {
         val dbFile = getDbFile(userId)
-        if (!dbFile.exists()) throw IOException("No local vault to back up yet.")
+        if (!dbFile.exists()) {
+            throw IOException("No local vault file found at ${dbFile.name}. Add some entries first.")
+        }
 
         val existing = findExisting(accessToken, BACKUP_NAME)
         val fileId = if (existing != null) {

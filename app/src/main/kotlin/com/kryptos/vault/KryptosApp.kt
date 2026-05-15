@@ -8,6 +8,7 @@ import com.kryptos.vault.security.AuthManager
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import java.io.File
 import java.security.Security
 
 class KryptosApp : Application() {
@@ -26,6 +27,19 @@ class KryptosApp : Application() {
         }
 
         currentDatabase?.close()
+        
+        // If we have a userId but no per-user DB yet, check if there's a legacy global DB to migrate.
+        if (userId != null) {
+            val legacyDb = getDatabasePath("kryptos.db")
+            val userDb = getDatabasePath("kryptos_$userId.db")
+            if (legacyDb.exists() && !userDb.exists()) {
+                legacyDb.renameTo(userDb)
+                // Also move WAL/SHM if they exist
+                File(legacyDb.path + "-wal").renameTo(File(userDb.path + "-wal"))
+                File(legacyDb.path + "-shm").renameTo(File(userDb.path + "-shm"))
+            }
+        }
+
         val db = VaultDatabase.build(this, userId)
         val repo = VaultRepository(db.vaultDao())
         
@@ -34,6 +48,13 @@ class KryptosApp : Application() {
         currentUserId = userId
         
         return repo
+    }
+
+    /** Closes the active database connection. Useful before restoring from backup. */
+    fun closeDatabase() {
+        currentDatabase?.close()
+        currentDatabase = null
+        currentRepository = null
     }
 
     /** Wipes the encrypted vault and all secrets. Caller is responsible for restarting the process. */
