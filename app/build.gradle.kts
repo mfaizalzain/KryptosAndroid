@@ -122,6 +122,7 @@ dependencies {
     implementation(libs.androidx.camera.mlkit.vision)
 
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services)
 
     // ePassport (ICAO 9303) NFC reading.
     // JMRTD's transitive scuba-smartcards is desktop-only; exclude in favor of scuba-sc-android.

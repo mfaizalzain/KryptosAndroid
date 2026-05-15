@@ -1,52 +1,20 @@
 package com.kryptos.vault.ui.account
 
 import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.CloudUpload
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.Restore
-import androidx.compose.material.icons.filled.WorkspacePremium
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,6 +30,8 @@ import com.kryptos.vault.KryptosApp
 import com.kryptos.vault.backup.DriveBackupManager
 import com.kryptos.vault.security.AuthManager
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeout
 import java.text.DateFormat
 import java.util.Date
 
@@ -96,7 +66,8 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
             feedback = "Drive access was denied."
             return@rememberLauncherForActivityResult
         }
-        val client = Identity.getAuthorizationClient(ctx as Activity)
+        val activity = ctx.findActivity() ?: return@rememberLauncherForActivityResult
+        val client = Identity.getAuthorizationClient(activity)
         val authResult = runCatching {
             client.getAuthorizationResultFromIntent(result.data)
         }.getOrNull()
@@ -115,24 +86,33 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
     }
 
     fun runDriveFlow(action: BackupAction) {
-        working = when (action) {
-            BackupAction.BACKUP -> "Backing up to Drive…"
-            BackupAction.RESTORE -> "Restoring from Drive…"
-            BackupAction.BACKUP_OWN -> "Backing up to your Drive…"
+        val activity = ctx.findActivity()
+        if (activity == null) {
+            feedback = "Internal error: Activity not found."
+            return
         }
+
+        working = "Authorizing Drive..."
         feedback = null
         pendingAction = action
-        val activity = ctx as Activity
+
         val scopeStrings = if (action == BackupAction.BACKUP_OWN) {
             listOf(DriveBackupManager.DRIVE_FILE_SCOPE)
         } else {
             listOf(DriveBackupManager.DRIVE_APPDATA_SCOPE)
         }
+        
         val request = AuthorizationRequest.builder()
             .setRequestedScopes(scopeStrings.map { Scope(it) })
             .build()
-        Identity.getAuthorizationClient(activity).authorize(request)
-            .addOnSuccessListener { authResult ->
+            
+        scope.launch {
+            try {
+                android.util.Log.d("DriveBackup", "Requesting Drive authorization...")
+                val authResult = withTimeout(15000) {
+                    Identity.getAuthorizationClient(activity).authorize(request).await()
+                }
+                
                 if (authResult.hasResolution()) {
                     val sender = authResult.pendingIntent?.intentSender
                     if (sender != null) {
@@ -149,18 +129,24 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                         feedback = "Drive returned no access token."
                         pendingAction = null
                     } else {
+                        working = "Processing..."
                         runDriveAction(scope, backup, token, action, account?.id, app,
                             onWorking = { working = it },
                             onFeedback = { feedback = it })
                         pendingAction = null
                     }
                 }
-            }
-            .addOnFailureListener {
+            } catch (t: Throwable) {
+                android.util.Log.e("DriveBackup", "Auth failed", t)
                 working = null
-                feedback = it.localizedMessage ?: "Drive authorization failed."
+                feedback = if (t is kotlinx.coroutines.TimeoutCancellationException) {
+                    "Authorization timed out. Check internet."
+                } else {
+                    t.localizedMessage ?: "Drive auth failed."
+                }
                 pendingAction = null
             }
+        }
     }
 
     ModalBottomSheet(
@@ -252,7 +238,7 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                     ) {
                         if (working == "Signing out…") {
-                            androidx.compose.material3.CircularProgressIndicator(
+                            CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
                                 strokeWidth = 2.dp,
                                 color = MaterialTheme.colorScheme.primary
@@ -463,7 +449,7 @@ private fun runDriveAction(
     accessToken: String,
     action: BackupAction,
     userId: String?,
-    app: com.kryptos.vault.KryptosApp,
+    app: KryptosApp,
     onWorking: (String?) -> Unit,
     onFeedback: (String?) -> Unit,
 ) {
@@ -497,6 +483,15 @@ private fun runDriveAction(
             onWorking(null)
         }
     }
+}
+
+private fun Context.findActivity(): Activity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+    return null
 }
 
 @Composable
