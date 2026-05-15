@@ -21,9 +21,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.PermIdentity
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -423,7 +425,7 @@ private fun mrzPreview(fields: List<Pair<String, String>>): String {
 // --- Payment Card (Credit/Debit) -------------------------------------------
 
 @Composable
-private fun PaymentCardHero(
+fun PaymentCardHero(
     title: String,
     fields: List<Pair<String, String>>,
     onCopy: (String, String) -> Unit,
@@ -434,7 +436,9 @@ private fun PaymentCardHero(
 
     val number = fields.firstNonBlank("Number", "Card number", "Card no", "Card no.")
     val cvv = fields.firstNonBlank("CVV", "CVC", "Security code")
-    val expiry = fields.value("Expiry")
+    val expiry = fields.value("Expiry").let { 
+        if (it.length == 4 && it.all { c -> c.isDigit() }) "${it.take(2)}/${it.drop(2)}" else it 
+    }
     val holder = fields.value("Cardholder")
     val issuer = fields.value("Issuer").ifBlank { title }
 
@@ -667,52 +671,83 @@ private fun ApiKeyHero(
     val env = fields.value("Environment")
     val service = fields.value("Service")
     
-    // Prioritize the user-defined title, fallback to service name
     val displayName = title.ifBlank { service.ifBlank { "API KEY" } }
 
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = Color(0xFF0F1425), // Deeper dark blue-black for better contrast
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, Color(0xFF8FA8FF).copy(alpha = 0.15f), RoundedCornerShape(24.dp)),
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(24.dp)),
     ) {
-        Column(Modifier.padding(20.dp)) {
+        Column(Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Traffic lights.
-                Box(Modifier.size(10.dp).clip(RoundedCornerShape(50)).background(Color(0xFFFF5F57)))
-                Spacer(Modifier.width(6.dp))
-                Box(Modifier.size(10.dp).clip(RoundedCornerShape(50)).background(Color(0xFFFEBC2E)))
-                Spacer(Modifier.width(6.dp))
-                Box(Modifier.size(10.dp).clip(RoundedCornerShape(50)).background(Color(0xFF28C840)))
-                Spacer(Modifier.weight(1f))
-                Text(
-                    if (env.isNotBlank()) "$displayName · $env" else displayName,
-                    color = Color(0xFF8FA8FF),
-                    fontFamily = Mono,
-                    fontSize = 12.sp,
+                Icon(
+                    Icons.Filled.Key,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
                 )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    displayName.uppercase(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+                if (env.isNotBlank()) {
+                    Spacer(Modifier.weight(1f))
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = env.uppercase(),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
+            
             Spacer(Modifier.height(14.dp))
 
-            TerminalLine(
-                prompt = "export API_KEY=",
-                value = key,
-                masked = !revealKey || !interactive,
-                onToggle = { revealKey = !revealKey },
-                onCopy = { if (key.isNotBlank()) onCopy("Key", key) },
-                interactive = interactive,
-            )
-            if (secret.isNotBlank() || revealSecret) {
-                Spacer(Modifier.height(8.dp))
-                TerminalLine(
-                    prompt = "export API_SECRET=",
-                    value = secret,
-                    masked = !revealSecret || !interactive,
-                    onToggle = { revealSecret = !revealSecret },
-                    onCopy = { if (secret.isNotBlank()) onCopy("Secret", secret) },
-                    interactive = interactive,
-                )
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(Modifier.padding(8.dp)) {
+                    TerminalLine(
+                        prompt = "KEY",
+                        value = key,
+                        masked = !revealKey || !interactive,
+                        onToggle = { revealKey = !revealKey },
+                        onCopy = { if (key.isNotBlank()) onCopy("Key", key) },
+                        interactive = interactive,
+                        accent = MaterialTheme.colorScheme.primary,
+                        onSurf = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (secret.isNotBlank() || revealSecret) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+                        TerminalLine(
+                            prompt = "SECRET",
+                            value = secret,
+                            masked = !revealSecret || !interactive,
+                            onToggle = { revealSecret = !revealSecret },
+                            onCopy = { if (secret.isNotBlank()) onCopy("Secret", secret) },
+                            interactive = interactive,
+                            accent = MaterialTheme.colorScheme.primary,
+                            onSurf = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
             }
         }
     }
@@ -726,13 +761,17 @@ private fun TerminalLine(
     onToggle: () -> Unit,
     onCopy: () -> Unit,
     interactive: Boolean = true,
+    accent: Color,
+    onSurf: Color,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             prompt,
-            color = Color(0xFF8FA8FF),
+            color = accent,
             fontFamily = Mono,
-            fontSize = 13.sp,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.width(55.dp)
         )
         val valueModifier = if (interactive) {
             Modifier.weight(1f).clickable(enabled = value.isNotBlank(), onClick = onCopy)
@@ -740,20 +779,20 @@ private fun TerminalLine(
             Modifier.weight(1f)
         }
         Text(
-            text = if (masked) "•".repeat(value.length.coerceIn(8, 32)) else value.ifBlank { "—" },
-            color = Color(0xFFE5EEFF),
+            text = if (masked) "••••••••••••••••" else value.ifBlank { "—" },
+            color = onSurf,
             fontFamily = Mono,
             fontSize = 13.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = valueModifier,
         )
-        if (interactive) {
+        if (interactive && value.isNotBlank()) {
             IconButton(onClick = onToggle, modifier = Modifier.size(28.dp)) {
                 Icon(
                     if (masked) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                     contentDescription = null,
-                    tint = Color(0xFF8FA8FF),
+                    tint = accent.copy(alpha = 0.6f),
                     modifier = Modifier.size(16.dp),
                 )
             }
@@ -955,81 +994,84 @@ private fun TaxNumberHero(
     onCopy: (String, String) -> Unit,
     interactive: Boolean,
 ) {
-    val bg = Brush.linearGradient(listOf(Color(0xFF37474F), Color(0xFF546E7A), Color(0xFF37474F)))
     val taxNo = fields.value("Tax number")
+    val name = fields.value("Full name")
     val country = fields.value("Country")
 
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = Color(0xFF37474F),
-        modifier = Modifier.fillMaxWidth().border(0.5.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(24.dp)),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(24.dp)),
     ) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .aspectRatio(1.586f)
-                .background(bg)
-        ) {
-            Column(Modifier.fillMaxSize().padding(22.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        title.ifBlank { "TAX IDENTIFICATION" },
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        letterSpacing = 1.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Icon(
-                        Icons.Filled.Description,
-                        contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.7f),
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    country.ifBlank { "National Tax Authority" }.uppercase(),
-                    color = Color.White.copy(alpha = 0.6f),
-                    fontSize = 11.sp,
-                    letterSpacing = 1.5.sp,
-                    fontWeight = FontWeight.Medium
+        Column(Modifier.padding(18.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.Description,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.size(20.dp)
                 )
-                Spacer(Modifier.weight(1f))
-                
-                LabelValue("FULL NAME", fields.value("Full name"),
-                    Color.White.copy(alpha = 0.7f), Color.White, 15)
-                
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    title.ifBlank { "TAX IDENTIFICATION" }.uppercase(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+            }
+            
+            Spacer(Modifier.height(12.dp))
+            
+            if (name.isNotBlank()) {
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            
+            if (country.isNotBlank()) {
+                Text(
+                    text = country,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color.Black.copy(alpha = 0.2f))
-                        .padding(horizontal = 16.dp, vertical = 10.dp)
-                        .clickable(enabled = interactive && taxNo.isNotBlank()) {
-                            onCopy("Tax number", taxNo)
-                        }
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "TAX NO.",
-                            color = Color.White.copy(alpha = 0.5f),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Text(
-                            taxNo.ifBlank { "•••• •••• ••••" },
-                            color = Color.White,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontFamily = Mono,
-                            letterSpacing = 2.sp
-                        )
+            Spacer(Modifier.height(14.dp))
+
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = interactive && taxNo.isNotBlank()) {
+                        onCopy("Tax number", taxNo)
                     }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        "TAX NO.",
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        taxNo.ifBlank { "•••• •••• ••••" },
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontFamily = Mono,
+                        letterSpacing = 2.sp
+                    )
                 }
             }
         }
@@ -1048,31 +1090,49 @@ private fun NoteHero(
     val content = fields.value("Content")
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f), RoundedCornerShape(24.dp)),
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(24.dp)),
     ) {
-        Column(Modifier.padding(20.dp)) {
-            Text(
-                title.ifBlank { "NOTE" },
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Bold,
-            )
+        Column(Modifier.padding(18.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.Description,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    title.ifBlank { "NOTE" }.uppercase(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+            }
+            
             Spacer(Modifier.height(12.dp))
-            Text(
-                content.ifBlank { "No content" },
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.tertiaryContainer,
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(enabled = interactive && content.isNotBlank()) {
                         onCopy("Note content", content)
-                    },
-                maxLines = 6,
-                overflow = TextOverflow.Ellipsis,
-            )
+                    }
+            ) {
+                Text(
+                    text = content.ifBlank { "No content" },
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    maxLines = 5,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }

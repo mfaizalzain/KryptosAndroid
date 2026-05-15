@@ -97,12 +97,14 @@ object ExpiryScheduler {
 
         // Try ISO yyyy-MM-dd first.
         runCatching { LocalDate.parse(raw) }.getOrNull()?.let { return it }
-        // MM/YY → last day of that month.
-        Regex("""^(\d{1,2})\s*[/\-]\s*(\d{2})$""").matchEntire(raw)?.let { m ->
+        // MM/YY or MM/YYYY → last day of that month.
+        Regex("""^(\d{1,2})\s*[/\-]\s*(\d{2}|\d{4})$""").matchEntire(raw)?.let { m ->
             val mm = m.groupValues[1].toIntOrNull() ?: return null
-            val yy = m.groupValues[2].toIntOrNull() ?: return null
-            val year = 2000 + yy
-            return LocalDate.of(year, mm, 1).withDayOfMonth(LocalDate.of(year, mm, 1).lengthOfMonth())
+            val yyStr = m.groupValues[2]
+            val year = if (yyStr.length == 2) 2000 + yyStr.toInt() else yyStr.toInt()
+            return runCatching {
+                LocalDate.of(year, mm, 1).withDayOfMonth(LocalDate.of(year, mm, 1).lengthOfMonth())
+            }.getOrNull()
         }
         // dd/MM/yyyy or dd-MM-yyyy.
         Regex("""^(\d{1,2})[\-/.](\d{1,2})[\-/.](\d{4})$""").matchEntire(raw)?.let { m ->
@@ -114,6 +116,15 @@ object ExpiryScheduler {
         Regex("""^(\d{4})[\-/.](\d{1,2})[\-/.](\d{1,2})$""").matchEntire(raw)?.let { m ->
             return runCatching {
                 LocalDate.of(m.groupValues[1].toInt(), m.groupValues[2].toInt(), m.groupValues[3].toInt())
+            }.getOrNull()
+        }
+        // MMYY (Payment Card)
+        if (raw.length == 4 && raw.all { it.isDigit() }) {
+            val mm = raw.substring(0, 2).toIntOrNull() ?: return null
+            val yy = raw.substring(2, 4).toIntOrNull() ?: return null
+            val year = 2000 + yy
+            return runCatching {
+                LocalDate.of(year, mm, 1).withDayOfMonth(LocalDate.of(year, mm, 1).lengthOfMonth())
             }.getOrNull()
         }
         // Best effort: let DateTimeFormatter try several patterns.

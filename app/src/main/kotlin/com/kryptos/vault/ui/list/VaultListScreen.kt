@@ -120,8 +120,8 @@ fun VaultListScreen(
                 navigationIcon = {
                     Box(
                         modifier = Modifier
-                            .padding(start = 16.dp)
-                            .size(48.dp)
+                            .padding(start = 12.dp)
+                            .size(45.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center,
@@ -130,7 +130,7 @@ fun VaultListScreen(
                             painter = painterResource(com.fmz.kryptos.R.drawable.ic_launcher_monochrome),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier.size(38.dp),
                         )
                     }
                 },
@@ -249,7 +249,7 @@ fun VaultListScreen(
                             }
                         } else {
                             items(items, key = { "row_${it.id}" }) { entry ->
-                                Box(modifier = Modifier.padding(horizontal = 24.dp)) {
+                                Box(modifier = Modifier.padding(horizontal = 40.dp)) {
                                     HeroCardTile(entry = entry, onClick = { onOpen(entry.id) })
                                 }
                             }

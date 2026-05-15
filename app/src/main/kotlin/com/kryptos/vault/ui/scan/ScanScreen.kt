@@ -191,7 +191,11 @@ fun ScanScreen(
                 Text("Processing scan…", style = MaterialTheme.typography.bodyMedium)
             } else {
                 Text(
-                    "Position the document inside the camera frame. The scanner will detect edges automatically and crop, then run OCR.",
+                    if (template == Template.PAYMENT_CARD) {
+                        "Position your card in the frame. Tip: Camera scan works best for embossed cards. For modern flat cards, use the 'Scan NFC chip' option instead."
+                    } else {
+                        "Position the document inside the camera frame. The scanner will detect edges automatically and crop, then run OCR."
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

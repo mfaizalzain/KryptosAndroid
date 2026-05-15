@@ -136,7 +136,7 @@ fun NfcCardScanScreen(
             androidx.compose.foundation.layout.Spacer(Modifier.size(16.dp))
             
             Text(
-                text = "Kryptos will securely read the card number and expiry date via the chip.",
+                text = "Kryptos will securely read the card number and expiry date via the chip. Note: CVV must be entered manually for security.",
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
