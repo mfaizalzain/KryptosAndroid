@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FAQ — Kryptos</title>
+<meta name="description" content="Frequently asked questions about Kryptos — the zero-knowledge personal vault for Android." />
+<meta name="theme-color" content="#0E1424" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="index.html">
+      <img class="brand-mark" src="favicon.svg" alt="" />
+      <span>Kryptos</span>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="index.html#features">Features</a>
+      <a href="index.html#security">Security</a>
+      <a href="index.html#pricing">Pricing</a>
+      <a href="faq.html" aria-current="page">FAQ</a>
+      <a href="privacy.html">Privacy</a>
+    </nav>
+    <a class="btn btn-primary nav-cta" href="index.html#download">Download</a>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="container">
+      <span class="eyebrow eyebrow-muted">Help center</span>
+      <h1>Frequently asked questions</h1>
+      <p class="lead">Everything you might want to know about how Kryptos handles your data, your backups, and your money.</p>
+    </div>
+  </section>
+
+  <section class="section faq-page">
+    <div class="container">
+
+      <h2 class="faq-group">Privacy &amp; security</h2>
+      <div class="faq-list">
+        <details open>
+          <summary>Can the Kryptos team see my documents?</summary>
+          <p>No. All data is encrypted locally on your device using SQLCipher (AES-256). The encryption key is derived from your authentication and stored in the Android Keystore — backed by hardware on supported devices. We have no servers that hold your plaintext data, and no way to decrypt it on our side.</p>
+        </details>
+        <details>
+          <summary>What does "zero-knowledge" actually mean here?</summary>
+          <p>It means the system is designed so that we have <em>no knowledge</em> of your vault contents — even if we wanted to look. Your data is encrypted before it leaves your device, and the only key that can decrypt it lives in the Android Keystore on your phone.</p>
+        </details>
+        <details>
+          <summary>Is my biometric data sent anywhere?</summary>
+          <p>Never. Biometric matching happens entirely inside the Android Biometric framework on your device. Kryptos only receives a yes/no signal that you authenticated successfully — never your fingerprint or face data.</p>
+        </details>
+        <details>
+          <summary>What if my device is rooted or compromised?</summary>
+          <p>SQLCipher and the Android Keystore raise the bar significantly, but no app can fully protect against a fully compromised device. If you suspect malware or root-level compromise, treat the secrets in your vault as exposed and rotate them.</p>
+        </details>
+      </div>
+
+      <h2 class="faq-group">Backup &amp; restore</h2>
+      <div class="faq-list">
+        <details>
+          <summary>How does backup work if it's zero-knowledge?</summary>
+          <p>Kryptos encrypts your entire vault into an opaque blob and uploads it to <em>your</em> Google Drive. Free users get the hidden AppData folder; Pro users can also back up to a visible "KryptosBackups" folder. Google Drive only sees encrypted bytes — never the contents.</p>
+        </details>
+        <details>
+          <summary>What happens if I lose my phone?</summary>
+          <p>Sign in with the same Google account on a new Android device, install Kryptos, and restore from Drive. After re-authenticating with biometrics, your vault is back — without anyone in between ever decrypting it.</p>
+        </details>
+        <details>
+          <summary>What if I forget my biometric / lose all access?</summary>
+          <p>Because we never see your key, we cannot reset it. If you can no longer authenticate <em>and</em> have no working backup, the encrypted blob is unrecoverable. We strongly recommend keeping Drive backup turned on.</p>
+        </details>
+        <details>
+          <summary>Can I export my data?</summary>
+          <p>Yes. Pro users can back up to the visible "KryptosBackups" folder in Google Drive, which makes the encrypted backup blob easy to copy off-device for safekeeping.</p>
+        </details>
+      </div>
+
+      <h2 class="faq-group">Scanning &amp; documents</h2>
+      <div class="faq-list">
+        <details>
+          <summary>Which documents support NFC?</summary>
+          <p>Modern electronic passports following the ICAO 9303 spec (read via JMRTD) and contactless EMV payment cards. NFC reading depends on the chip in the document — not every issuer exposes the same data.</p>
+        </details>
+        <details>
+          <summary>How accurate is the OCR scanner?</summary>
+          <p>OCR uses Google ML Kit, with locale-aware parsing that does extra work for Malaysian documents (MyKad, Malaysian driver's licence, passport) and common international formats. You can always edit any extracted field before saving.</p>
+        </details>
+        <details>
+          <summary>Are my scans uploaded for OCR?</summary>
+          <p>No. ML Kit's text recognition runs entirely on-device. Your camera frames are processed locally and discarded.</p>
+        </details>
+        <details>
+          <summary>What document types are supported?</summary>
+          <p>Passports, driver's licences, national IDs, payment cards, API keys, secure notes, and tax numbers — each with its own purpose-built card UI and field set.</p>
+        </details>
+      </div>
+
+      <h2 class="faq-group">Pricing &amp; Pro</h2>
+      <div class="faq-list">
+        <details>
+          <summary>How much does Kryptos cost?</summary>
+          <p>The app is free to download and use for up to <strong>10 entries</strong>, with no ads. Kryptos Pro is a one-time purchase of <strong>$1.99</strong> that removes the entry limit and unlocks the rest of the Pro features. Pay once, own it forever — there are no subscriptions or recurring fees.</p>
+        </details>
+        <details>
+          <summary>What counts as an "entry"?</summary>
+          <p>Each item you save in your vault is one entry — a passport, a payment card, a driver's licence, an API key, a note, a tax number, and so on. Free covers your first 10; Pro removes the cap entirely.</p>
+        </details>
+        <details>
+          <summary>What do I get with Pro?</summary>
+          <p>Pro removes the 10-entry limit, unlocks backup to a visible "KryptosBackups" folder in Drive (easier to manage and copy elsewhere), priority support, and any future Pro-tier features at no additional cost.</p>
+        </details>
+        <details>
+          <summary>Is the Pro purchase transferable across devices?</summary>
+          <p>Yes — Pro is tied to your Google Play account, so installing on another device with the same account restores your purchase automatically.</p>
+        </details>
+        <details>
+          <summary>Will the price ever change to a subscription?</summary>
+          <p>No. Pro is and will remain a one-time purchase. If we add features that are too costly to bundle in, we'd consider a separate paid add-on — never converting your existing Pro into a subscription.</p>
+        </details>
+      </div>
+
+      <h2 class="faq-group">Accounts &amp; multi-user</h2>
+      <div class="faq-list">
+        <details>
+          <summary>Can my partner and I share a single device?</summary>
+          <p>Yes. Kryptos supports multiple Google accounts on the same device, each with its own fully isolated, separately encrypted database. Switching accounts switches vaults — they cannot see each other.</p>
+        </details>
+        <details>
+          <summary>Can I use Kryptos without a Google account?</summary>
+          <p>You can use the local vault without backup. Backup &amp; restore require signing in with Google Drive so the encrypted blob has somewhere to live.</p>
+        </details>
+      </div>
+
+      <div class="contact-card">
+        <h3>Still have a question?</h3>
+        <p>Email us — we read every message.</p>
+        <a href="mailto:hello@faizalmzain.com" class="btn btn-primary">hello@faizalmzain.com</a>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <a class="brand" href="index.html">
+        <img class="brand-mark" src="favicon.svg" alt="" />
+        <span>Kryptos</span>
+      </a>
+      <p>Your zero-knowledge personal vault for Android.</p>
+    </div>
+    <div class="footer-cols">
+      <div>
+        <h4>Product</h4>
+        <a href="index.html#features">Features</a>
+        <a href="index.html#security">Security</a>
+        <a href="index.html#pricing">Pricing</a>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <a href="faq.html">FAQ</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="mailto:hello@faizalmzain.com">Contact</a>
+      </div>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <small>© 2026 Faizal Zain. All rights reserved.</small>
+    <small>Made with care in Kuala Lumpur.</small>
+  </div>
+</footer>
+
+</body>
+</html>

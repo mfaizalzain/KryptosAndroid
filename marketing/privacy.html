@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Privacy Policy — Kryptos</title>
+<meta name="description" content="The Kryptos privacy policy — what we collect, what we don't, and why we can't read your vault." />
+<meta name="theme-color" content="#0E1424" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="index.html">
+      <img class="brand-mark" src="favicon.svg" alt="" />
+      <span>Kryptos</span>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="index.html#features">Features</a>
+      <a href="index.html#security">Security</a>
+      <a href="index.html#pricing">Pricing</a>
+      <a href="faq.html">FAQ</a>
+      <a href="privacy.html" aria-current="page">Privacy</a>
+    </nav>
+    <a class="btn btn-primary nav-cta" href="index.html#download">Download</a>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="container">
+      <span class="eyebrow eyebrow-muted">Legal</span>
+      <h1>Privacy Policy</h1>
+      <p class="lead">The short version: your vault stays on your device, encrypted with a key only you control. We don't have it. We don't want it.</p>
+      <p class="meta-line">Last updated: 15 May 2026</p>
+    </div>
+  </section>
+
+  <section class="section legal-page">
+    <div class="container legal-container">
+
+      <div class="tldr">
+        <strong>TL;DR</strong>
+        <ul>
+          <li>Your documents, cards, and notes are encrypted on your device with AES-256.</li>
+          <li>We do not run servers that hold your vault contents. We cannot read them.</li>
+          <li>Backups are encrypted blobs stored in <em>your</em> Google Drive — Google can't read them either.</li>
+          <li>We collect minimal diagnostic data (crash logs) to keep the app working. No tracking, no ads, no selling data.</li>
+        </ul>
+      </div>
+
+      <h2>1. Who we are</h2>
+      <p>Kryptos ("the app", "we", "us") is published by Faizal Zain, an independent developer based in Kuala Lumpur, Malaysia. You can reach us at <a href="mailto:hello@faizalmzain.com">hello@faizalmzain.com</a>.</p>
+
+      <h2>2. What data Kryptos handles</h2>
+      <p>Kryptos handles two distinct categories of data:</p>
+      <h3>2.1 Vault data (your documents)</h3>
+      <p>Anything you store inside Kryptos — passport details, ID numbers, payment cards, notes, API keys, scanned images, OCR results — is your <strong>vault data</strong>. It includes:</p>
+      <ul>
+        <li>Document fields you enter or that OCR extracts on-device</li>
+        <li>Photos or scans you choose to attach</li>
+        <li>Data read from NFC chips (ePassports, EMV payment cards)</li>
+        <li>Any notes, API keys, or tax numbers you add</li>
+      </ul>
+      <p><strong>Vault data never leaves your device unencrypted.</strong> It is stored in a SQLCipher (AES-256) encrypted database whose key is held in the Android Keystore — hardware-backed on supported devices — and gated behind your Android biometric authentication.</p>
+
+      <h3>2.2 Account &amp; diagnostic data</h3>
+      <p>To make the app work, we may receive:</p>
+      <ul>
+        <li><strong>Your Google account email</strong>, only because Google Sign-In requires it to enable Drive backup and to scope the per-user encrypted database.</li>
+        <li><strong>Anonymous crash &amp; diagnostic reports</strong> from Google Play (you can disable this in your device settings) so we can fix bugs.</li>
+        <li><strong>Google Play purchase tokens</strong> for verifying that you own Kryptos Pro.</li>
+      </ul>
+      <p>We do not collect analytics events about your behaviour inside the vault. We do not log document contents, field values, or filenames.</p>
+
+      <h2>3. What we do <em>not</em> do</h2>
+      <ul class="legal-deny">
+        <li>We do not run a backend server that stores your vault contents.</li>
+        <li>We do not have a copy of your encryption key, biometrics, or password.</li>
+        <li>We do not sell, rent, or share your data with third parties.</li>
+        <li>We do not show ads, and we do not embed advertising SDKs.</li>
+        <li>We do not perform server-side OCR. ML Kit text recognition runs entirely on-device.</li>
+        <li>We do not transmit camera frames, NFC chip reads, or scanned images off-device.</li>
+      </ul>
+
+      <h2>4. Cloud backup &amp; Google Drive</h2>
+      <p>If you enable backup, Kryptos uploads your <em>encrypted</em> vault blob to your own Google Drive:</p>
+      <ul>
+        <li><strong>Free:</strong> The blob is written to the hidden Drive AppData folder, which only Kryptos can see for your account.</li>
+        <li><strong>Pro:</strong> You may also write the blob to a visible "KryptosBackups" folder in My Drive, so you can copy it elsewhere for safekeeping.</li>
+      </ul>
+      <p>In both cases, the file Google receives is opaque ciphertext. Google Drive cannot decrypt it. We cannot decrypt it. Only your device, after a successful biometric unlock, can.</p>
+
+      <h2>5. Permissions we request</h2>
+      <ul>
+        <li><strong>Camera</strong> — to scan documents with OCR. Frames are processed on-device and not stored unless you save the document.</li>
+        <li><strong>NFC</strong> — to read electronic passports and EMV cards. Reads happen locally; nothing is transmitted.</li>
+        <li><strong>Biometric</strong> — to unlock your vault using Android Biometric.</li>
+        <li><strong>Internet</strong> — only for Google Sign-In, Google Drive backup, expiry notifications, and Play purchase verification.</li>
+        <li><strong>Notifications</strong> — to remind you before passports, IDs, and cards expire.</li>
+      </ul>
+
+      <h2>6. Children's privacy</h2>
+      <p>Kryptos is not directed at children under 13. We do not knowingly collect personal information from children.</p>
+
+      <h2>7. Data retention &amp; deletion</h2>
+      <p>Because your vault lives on your device, deleting Kryptos deletes your vault. To delete cloud backups:</p>
+      <ul>
+        <li>Open Google Drive → Settings → Manage apps → Kryptos → Delete hidden app data (free tier).</li>
+        <li>Or delete the "KryptosBackups" folder in My Drive (Pro tier).</li>
+      </ul>
+      <p>Diagnostic and crash reports collected by Google Play are managed under Google's retention policies and your Play Console settings.</p>
+
+      <h2>8. Your rights</h2>
+      <p>Depending on your jurisdiction (GDPR in the EU/UK, PDPA in Malaysia, CCPA in California, etc.), you may have the right to access, correct, or delete personal data we hold about you. Since we hold no copy of your vault data, requests under these laws will primarily concern your account email and any diagnostic information — write to <a href="mailto:hello@faizalmzain.com">hello@faizalmzain.com</a>.</p>
+
+      <h2>9. Third-party services</h2>
+      <p>Kryptos relies on a small number of third parties, each used for the narrowest possible purpose:</p>
+      <ul>
+        <li><strong>Google Sign-In / Credential Manager</strong> — authentication.</li>
+        <li><strong>Google Drive</strong> — encrypted backup storage.</li>
+        <li><strong>Google ML Kit</strong> — on-device OCR (no network).</li>
+        <li><strong>Google Play Billing</strong> — Pro purchase verification.</li>
+      </ul>
+      <p>These services are governed by their own privacy policies.</p>
+
+      <h2>10. Changes to this policy</h2>
+      <p>If we update this policy, we will revise the "Last updated" date above and, for material changes, notify you in-app. Continued use of Kryptos after a change constitutes acceptance.</p>
+
+      <h2>11. Contact</h2>
+      <p>For privacy questions or requests, email <a href="mailto:hello@faizalmzain.com">hello@faizalmzain.com</a>.</p>
+
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <a class="brand" href="index.html">
+        <img class="brand-mark" src="favicon.svg" alt="" />
+        <span>Kryptos</span>
+      </a>
+      <p>Your zero-knowledge personal vault for Android.</p>
+    </div>
+    <div class="footer-cols">
+      <div>
+        <h4>Product</h4>
+        <a href="index.html#features">Features</a>
+        <a href="index.html#security">Security</a>
+        <a href="index.html#pricing">Pricing</a>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <a href="faq.html">FAQ</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="mailto:hello@faizalmzain.com">Contact</a>
+      </div>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <small>© 2026 Faizal Zain. All rights reserved.</small>
+    <small>Made with care in Kuala Lumpur.</small>
+  </div>
+</footer>
+
+</body>
+</html>
