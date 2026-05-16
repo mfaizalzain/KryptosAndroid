@@ -22,6 +22,7 @@
     </a>
     <nav class="nav-links" aria-label="Primary">
       <a href="index.html#features">Features</a>
+      <a href="index.html#platforms">Platforms</a>
       <a href="index.html#security">Security</a>
       <a href="index.html#pricing">Pricing</a>
       <a href="faq.html">FAQ</a>
@@ -37,7 +38,7 @@
       <span class="eyebrow eyebrow-muted">Legal</span>
       <h1>Privacy Policy</h1>
       <p class="lead">The short version: your vault stays on your device, encrypted with a key only you control. We don't have it. We don't want it.</p>
-      <p class="meta-line">Last updated: 15 May 2026</p>
+      <p class="meta-line">Last updated: 16 May 2026</p>
     </div>
   </section>
 
@@ -49,7 +50,7 @@
         <ul>
           <li>Your documents, cards, and notes are encrypted on your device with AES-256.</li>
           <li>We do not run servers that hold your vault contents. We cannot read them.</li>
-          <li>Backups are encrypted blobs stored in <em>your</em> Google Drive — Google can't read them either.</li>
+          <li>Backups are encrypted blobs stored in iCloud or <em>your</em> Google Drive — cloud providers can't read them either.</li>
           <li>We collect minimal diagnostic data (crash logs) to keep the app working. No tracking, no ads, no selling data.</li>
         </ul>
       </div>
@@ -64,17 +65,17 @@
       <ul>
         <li>Document fields you enter or that OCR extracts on-device</li>
         <li>Photos or scans you choose to attach</li>
-        <li>Data read from NFC chips (ePassports, EMV payment cards)</li>
+        <li>Data read from NFC chips on Android (ePassports, EMV payment cards)</li>
         <li>Any notes, API keys, or tax numbers you add</li>
       </ul>
-      <p><strong>Vault data never leaves your device unencrypted.</strong> It is stored in a SQLCipher (AES-256) encrypted database whose key is held in the Android Keystore — hardware-backed on supported devices — and gated behind your Android biometric authentication.</p>
+      <p><strong>Vault data never leaves your device unencrypted.</strong> On Android, it is stored in a SQLCipher (AES-256) encrypted database whose key is held in the Android Keystore. In the upcoming iOS version, vault data will be encrypted with AES-GCM (256-bit) using Apple's CryptoKit, with the encryption key stored in the iOS Keychain using <code>kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly</code>. Access is gated behind Android biometrics today, with Face ID and Touch ID planned for iOS.</p>
 
       <h3>2.2 Account &amp; diagnostic data</h3>
       <p>To make the app work, we may receive:</p>
       <ul>
-        <li><strong>Your Google account email</strong>, only because Google Sign-In requires it to enable Drive backup and to scope the per-user encrypted database.</li>
-        <li><strong>Anonymous crash &amp; diagnostic reports</strong> from Google Play (you can disable this in your device settings) so we can fix bugs.</li>
-        <li><strong>Google Play purchase tokens</strong> for verifying that you own Kryptos Pro.</li>
+        <li><strong>Your signed-in account identifier</strong>, only because Sign in with Apple or Google Sign-In is used to enable cloud backup and scope the per-account encrypted vault.</li>
+        <li><strong>Anonymous crash &amp; diagnostic reports</strong> from Google Play or Apple (you can disable this in your device settings) so we can fix bugs.</li>
+        <li><strong>Store purchase tokens or receipts</strong> from Google Play or Apple for verifying that you own Kryptos Pro.</li>
       </ul>
       <p>We do not collect analytics events about your behaviour inside the vault. We do not log document contents, field values, or filenames.</p>
 
@@ -84,24 +85,25 @@
         <li>We do not have a copy of your encryption key, biometrics, or password.</li>
         <li>We do not sell, rent, or share your data with third parties.</li>
         <li>We do not show ads, and we do not embed advertising SDKs.</li>
-        <li>We do not perform server-side OCR. ML Kit text recognition runs entirely on-device.</li>
-        <li>We do not transmit camera frames, NFC chip reads, or scanned images off-device.</li>
+        <li>We do not perform server-side OCR. ML Kit on Android runs entirely on-device, and the upcoming iOS version will use on-device VisionKit / Live Text.</li>
+        <li>We do not transmit camera frames, supported Android NFC chip reads, or scanned images off-device.</li>
       </ul>
 
-      <h2>4. Cloud backup &amp; Google Drive</h2>
-      <p>If you enable backup, Kryptos uploads your <em>encrypted</em> vault blob to your own Google Drive:</p>
+      <h2>4. Cloud backup, iCloud &amp; Google Drive</h2>
+      <p>If you enable backup, Kryptos uploads your <em>encrypted</em> vault blob to the cloud provider you choose:</p>
       <ul>
-        <li><strong>Free:</strong> The blob is written to the hidden Drive AppData folder, which only Kryptos can see for your account.</li>
-        <li><strong>Pro:</strong> You may also write the blob to a visible "KryptosBackups" folder in My Drive, so you can copy it elsewhere for safekeeping.</li>
+        <li><strong>iCloud:</strong> In the upcoming iOS version, the blob can be stored in your private CloudKit database.</li>
+        <li><strong>Google Drive Free:</strong> The blob is written to the hidden Drive AppData folder, which only Kryptos can see for your account.</li>
+        <li><strong>Google Drive Pro:</strong> You may also write the blob to a visible "KryptosBackups" folder in My Drive, so you can copy it elsewhere for safekeeping.</li>
       </ul>
-      <p>In both cases, the file Google receives is opaque ciphertext. Google Drive cannot decrypt it. We cannot decrypt it. Only your device, after a successful biometric unlock, can.</p>
+      <p>In every case, the file the cloud provider receives is opaque ciphertext. iCloud and Google Drive cannot decrypt it. We cannot decrypt it. Only your device, after a successful biometric unlock, can.</p>
 
       <h2>5. Permissions we request</h2>
       <ul>
         <li><strong>Camera</strong> — to scan documents with OCR. Frames are processed on-device and not stored unless you save the document.</li>
-        <li><strong>NFC</strong> — to read electronic passports and EMV cards. Reads happen locally; nothing is transmitted.</li>
-        <li><strong>Biometric</strong> — to unlock your vault using Android Biometric.</li>
-        <li><strong>Internet</strong> — only for Google Sign-In, Google Drive backup, expiry notifications, and Play purchase verification.</li>
+        <li><strong>NFC</strong> — Android only, to read electronic passports and EMV cards. Reads happen locally; nothing is transmitted. The upcoming iOS version will not include NFC document reading.</li>
+        <li><strong>Biometric</strong> — to unlock your vault using Android Biometric today, with Face ID and Touch ID planned for iOS.</li>
+        <li><strong>Internet</strong> — only for Sign in with Apple or Google, iCloud sync, Google Drive backup, and store purchase verification.</li>
         <li><strong>Notifications</strong> — to remind you before passports, IDs, and cards expire.</li>
       </ul>
 
@@ -111,10 +113,11 @@
       <h2>7. Data retention &amp; deletion</h2>
       <p>Because your vault lives on your device, deleting Kryptos deletes your vault. To delete cloud backups:</p>
       <ul>
-        <li>Open Google Drive → Settings → Manage apps → Kryptos → Delete hidden app data (free tier).</li>
-        <li>Or delete the "KryptosBackups" folder in My Drive (Pro tier).</li>
+        <li>For iCloud backup, delete Kryptos data from your iCloud storage settings or from within Kryptos where available.</li>
+        <li>For hidden Google Drive backup, open Google Drive → Settings → Manage apps → Kryptos → Delete hidden app data.</li>
+        <li>For visible Google Drive Pro backup, delete the "KryptosBackups" folder in My Drive.</li>
       </ul>
-      <p>Diagnostic and crash reports collected by Google Play are managed under Google's retention policies and your Play Console settings.</p>
+      <p>Diagnostic and crash reports collected by Google Play or Apple are managed under their retention policies and your device or account settings.</p>
 
       <h2>8. Your rights</h2>
       <p>Depending on your jurisdiction (GDPR in the EU/UK, PDPA in Malaysia, CCPA in California, etc.), you may have the right to access, correct, or delete personal data we hold about you. Since we hold no copy of your vault data, requests under these laws will primarily concern your account email and any diagnostic information — write to <a href="mailto:hello@faizalmzain.com">hello@faizalmzain.com</a>.</p>
@@ -122,10 +125,13 @@
       <h2>9. Third-party services</h2>
       <p>Kryptos relies on a small number of third parties, each used for the narrowest possible purpose:</p>
       <ul>
-        <li><strong>Google Sign-In / Credential Manager</strong> — authentication.</li>
-        <li><strong>Google Drive</strong> — encrypted backup storage.</li>
-        <li><strong>Google ML Kit</strong> — on-device OCR (no network).</li>
-        <li><strong>Google Play Billing</strong> — Pro purchase verification.</li>
+        <li><strong>Sign in with Apple</strong> — authentication in the upcoming iOS version when selected.</li>
+        <li><strong>Google Sign-In / Credential Manager</strong> — authentication and Drive account access when selected.</li>
+        <li><strong>iCloud / CloudKit</strong> — encrypted backup storage in the upcoming iOS version when selected.</li>
+        <li><strong>Google Drive</strong> — encrypted backup storage when selected.</li>
+        <li><strong>Google ML Kit</strong> — on-device OCR on Android (no network).</li>
+        <li><strong>Apple VisionKit / Live Text</strong> — planned on-device OCR for the upcoming iOS version.</li>
+        <li><strong>Google Play Billing / Apple in-app purchase</strong> — Pro purchase verification.</li>
       </ul>
       <p>These services are governed by their own privacy policies.</p>
 
@@ -146,12 +152,13 @@
         <img class="brand-mark" src="favicon.svg" alt="" />
         <span>Kryptos</span>
       </a>
-      <p>Your zero-knowledge personal vault for Android.</p>
+      <p>Your zero-knowledge personal vault for Android. iOS coming soon.</p>
     </div>
     <div class="footer-cols">
       <div>
         <h4>Product</h4>
         <a href="index.html#features">Features</a>
+        <a href="index.html#platforms">Platforms</a>
         <a href="index.html#security">Security</a>
         <a href="index.html#pricing">Pricing</a>
       </div>

@@ -4,10 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Kryptos — Your zero-knowledge personal vault</title>
-<meta name="description" content="Kryptos is a zero-knowledge personal vault for Android. Securely store passports, ID cards, payment cards, and private notes — encrypted on-device with AES-256." />
+<meta name="description" content="Kryptos is a zero-knowledge personal vault for Android, with iOS coming soon. Securely store passports, ID cards, payment cards, API keys, and private notes — encrypted on-device with AES-256." />
 <meta name="theme-color" content="#0E1424" />
 <meta property="og:title" content="Kryptos — Your zero-knowledge personal vault" />
-<meta property="og:description" content="Encrypted on-device. Scanned with your camera or NFC. Backed up to your own Google Drive." />
+<meta property="og:description" content="Encrypted on-device. Available on Android, with iOS coming soon." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://kryptos.faizalmzain.com" />
 <link rel="icon" href="favicon.svg" type="image/svg+xml" />
@@ -26,6 +26,7 @@
     </a>
     <nav class="nav-links" aria-label="Primary">
       <a href="#features">Features</a>
+      <a href="#platforms">Platforms</a>
       <a href="#security">Security</a>
       <a href="#pricing">Pricing</a>
       <a href="faq.html">FAQ</a>
@@ -50,19 +51,23 @@
       </span>
       <h1>Your most private documents,<br/><span class="grad-text">locked down by design.</span></h1>
       <p class="lead">
-        Kryptos is a personal vault for Android that keeps your passports, IDs, payment cards, and notes encrypted on your device. We never see your data — only you can.
+        Kryptos is a personal vault for Android, with iOS coming soon, that keeps passports, IDs, payment cards, API keys, and private notes encrypted on your device. We never see your data — only you can.
       </p>
       <div class="cta-row">
         <a href="https://play.google.com/store/apps/details?id=com.fmz.kryptos" target="_blank" rel="noopener" class="btn btn-primary btn-lg">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 20.5V3.5l13.5 8.5L3 20.5z"/></svg>
           Get on Google Play
         </a>
+        <a href="#platforms" class="btn btn-ghost btn-lg">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.47 2.2-1.23 3.02-.82.88-2.15 1.56-3.23 1.47-.14-1.1.4-2.28 1.15-3.08.82-.88 2.25-1.52 3.31-1.41zM20.3 17.32c-.55 1.26-.82 1.82-1.53 2.93-.99 1.54-2.38 3.46-4.1 3.48-1.53.02-1.93-1-4.01-.99-2.08.01-2.52 1.02-4.05 1-1.72-.02-3.03-1.75-4.02-3.29-2.76-4.3-3.05-9.35-1.35-12.03 1.2-1.9 3.1-3.01 4.89-3.01 1.82 0 2.96 1 4.47 1s2.43-1 4.1-1c1.26 0 2.6.69 3.79 1.88-3.33 1.82-2.79 6.58.82 8.03z"/></svg>
+          iOS coming soon
+        </a>
         <a href="#features" class="btn btn-ghost btn-lg">See how it works →</a>
       </div>
       <ul class="hero-meta">
-        <li><strong>AES-256</strong> SQLCipher</li>
-        <li><strong>NFC</strong> ePassport &amp; EMV</li>
-        <li><strong>Biometric</strong> unlock</li>
+        <li><strong>AES-256</strong> on-device encryption</li>
+        <li><strong>iCloud</strong> or Drive backup</li>
+        <li><strong>Face ID</strong> &amp; biometric unlock</li>
       </ul>
     </div>
     <div class="hero-visual" aria-hidden="true">
@@ -105,14 +110,15 @@
 
 <section class="trust">
   <div class="container">
-    <p class="trust-label">Built on the standards trusted by</p>
+    <p class="trust-label">Built on privacy-first platform technology</p>
     <div class="trust-row">
       <span>SQLCipher</span>
+      <span>CryptoKit</span>
+      <span>iOS Keychain</span>
       <span>Google ML Kit</span>
+      <span>VisionKit</span>
       <span>Jetpack Compose</span>
-      <span>JMRTD</span>
-      <span>Material 3</span>
-      <span>Android Biometric</span>
+      <span>Android Keystore</span>
     </div>
   </div>
 </section>
@@ -131,7 +137,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
         </div>
         <h3>Zero-knowledge encryption</h3>
-        <p>Your data is encrypted locally with SQLCipher AES-256. We can't read it — and neither can anyone else.</p>
+        <p>Your data is encrypted locally with AES-256. Android uses SQLCipher and Android Keystore; the upcoming iOS version will use CryptoKit AES-GCM with keys held in the iOS Keychain.</p>
       </article>
 
       <article class="feature">
@@ -139,15 +145,15 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M7 14h4"/></svg>
         </div>
         <h3>Smart document scanning</h3>
-        <p>Snap a passport or driver's license. Google ML Kit OCR extracts the fields automatically with locale-aware parsing.</p>
+        <p>Snap a passport, driver's licence, ID card, or payment card. On-device OCR extracts fields automatically using Google ML Kit on Android, with VisionKit and Live Text planned for iOS.</p>
       </article>
 
       <article class="feature">
         <div class="f-icon f-icon-blue">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12a7 7 0 0114 0M8.5 12a3.5 3.5 0 017 0M12 12v7"/></svg>
         </div>
-        <h3>NFC chip reading</h3>
-        <p>Read electronic passports (ePassport) and EMV payment cards directly via NFC — no cloud round-trip.</p>
+        <h3>QR and NFC capture</h3>
+        <p>Import QR codes on both platforms and regenerate them later. Android also supports NFC reading for ePassports and EMV cards; iOS does not include NFC document reading.</p>
       </article>
 
       <article class="feature">
@@ -162,8 +168,8 @@
         <div class="f-icon f-icon-blue">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
         </div>
-        <h3>Encrypted Drive backup</h3>
-        <p>Auto-backup to a hidden, private folder in your Google Drive. Pro adds a visible "KryptosBackups" folder.</p>
+        <h3>Encrypted cloud backup</h3>
+        <p>Auto-backup encrypted vault blobs to Google Drive today, with iCloud support planned for iOS. Free uses hidden Drive AppData; Pro adds a visible "KryptosBackups" folder.</p>
       </article>
 
       <article class="feature">
@@ -171,7 +177,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
         </div>
         <h3>Expiry reminders</h3>
-        <p>Get notified before passports, cards, or licenses expire — powered by WorkManager, scheduled offline.</p>
+        <p>Get local reminders 30 days, 7 days, and 1 day before passports, cards, IDs, or licences expire — scheduled offline on your device.</p>
       </article>
 
       <article class="feature">
@@ -179,7 +185,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="9" r="3"/><path d="M5 21c1.5-4 4-6 7-6s5.5 2 7 6"/></svg>
         </div>
         <h3>Biometric unlock</h3>
-        <p>Lock your vault behind Android Biometrics — Fingerprint or Face Unlock — backed by hardware keystore.</p>
+        <p>Lock your vault behind Android biometrics today, with Face ID and Touch ID support planned for iOS.</p>
       </article>
 
       <article class="feature">
@@ -187,7 +193,41 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="9" r="3"/><path d="M3 19c1-3 3.5-4.5 6-4.5s5 1.5 6 4.5M14.5 14.5c2-.3 4 1 5.5 4.5"/></svg>
         </div>
         <h3>Multi-account isolation</h3>
-        <p>Multiple Google accounts, fully isolated — each with its own encrypted database on the same device.</p>
+        <p>Sign in with Apple or Google. Each account gets its own separately encrypted vault, so entries never leak between profiles.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="platforms" class="section section-platforms">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow eyebrow-muted">Android now · iOS soon</span>
+      <h2>Same zero-knowledge vault, tuned for each platform.</h2>
+      <p class="section-sub">Kryptos is available on Android today. The iOS version is coming soon with the same privacy model and native iPhone security features.</p>
+    </div>
+    <div class="platform-grid">
+      <article class="platform-card">
+        <span class="platform-pill">Android</span>
+        <h3>Android vault</h3>
+        <ul class="check-list compact">
+          <li><span class="check">✓</span> SQLCipher AES-256 database encryption</li>
+          <li><span class="check">✓</span> Keys held in Android Keystore</li>
+          <li><span class="check">✓</span> Google Sign-In account isolation</li>
+          <li><span class="check">✓</span> Google Drive hidden AppData or visible Pro backup</li>
+          <li><span class="check">✓</span> NFC reading for ePassports and EMV cards</li>
+        </ul>
+      </article>
+      <article class="platform-card">
+        <span class="platform-pill platform-pill-ios">Coming soon</span>
+        <h3>iPhone vault</h3>
+        <ul class="check-list compact">
+          <li><span class="check">✓</span> CryptoKit AES-GCM 256-bit encryption</li>
+          <li><span class="check">✓</span> Keychain key storage with ThisDeviceOnly protection</li>
+          <li><span class="check">✓</span> Sign in with Apple or Google account isolation</li>
+          <li><span class="check">✓</span> iCloud private CloudKit or Google Drive backup</li>
+          <li><span class="check check-muted">−</span> No NFC document reading planned for iOS</li>
+        </ul>
       </article>
     </div>
   </div>
@@ -200,10 +240,10 @@
       <h2>Designed so we never see your data.</h2>
       <p class="section-sub">Kryptos is built around a simple promise: your secrets stay on your device, encrypted with a key only you control.</p>
       <ul class="check-list">
-        <li><span class="check">✓</span> SQLCipher AES-256 at rest</li>
-        <li><span class="check">✓</span> Keys held in Android Keystore (hardware-backed)</li>
+        <li><span class="check">✓</span> AES-256 encryption at rest</li>
+        <li><span class="check">✓</span> Keys held in Android Keystore or iOS Keychain</li>
         <li><span class="check">✓</span> Biometric gate before any decrypt</li>
-        <li><span class="check">✓</span> Encrypted blob backups — Drive can't read them</li>
+        <li><span class="check">✓</span> Encrypted blob backups — iCloud and Drive can't read them</li>
         <li><span class="check">✓</span> No analytics on your vault contents. Ever.</li>
       </ul>
     </div>
@@ -217,12 +257,12 @@
           <small>Local-first · End-to-end encrypted backups</small>
         </div>
       </div>
-      <pre class="code-block"><span class="c-key">db</span> = <span class="c-fn">SQLCipher.open</span>(
-  path: <span class="c-str">"vault.db"</span>,
-  key:  <span class="c-fn">Keystore.derive</span>(user, biometric)
+      <pre class="code-block"><span class="c-key">vault</span> = <span class="c-fn">AES256.open</span>(
+  data: <span class="c-str">"vault"</span>,
+  key:  <span class="c-fn">SecureStore.key</span>(account, biometric)
 )
 <span class="c-com">// We never see your key. We never see your rows.</span>
-<span class="c-key">backup</span> = <span class="c-fn">encrypt</span>(db) → drive.<span class="c-fn">upload</span>()</pre>
+<span class="c-key">backup</span> = <span class="c-fn">encrypt</span>(vault) → cloud.<span class="c-fn">upload</span>()</pre>
     </div>
   </div>
 </section>
@@ -239,9 +279,9 @@
         <div class="price"><span>$0</span><small>up to 10 entries</small></div>
         <ul class="price-list">
           <li>✓ Store up to 10 entries</li>
-          <li>✓ OCR &amp; NFC scanning</li>
+          <li>✓ OCR and QR scanning</li>
           <li>✓ Biometric unlock</li>
-          <li>✓ Hidden Drive AppData backup</li>
+          <li>✓ iCloud or hidden Drive backup</li>
           <li>✓ Expiry reminders</li>
         </ul>
         <a href="#download" class="btn btn-ghost btn-block">Download free</a>
@@ -252,7 +292,7 @@
         <div class="price"><span>$1.99</span><small>one-time · no subscription</small></div>
         <ul class="price-list">
           <li>✓ <strong>Unlimited</strong> entries</li>
-          <li>✓ Everything is Free</li>
+          <li>✓ Everything in Free</li>
           <li>✓ Backup to visible "KryptosBackups" folder</li>
           <li>✓ Easier restore &amp; portability</li>
           <li>✓ Priority support</li>
@@ -274,23 +314,23 @@
     <div class="faq-list">
       <details>
         <summary>Can the Kryptos team see my documents?</summary>
-        <p>No. All data is encrypted locally on your device with a key derived from your biometric and stored in the Android Keystore. We have no servers that hold your plaintext data.</p>
+        <p>No. All data is encrypted locally on your device with a key stored in Android Keystore today, and the iOS Keychain in the upcoming iPhone version. We have no servers that hold your plaintext data.</p>
       </details>
       <details>
         <summary>How does backup work if it's zero-knowledge?</summary>
-        <p>Kryptos encrypts your entire vault into an opaque blob and uploads it to <em>your</em> Google Drive — either to the hidden AppData folder (free) or to a visible "KryptosBackups" folder (Pro). Google Drive only sees encrypted bytes.</p>
+        <p>Kryptos encrypts your entire vault into an opaque blob and uploads it to <em>your</em> Google Drive today, with iCloud support planned for iOS. Cloud providers only see encrypted bytes.</p>
       </details>
       <details>
         <summary>What happens if I lose my phone?</summary>
-        <p>Sign in with the same Google account on a new device, restore from Drive, and re-authenticate with biometrics. Your vault is back — without anyone in between ever decrypting it.</p>
+        <p>Sign in with the same Apple or Google account on a new device, restore from your chosen backup, and re-authenticate with biometrics. Your vault is back — without anyone in between ever decrypting it.</p>
       </details>
       <details>
         <summary>Which documents support NFC?</summary>
-        <p>Modern electronic passports (ICAO 9303 ePassports via JMRTD) and contactless EMV payment cards. NFC reading depends on the chip — not every card exposes the same data.</p>
+        <p>On Android, modern electronic passports (ICAO 9303 ePassports via JMRTD) and contactless EMV payment cards can be read when supported by the document or card. The upcoming iOS version will not include NFC document reading.</p>
       </details>
       <details>
         <summary>Is Kryptos open about its security?</summary>
-        <p>Yes. We use industry-standard primitives (SQLCipher AES-256, Android Keystore, Android Biometric) rather than rolling our own crypto.</p>
+        <p>Yes. We use industry-standard platform primitives — SQLCipher and Android Keystore on Android, with CryptoKit, Keychain, Face ID, and Touch ID planned for iOS — rather than rolling our own crypto.</p>
       </details>
     </div>
     <div class="see-more">
@@ -302,11 +342,15 @@
 <section id="download" class="cta-section">
   <div class="container cta-inner">
     <h2>Take control of your documents today.</h2>
-    <p>Available on Android. Free download — Pro features optional.</p>
+    <p>Available on Android today. iOS is coming soon. Free download — Pro features optional.</p>
     <div class="cta-row center">
       <a href="https://play.google.com/store/apps/details?id=com.fmz.kryptos" target="_blank" rel="noopener" class="btn btn-primary btn-lg">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 20.5V3.5l13.5 8.5L3 20.5z"/></svg>
         Get on Google Play
+      </a>
+      <a href="mailto:hello@faizalmzain.com?subject=Kryptos%20iOS%20App%20Store%20link" class="btn btn-ghost btn-lg">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.47 2.2-1.23 3.02-.82.88-2.15 1.56-3.23 1.47-.14-1.1.4-2.28 1.15-3.08.82-.88 2.25-1.52 3.31-1.41zM20.3 17.32c-.55 1.26-.82 1.82-1.53 2.93-.99 1.54-2.38 3.46-4.1 3.48-1.53.02-1.93-1-4.01-.99-2.08.01-2.52 1.02-4.05 1-1.72-.02-3.03-1.75-4.02-3.29-2.76-4.3-3.05-9.35-1.35-12.03 1.2-1.9 3.1-3.01 4.89-3.01 1.82 0 2.96 1 4.47 1s2.43-1 4.1-1c1.26 0 2.6.69 3.79 1.88-3.33 1.82-2.79 6.58.82 8.03z"/></svg>
+        iOS coming soon
       </a>
     </div>
   </div>
@@ -321,12 +365,13 @@
         <img class="brand-mark" src="favicon.svg" alt="" />
         <span>Kryptos</span>
       </a>
-      <p>Your zero-knowledge personal vault for Android.</p>
+      <p>Your zero-knowledge personal vault for Android. iOS coming soon.</p>
     </div>
     <div class="footer-cols">
       <div>
         <h4>Product</h4>
         <a href="index.html#features">Features</a>
+        <a href="index.html#platforms">Platforms</a>
         <a href="index.html#security">Security</a>
         <a href="index.html#pricing">Pricing</a>
       </div>

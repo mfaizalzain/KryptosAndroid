@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>FAQ — Kryptos</title>
-<meta name="description" content="Frequently asked questions about Kryptos — the zero-knowledge personal vault for Android." />
+<meta name="description" content="Frequently asked questions about Kryptos — the zero-knowledge personal vault for Android, with iOS coming soon." />
 <meta name="theme-color" content="#0E1424" />
 <link rel="icon" href="favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,6 +22,7 @@
     </a>
     <nav class="nav-links" aria-label="Primary">
       <a href="index.html#features">Features</a>
+      <a href="index.html#platforms">Platforms</a>
       <a href="index.html#security">Security</a>
       <a href="index.html#pricing">Pricing</a>
       <a href="faq.html" aria-current="page">FAQ</a>
@@ -47,19 +48,19 @@
       <div class="faq-list">
         <details open>
           <summary>Can the Kryptos team see my documents?</summary>
-          <p>No. All data is encrypted locally on your device using SQLCipher (AES-256). The encryption key is derived from your authentication and stored in the Android Keystore — backed by hardware on supported devices. We have no servers that hold your plaintext data, and no way to decrypt it on our side.</p>
+          <p>No. All data is encrypted locally on your device using AES-256. Android uses SQLCipher with keys stored in Android Keystore. The upcoming iOS version will use Apple's CryptoKit AES-GCM with the key stored in the iOS Keychain using ThisDeviceOnly protection. We have no servers that hold your plaintext data, and no way to decrypt it on our side.</p>
         </details>
         <details>
           <summary>What does "zero-knowledge" actually mean here?</summary>
-          <p>It means the system is designed so that we have <em>no knowledge</em> of your vault contents — even if we wanted to look. Your data is encrypted before it leaves your device, and the only key that can decrypt it lives in the Android Keystore on your phone.</p>
+          <p>It means the system is designed so that we have <em>no knowledge</em> of your vault contents — even if we wanted to look. Your data is encrypted before it leaves your device, and the only key that can decrypt it lives in Android Keystore today, with iOS Keychain support planned for the iPhone version.</p>
         </details>
         <details>
           <summary>Is my biometric data sent anywhere?</summary>
-          <p>Never. Biometric matching happens entirely inside the Android Biometric framework on your device. Kryptos only receives a yes/no signal that you authenticated successfully — never your fingerprint or face data.</p>
+          <p>Never. Biometric matching happens entirely inside Android Biometric today, with Face ID and Touch ID planned for iOS. Kryptos only receives a yes/no signal that you authenticated successfully — never your fingerprint or face data.</p>
         </details>
         <details>
           <summary>What if my device is rooted or compromised?</summary>
-          <p>SQLCipher and the Android Keystore raise the bar significantly, but no app can fully protect against a fully compromised device. If you suspect malware or root-level compromise, treat the secrets in your vault as exposed and rotate them.</p>
+          <p>SQLCipher, CryptoKit, Android Keystore, and the iOS Keychain raise the bar significantly, but no app can fully protect against a fully compromised device. If you suspect malware, jailbreak, root-level compromise, or device takeover, treat the secrets in your vault as exposed and rotate them.</p>
         </details>
       </div>
 
@@ -67,19 +68,19 @@
       <div class="faq-list">
         <details>
           <summary>How does backup work if it's zero-knowledge?</summary>
-          <p>Kryptos encrypts your entire vault into an opaque blob and uploads it to <em>your</em> Google Drive. Free users get the hidden AppData folder; Pro users can also back up to a visible "KryptosBackups" folder. Google Drive only sees encrypted bytes — never the contents.</p>
+          <p>Kryptos encrypts your entire vault into an opaque blob before upload. On Android, Drive backup uses the hidden AppData folder for Free users, while Pro can also back up to a visible "KryptosBackups" folder. The upcoming iOS version will support iCloud using a private CloudKit database or your own Google Drive. iCloud and Google Drive only see encrypted bytes — never the contents.</p>
         </details>
         <details>
           <summary>What happens if I lose my phone?</summary>
-          <p>Sign in with the same Google account on a new Android device, install Kryptos, and restore from Drive. After re-authenticating with biometrics, your vault is back — without anyone in between ever decrypting it.</p>
+          <p>Sign in with the same Apple or Google account on a new device, install Kryptos, and restore from your chosen cloud backup. After re-authenticating with biometrics, your vault is back — without anyone in between ever decrypting it.</p>
         </details>
         <details>
           <summary>What if I forget my biometric / lose all access?</summary>
-          <p>Because we never see your key, we cannot reset it. If you can no longer authenticate <em>and</em> have no working backup, the encrypted blob is unrecoverable. We strongly recommend keeping Drive backup turned on.</p>
+          <p>Because we never see your key, we cannot reset it. If you can no longer authenticate <em>and</em> have no working backup, the encrypted blob is unrecoverable. We strongly recommend keeping iCloud or Drive backup turned on.</p>
         </details>
         <details>
           <summary>Can I export my data?</summary>
-          <p>Yes. Pro users can back up to the visible "KryptosBackups" folder in Google Drive, which makes the encrypted backup blob easy to copy off-device for safekeeping.</p>
+          <p>Yes. Pro users can back up to the visible "KryptosBackups" folder in Google Drive, which makes the encrypted backup blob easy to copy off-device for safekeeping. The upcoming iOS version will also support iCloud private CloudKit backup.</p>
         </details>
       </div>
 
@@ -87,15 +88,15 @@
       <div class="faq-list">
         <details>
           <summary>Which documents support NFC?</summary>
-          <p>Modern electronic passports following the ICAO 9303 spec (read via JMRTD) and contactless EMV payment cards. NFC reading depends on the chip in the document — not every issuer exposes the same data.</p>
+          <p>On Android, modern electronic passports following the ICAO 9303 spec (read via JMRTD) and contactless EMV payment cards can be read when the chip exposes supported data. The upcoming iOS version will not include NFC document reading.</p>
         </details>
         <details>
           <summary>How accurate is the OCR scanner?</summary>
-          <p>OCR uses Google ML Kit, with locale-aware parsing that does extra work for Malaysian documents (MyKad, Malaysian driver's licence, passport) and common international formats. You can always edit any extracted field before saving.</p>
+          <p>OCR uses Google ML Kit on Android. The upcoming iOS version will use VisionKit with Live Text, with parsing for common document formats. You can always edit any extracted field before saving.</p>
         </details>
         <details>
           <summary>Are my scans uploaded for OCR?</summary>
-          <p>No. ML Kit's text recognition runs entirely on-device. Your camera frames are processed locally and discarded.</p>
+          <p>No. Text recognition runs entirely on-device through Google ML Kit on Android, and will run through VisionKit / Live Text in the upcoming iOS version. Your camera frames are processed locally and discarded.</p>
         </details>
         <details>
           <summary>What document types are supported?</summary>
@@ -115,11 +116,11 @@
         </details>
         <details>
           <summary>What do I get with Pro?</summary>
-          <p>Pro removes the 10-entry limit, unlocks backup to a visible "KryptosBackups" folder in Drive (easier to manage and copy elsewhere), priority support, and any future Pro-tier features at no additional cost.</p>
+          <p>Pro removes the 10-entry limit, unlocks backup to a visible "KryptosBackups" folder in Drive where supported (easier to manage and copy elsewhere), priority support, and any future Pro-tier features at no additional cost.</p>
         </details>
         <details>
           <summary>Is the Pro purchase transferable across devices?</summary>
-          <p>Yes — Pro is tied to your Google Play account, so installing on another device with the same account restores your purchase automatically.</p>
+          <p>Yes — Pro is tied to the store account used for purchase, such as Google Play on Android and Apple ID when the iOS version launches. Installing on another device with the same store account restores your purchase automatically.</p>
         </details>
         <details>
           <summary>Will the price ever change to a subscription?</summary>
@@ -131,11 +132,11 @@
       <div class="faq-list">
         <details>
           <summary>Can my partner and I share a single device?</summary>
-          <p>Yes. Kryptos supports multiple Google accounts on the same device, each with its own fully isolated, separately encrypted database. Switching accounts switches vaults — they cannot see each other.</p>
+          <p>Yes. Kryptos supports multiple signed-in accounts on the same device, using Google accounts on Android. The upcoming iOS version will support Sign in with Apple or Google. Each account has its own fully isolated, separately encrypted vault. Switching accounts switches vaults — they cannot see each other.</p>
         </details>
         <details>
-          <summary>Can I use Kryptos without a Google account?</summary>
-          <p>You can use the local vault without backup. Backup &amp; restore require signing in with Google Drive so the encrypted blob has somewhere to live.</p>
+          <summary>Can I use Kryptos without a cloud account?</summary>
+          <p>You can use the local vault without backup. Backup &amp; restore require signing in with the cloud provider you choose, such as Apple for iCloud or Google for Drive, so the encrypted blob has somewhere to live.</p>
         </details>
       </div>
 
@@ -156,12 +157,13 @@
         <img class="brand-mark" src="favicon.svg" alt="" />
         <span>Kryptos</span>
       </a>
-      <p>Your zero-knowledge personal vault for Android.</p>
+      <p>Your zero-knowledge personal vault for Android. iOS coming soon.</p>
     </div>
     <div class="footer-cols">
       <div>
         <h4>Product</h4>
         <a href="index.html#features">Features</a>
+        <a href="index.html#platforms">Platforms</a>
         <a href="index.html#security">Security</a>
         <a href="index.html#pricing">Pricing</a>
       </div>
