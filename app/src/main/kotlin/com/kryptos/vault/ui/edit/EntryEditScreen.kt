@@ -2,9 +2,11 @@ package com.kryptos.vault.ui.edit
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -16,11 +18,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -38,7 +43,6 @@ import com.kryptos.vault.ui.VaultViewModel
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -62,34 +66,71 @@ fun EntryEditScreen(
     savedStateHandle: SavedStateHandle? = null,
 ) {
     val scope = rememberCoroutineScope()
+    val ctx = LocalContext.current
     var loaded by rememberSaveable { mutableStateOf(false) }
     var title by rememberSaveable { mutableStateOf("") }
+    var titleError by rememberSaveable { mutableStateOf(false) }
     var template by rememberSaveable(stateSaver = TemplateSaver) { mutableStateOf(Template.ID_CARD) }
     val fields = rememberSaveable(saver = FieldsListSaver) { mutableStateListOf<Pair<String, String>>() }
     var existingAttachment by remember { mutableStateOf<ByteArray?>(null) }
+    var existingCreatedAt by remember { mutableStateOf<Long?>(null) }
     var duplicateToConfirm by remember { mutableStateOf<VaultEntry?>(null) }
+    var isSaving by remember { mutableStateOf(false) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
     var datePickerTargetIndex by remember { mutableStateOf<Int?>(null) }
     val focusManager = LocalFocusManager.current
+    val listState = rememberLazyListState()
+    val titleFocusRequester = remember { FocusRequester() }
 
     fun doSave(force: Boolean = false) {
+        if (isSaving) return
+        
+        if (title.isBlank()) {
+            titleError = true
+            scope.launch {
+                val titleIndex = if (supportsCameraScan(template) || supportsNfcScan(template) || template == Template.QR_CODE) 3 else 2
+                listState.animateScrollToItem(titleIndex)
+                titleFocusRequester.requestFocus()
+                snackbarHostState.showSnackbar("Please enter a title.")
+            }
+            return
+        }
+        titleError = false
+
         val entry = VaultEntry(
             id = id,
             template = template,
             title = title,
             fieldsJson = FieldsCodec.encode(fields.toList()),
             attachment = existingAttachment,
+            createdAt = existingCreatedAt ?: System.currentTimeMillis(),
         )
+
+        isSaving = true
+
         if (!force) {
             val dup = viewModel.findDuplicate(entry)
             if (dup != null) {
                 duplicateToConfirm = dup
+                isSaving = false
                 return
             }
         }
+
         scope.launch {
-            viewModel.upsert(entry)
-            onDone()
+            try {
+                android.util.Log.d("EntryEditScreen", "Saving entry: $title")
+                kotlinx.coroutines.withTimeout(10000) {
+                    viewModel.upsert(entry)
+                }
+                android.util.Log.d("EntryEditScreen", "Save success. Navigating back.")
+                onDone()
+            } catch (t: Throwable) {
+                android.util.Log.e("EntryEditScreen", "Save FAILED", t)
+                snackbarHostState.showSnackbar("Error: ${t.localizedMessage ?: "Failed to save"}")
+                isSaving = false
+            }
         }
     }
 
@@ -110,6 +151,7 @@ fun EntryEditScreen(
                 }
                 fields.addAll(decoded)
                 existingAttachment = e.attachment
+                existingCreatedAt = e.createdAt
             }
         } else {
             if (prefillTemplate != null) {
@@ -176,68 +218,45 @@ fun EntryEditScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(if (id == 0L) "New entry" else "Edit entry") },
                 navigationIcon = {
                     IconButton(onClick = onDone) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                 },
-            )
-        },
-        bottomBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                tonalElevation = 3.dp,
-                shadowElevation = 12.dp
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .windowInsetsPadding(WindowInsets.navigationBars)
-                        .padding(16.dp)
-                ) {
-                    Button(
-                        onClick = { doSave() },
-                        enabled = title.isNotBlank(),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        shape = RoundedCornerShape(28.dp),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
-                    ) {
-                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(24.dp))
-                        Spacer(Modifier.width(12.dp))
-                        Text(
-                            text = if (id == 0L) "Save Entry" else "Save Changes",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                actions = {
+                    if (isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp).padding(end = 16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
                         )
+                    } else {
+                        TextButton(onClick = { doSave() }) {
+                            Text("SAVE", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
-            }
+            )
         }
     ) { padding ->
         if (!loaded) return@Scaffold
 
         LazyColumn(
+            state = listState,
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = { focusManager.clearFocus() })
+                },
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding() + 8.dp,
-                bottom = padding.calculateBottomPadding() + 16.dp,
+                bottom = padding.calculateBottomPadding() + 88.dp,
                 start = 16.dp, end = 16.dp,
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Title") },
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
-                )
-            }
             item {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -367,6 +386,28 @@ fun EntryEditScreen(
                 }
             }
 
+            item {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = {
+                        title = it
+                        if (it.isNotBlank()) titleError = false
+                    },
+                    label = { Text("Title") },
+                    isError = titleError,
+                    supportingText = if (titleError) { { Text("Title is required") } } else null,
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(titleFocusRequester),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                    ),
+                )
+            }
+
             items(fields.size) { i ->
                 val name = fields[i].first
                 val isDefault = defaultFieldsFor(template).any { it.equals(name, ignoreCase = true) }
@@ -406,7 +447,10 @@ fun EntryEditScreen(
                             shape = RoundedCornerShape(20.dp),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                            keyboardActions = KeyboardActions(
+                                onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                            ),
                         )
                     }
 
@@ -438,6 +482,10 @@ fun EntryEditScreen(
                         keyboardOptions = KeyboardOptions(
                             keyboardType = if (isNumericField(fields[i].first, template) || (template == Template.PAYMENT_CARD && fields[i].first.contains("expiry", ignoreCase = true))) KeyboardType.Number else KeyboardType.Text,
                             imeAction = if (i < fields.size - 1) ImeAction.Next else ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                            onDone = { focusManager.clearFocus() },
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -536,7 +584,6 @@ private fun templateIcon(t: Template): ImageVector = when (t) {
 
 private class ExpiryVisualTransformation : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {
-        // Only format if the input is digits; if slashes leaked in, strip them for the mask logic.
         val digits = text.text.filter { it.isDigit() }.take(4)
         var out = ""
         for (i in digits.indices) {
@@ -569,7 +616,6 @@ private fun isDateField(name: String, template: Template): Boolean {
 private fun isNumericField(name: String, template: Template): Boolean {
     val n = name.lowercase()
     if (template == Template.PAYMENT_CARD && (n.contains("expiry") || n.contains("expires"))) return true
-    // Target fields that are strictly numeric in nature
     return n == "number" || n.contains("cvv") || n.contains("pin") || n.contains("cvc") || n == "account number"
 }
 

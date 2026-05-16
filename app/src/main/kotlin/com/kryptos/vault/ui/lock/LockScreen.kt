@@ -54,12 +54,15 @@ import kotlinx.coroutines.launch
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.graphics.drawscope.scale
 
 @Composable
 fun LockScreen(onUnlocked: () -> Unit) {
     val ctx = LocalContext.current
-    val activity = ctx as FragmentActivity
+    val activity = ctx as? FragmentActivity
     val auth = remember { (ctx.applicationContext as KryptosApp).authManager }
     val scope = rememberCoroutineScope()
 
@@ -70,13 +73,15 @@ fun LockScreen(onUnlocked: () -> Unit) {
     var showAccount by remember { mutableStateOf(false) }
 
     fun authenticate() {
-        BiometricAuth.prompt(
-            activity = activity,
-            title = "Unlock Kryptos",
-            subtitle = "Authenticate to access your vault",
-            onSuccess = onUnlocked,
-            onFailure = { attempts++ },
-        )
+        activity?.let {
+            BiometricAuth.prompt(
+                activity = it,
+                title = "Unlock Kryptos",
+                subtitle = "Authenticate to access your vault",
+                onSuccess = onUnlocked,
+                onFailure = { attempts++ },
+            )
+        }
     }
 
     fun signIn() {
@@ -176,22 +181,26 @@ fun LockScreen(onUnlocked: () -> Unit) {
                             .fillMaxWidth()
                             .height(56.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
+                            containerColor = Color.White,
+                            contentColor = Color(0xFF1F1F1F)
+                        ),
+                        border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
                     ) {
                         if (signingIn) {
                             androidx.compose.material3.CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
                                 strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary
+                                color = MaterialTheme.colorScheme.primary
                             )
                         } else {
-                            GoogleIcon(Modifier.size(20.dp))
+                            GoogleIcon(Modifier.size(22.dp))
                         }
                         Spacer(Modifier.width(12.dp))
                         Text(
                             text = if (signingIn) "Signing in…" else "Sign in with Google",
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Medium
                         )
                     }
 
@@ -270,65 +279,56 @@ fun LockScreen(onUnlocked: () -> Unit) {
 
 @Composable
 private fun GoogleIcon(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val w = size.width
-            val h = size.height
-            val center = androidx.compose.ui.geometry.Offset(w / 2, h / 2)
-            val radius = w / 2
+    Canvas(modifier = modifier) {
+        val scale = size.width / 24f
+        scale(scale, scale, Offset.Zero) {
+            val p = Path()
+            // Blue
+            p.moveTo(22.56f, 12.25f)
+            p.cubicTo(22.56f, 11.47f, 22.49f, 10.72f, 22.36f, 10f)
+            p.lineTo(12f, 10f)
+            p.lineTo(12f, 14.26f)
+            p.lineTo(17.92f, 14.26f)
+            p.cubicTo(17.66f, 15.63f, 16.88f, 16.79f, 15.71f, 17.57f)
+            p.lineTo(15.71f, 20.34f)
+            p.lineTo(19.28f, 20.34f)
+            p.cubicTo(21.36f, 18.42f, 22.56f, 15.6f, 22.56f, 12.25f)
+            drawPath(p, Color(0xFF4285F4))
 
-            // Red segment (Top)
-            val redPath = Path().apply {
-                moveTo(center.x, center.y)
-                arcTo(androidx.compose.ui.geometry.Rect(center.x - radius, center.y - radius, center.x + radius, center.y + radius), -135f, 90f, false)
-                close()
-            }
-            drawPath(redPath, Color(0xFFEA4335))
+            // Green
+            p.reset()
+            p.moveTo(12f, 23f)
+            p.cubicTo(15.24f, 23f, 17.95f, 21.92f, 19.93f, 20.09f)
+            p.lineTo(16.36f, 17.32f)
+            p.cubicTo(15.37f, 17.98f, 14.11f, 18.38f, 12.01f, 18.38f)
+            p.cubicTo(8.66f, 18.38f, 5.82f, 16.11f, 4.81f, 13.06f)
+            p.lineTo(1.23f, 13.06f)
+            p.lineTo(1.23f, 15.83f)
+            p.cubicTo(3.21f, 19.68f, 7.31f, 23f, 12f, 23f)
+            drawPath(p, Color(0xFF34A853))
 
-            // Yellow segment (Left)
-            val yellowPath = Path().apply {
-                moveTo(center.x, center.y)
-                arcTo(androidx.compose.ui.geometry.Rect(center.x - radius, center.y - radius, center.x + radius, center.y + radius), 135f, 90f, false)
-                close()
-            }
-            drawPath(yellowPath, Color(0xFFFBBC05))
+            // Yellow
+            p.reset()
+            p.moveTo(4.8f, 13.06f)
+            p.cubicTo(4.54f, 12.29f, 4.4f, 11.46f, 4.4f, 10.6f)
+            p.cubicTo(4.4f, 9.74f, 4.54f, 8.91f, 4.8f, 8.14f)
+            p.lineTo(4.8f, 5.37f)
+            p.lineTo(1.23f, 5.37f)
+            p.cubicTo(0.44f, 6.95f, 0f, 8.72f, 0f, 10.6f)
+            p.cubicTo(0f, 12.48f, 0.44f, 14.25f, 1.23f, 15.83f)
+            p.lineTo(4.8f, 13.06f)
+            drawPath(p, Color(0xFFFBBC05))
 
-            // Green segment (Bottom)
-            val greenPath = Path().apply {
-                moveTo(center.x, center.y)
-                arcTo(androidx.compose.ui.geometry.Rect(center.x - radius, center.y - radius, center.x + radius, center.y + radius), 45f, 90f, false)
-                close()
-            }
-            drawPath(greenPath, Color(0xFF34A853))
-
-            // Blue segment (Right)
-            val bluePath = Path().apply {
-                moveTo(center.x, center.y)
-                arcTo(androidx.compose.ui.geometry.Rect(center.x - radius, center.y - radius, center.x + radius, center.y + radius), -45f, 90f, false)
-                close()
-            }
-            drawPath(bluePath, Color(0xFF4285F4))
-
-            // White center circle to make it a ring
-            drawCircle(Color.White, radius * 0.65f)
-
-            // The 'G' horizontal bar (Blue)
-            drawRect(
-                color = Color(0xFF4285F4),
-                topLeft = androidx.compose.ui.geometry.Offset(center.x, center.y - (radius * 0.15f)),
-                size = androidx.compose.ui.geometry.Size(radius, radius * 0.3f)
-            )
-            
-            // Masking red segment with white to create the G gap
-            val gapPath = Path().apply {
-                moveTo(center.x, center.y)
-                arcTo(androidx.compose.ui.geometry.Rect(center.x - radius, center.y - radius, center.x + radius, center.y + radius), -45f, 30f, false)
-                close()
-            }
-            drawPath(gapPath, Color.White)
+            // Red
+            p.reset()
+            p.moveTo(12f, 4.61f)
+            p.cubicTo(13.76f, 4.61f, 15.34f, 5.21f, 16.58f, 6.4f)
+            p.lineTo(20.01f, 2.97f)
+            p.cubicTo(17.95f, 1.08f, 15.24f, 0f, 12f, 0f)
+            p.cubicTo(7.31f, 0f, 3.21f, 3.32f, 1.23f, 7.83f)
+            p.lineTo(4.8f, 10.6f)
+            p.cubicTo(5.81f, 7.55f, 8.65f, 5.28f, 12f, 5.28f)
+            drawPath(p, Color(0xFFEA4335))
         }
     }
 }

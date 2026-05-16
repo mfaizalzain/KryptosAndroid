@@ -98,7 +98,10 @@ fun KryptosNavGraph(unlocked: MutableState<Boolean>) {
                 id = id,
                 viewModel = vm,
                 savedStateHandle = entry.savedStateHandle,
-                onDone = { nav.popBackStack() },
+                onDone = { 
+                    android.util.Log.e("NavGraph", "onDone called for EDIT. Popping backstack.")
+                    nav.popBackStack() 
+                },
                 onScan = { template -> nav.navigate(Routes.scan(template)) },
                 onQrScan = { nav.navigate(Routes.QR_SCAN) },
                 onNfcScan = { template, prefillJson ->

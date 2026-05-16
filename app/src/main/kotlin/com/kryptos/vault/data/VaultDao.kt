@@ -16,6 +16,9 @@ interface VaultDao {
     @Query("SELECT * FROM vault_entries WHERE id = :id")
     suspend fun getById(id: Long): VaultEntry?
 
+    @Query("SELECT COUNT(*) FROM vault_entries")
+    suspend fun count(): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entry: VaultEntry): Long
 

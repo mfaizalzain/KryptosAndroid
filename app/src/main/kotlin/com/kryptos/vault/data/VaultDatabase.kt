@@ -13,7 +13,7 @@ abstract class VaultDatabase : androidx.room.RoomDatabase() {
 
     companion object {
         fun build(context: Context, userId: String? = null): VaultDatabase {
-            val passphrase = KeyManager.getDatabasePassphrase(context)
+            val passphrase = KeyManager.getDatabasePassphrase(context, userId)
             val factory = SupportOpenHelperFactory(passphrase)
             val sanitizedId = userId?.replace(Regex("[^a-zA-Z0-9]"), "_")
             val dbName = if (sanitizedId == null) "kryptos.db" else "kryptos_$sanitizedId.db"

@@ -1,5 +1,9 @@
 package com.kryptos.vault.ui.list
 
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,10 +27,10 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Article
-import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
@@ -346,24 +350,65 @@ private fun EmptyState(message: String, modifier: Modifier = Modifier) {
 
 @Composable
 private fun HeroCardTile(entry: VaultEntry, onClick: () -> Unit) {
-    val fields = remember(entry.fieldsJson) {
-        runCatching { FieldsCodec.decode(entry.fieldsJson) }.getOrDefault(emptyList())
-    }
+    val attachment = entry.attachment
+    val isScannedTemplate = entry.template in setOf(
+        Template.ID_CARD,
+        Template.PAYMENT_CARD,
+        Template.DRIVERS_LICENSE
+    )
+
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(24.dp),
         shadowElevation = 2.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
-        HeroCard(
-            template = entry.template,
-            title = entry.title.ifBlank { "Untitled Entry" },
-            fields = fields,
-            attachment = entry.attachment,
-            onCopy = { _, _ -> },
-            interactive = false,
-        )
+        if (attachment != null && isScannedTemplate) {
+            val bitmap = remember(attachment) {
+                BitmapFactory.decodeByteArray(attachment, 0, attachment.size)
+            }
+            if (bitmap != null) {
+                Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = entry.title,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.5f),
+                        modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth()
+                    ) {
+                        Text(
+                            text = entry.title,
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
+                }
+            } else {
+                DefaultHeroCard(entry)
+            }
+        } else {
+            DefaultHeroCard(entry)
+        }
     }
+}
+
+@Composable
+private fun DefaultHeroCard(entry: VaultEntry) {
+    val fields = remember(entry.fieldsJson) {
+        runCatching { FieldsCodec.decode(entry.fieldsJson) }.getOrDefault(emptyList())
+    }
+    HeroCard(
+        template = entry.template,
+        title = entry.title.ifBlank { "Untitled Entry" },
+        fields = fields,
+        attachment = entry.attachment,
+        onCopy = { _, _ -> },
+        interactive = false,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -444,10 +489,10 @@ private fun iconFor(t: Template): ImageVector = when (t) {
     Template.ID_CARD -> Icons.Filled.Badge
     Template.PASSPORT -> Icons.Filled.Flight
     Template.DRIVERS_LICENSE -> Icons.Filled.DirectionsCar
-    Template.BIRTH_CERTIFICATE -> Icons.Filled.Article
+    Template.BIRTH_CERTIFICATE -> Icons.AutoMirrored.Filled.Article
     Template.PAYMENT_CARD -> Icons.Filled.CreditCard
     Template.BANK_ACCOUNT -> Icons.Filled.Savings
-    Template.TAX_NUMBER -> Icons.Filled.Assignment
+    Template.TAX_NUMBER -> Icons.AutoMirrored.Filled.Assignment
     Template.API_KEY -> Icons.Filled.Key
     Template.NOTE -> Icons.Filled.Description
     Template.QR_CODE -> Icons.Filled.QrCode

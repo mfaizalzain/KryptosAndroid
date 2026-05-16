@@ -61,15 +61,24 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
     LaunchedEffect(account?.id) {
         val id = account?.id ?: return@LaunchedEffect
         if (backup.getLastBackupAtMillis(id) == 0L) {
-            // Try to sync from Drive once if we have no local date
+            android.util.Log.d("AccountSheet", "Checking Drive for existing backup for user: $id")
             val activity = ctx.findActivity() ?: return@LaunchedEffect
+            val scopes = listOf(
+                DriveBackupManager.DRIVE_APPDATA_SCOPE,
+                DriveBackupManager.DRIVE_FILE_SCOPE,
+            )
+            
             val request = AuthorizationRequest.builder()
-                .setRequestedScopes(listOf(Scope(DriveBackupManager.DRIVE_APPDATA_SCOPE)))
+                .setRequestedScopes(scopes.map { Scope(it) })
                 .build()
             try {
-                val authResult = Identity.getAuthorizationClient(activity).authorize(request).await()
-                authResult.accessToken?.let { token ->
-                    backup.refreshLastBackupDate(token, id)
+                val authResult = withTimeout(5000) {
+                    Identity.getAuthorizationClient(activity).authorize(request).await()
+                }
+                if (!authResult.hasResolution()) {
+                    authResult.accessToken?.let { token ->
+                        backup.refreshLastBackupDate(token, id)
+                    }
                 }
             } catch (e: Exception) {
                 android.util.Log.w("AccountSheet", "Silent backup sync failed: ${e.message}")
@@ -117,10 +126,14 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
         feedback = null
         pendingAction = action
 
-        val scopeStrings = if (action == BackupAction.BACKUP_OWN) {
-            listOf(DriveBackupManager.DRIVE_FILE_SCOPE)
-        } else {
-            listOf(DriveBackupManager.DRIVE_APPDATA_SCOPE)
+        val scopeStrings = when (action) {
+            BackupAction.BACKUP -> listOf(DriveBackupManager.DRIVE_APPDATA_SCOPE)
+            BackupAction.BACKUP_OWN -> listOf(DriveBackupManager.DRIVE_FILE_SCOPE)
+            BackupAction.REFRESH,
+            BackupAction.RESTORE -> listOf(
+                DriveBackupManager.DRIVE_APPDATA_SCOPE,
+                DriveBackupManager.DRIVE_FILE_SCOPE,
+            )
         }
         
         val request = AuthorizationRequest.builder()
@@ -343,7 +356,7 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
             // --- Cloud backup ---
             Section("Cloud backup") {
                 Text(
-                    "Backs up the encrypted vault file to your private Google Drive AppData.",
+                    "Backups include your encrypted documents and the unique key needed to unlock them.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -353,12 +366,34 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        if (last == 0L) "No backup yet."
-                        else "Last backup: ${DateFormat.getDateTimeInstance().format(Date(last))}",
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(12.dp)
-                    )
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                if (last == 0L) "No local backup date found."
+                                else "Last known backup: ${DateFormat.getDateTimeInstance().format(Date(last))}",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            if (last == 0L) {
+                                Text(
+                                    "Check your Google Drive for existing data.",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        if (last == 0L && current != null) {
+                            TextButton(
+                                onClick = { runDriveFlow(BackupAction.REFRESH) },
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
+                                Text("Check Drive", style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
+                    }
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -505,7 +540,7 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
     }
 }
 
-private enum class BackupAction { BACKUP, RESTORE, BACKUP_OWN }
+private enum class BackupAction { REFRESH, BACKUP, RESTORE, BACKUP_OWN }
 
 private fun runDriveAction(
     scope: kotlinx.coroutines.CoroutineScope,
@@ -520,6 +555,10 @@ private fun runDriveAction(
     scope.launch {
         try {
             when (action) {
+                BackupAction.REFRESH -> {
+                    backup.refreshLastBackupDate(accessToken, userId)
+                    onFeedback(null)
+                }
                 BackupAction.BACKUP -> {
                     backup.backup(accessToken, userId)
                     onFeedback("Backup complete.")
@@ -529,15 +568,21 @@ private fun runDriveAction(
                     onFeedback("Backup to My Drive complete.")
                 }
                 BackupAction.RESTORE -> {
+                    onWorking("Restoring vault...")
                     app.closeDatabase()
-                    val ok = backup.restore(accessToken, userId)
-                    onFeedback(
-                        if (ok) "Restore complete. Restarting in 1 second…"
-                        else "No backup found in Drive."
-                    )
+                    val ok = try {
+                        backup.restore(accessToken, userId)
+                    } catch (e: Exception) {
+                        android.util.Log.e("AccountSheet", "Restore failed", e)
+                        onFeedback("Restore failed: ${e.localizedMessage}")
+                        false
+                    }
                     if (ok) {
-                        kotlinx.coroutines.delay(1000)
+                        onFeedback("Restore successful. Restarting app…")
+                        kotlinx.coroutines.delay(1500)
                         android.os.Process.killProcess(android.os.Process.myPid())
+                    } else {
+                        onFeedback("No backup found in Drive.")
                     }
                 }
             }
