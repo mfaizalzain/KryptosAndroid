@@ -33,9 +33,15 @@ class DriveBackupManager(private val context: Context) {
         )
     }
 
-    var lastBackupAtMillis: Long
-        get() = prefs.getLong(KEY_LAST_BACKUP, 0L)
-        private set(value) = prefs.edit().putLong(KEY_LAST_BACKUP, value).apply()
+    fun getLastBackupAtMillis(userId: String?): Long {
+        val key = if (userId == null) KEY_LAST_BACKUP else "${KEY_LAST_BACKUP}_$userId"
+        return prefs.getLong(key, 0L)
+    }
+
+    private fun setLastBackupAtMillis(userId: String?, value: Long) {
+        val key = if (userId == null) KEY_LAST_BACKUP else "${KEY_LAST_BACKUP}_$userId"
+        prefs.edit().putLong(key, value).apply()
+    }
 
     private fun getDbFile(userId: String?): File {
         val sanitizedId = userId?.replace(Regex("[^a-zA-Z0-9]"), "_")
@@ -53,6 +59,13 @@ class DriveBackupManager(private val context: Context) {
         if (arr.length() == 0) null else {
             val o = arr.getJSONObject(0)
             BackupInfo(o.getString("id"), parseIso(o.optString("modifiedTime", "")))
+        }
+    }
+
+    suspend fun refreshLastBackupDate(accessToken: String, userId: String?) = withContext(Dispatchers.IO) {
+        val existing = findExisting(accessToken, BACKUP_NAME)
+        if (existing != null) {
+            setLastBackupAtMillis(userId, existing.modifiedAtMillis)
         }
     }
 
@@ -91,7 +104,7 @@ class DriveBackupManager(private val context: Context) {
             createBytes(accessToken, KEY_NAME, keyJson, "application/json", "appDataFolder")
         }
 
-        lastBackupAtMillis = System.currentTimeMillis()
+        setLastBackupAtMillis(userId, System.currentTimeMillis())
         android.util.Log.i("DriveBackup", "Backup success.")
         fileId
     }
@@ -119,7 +132,7 @@ class DriveBackupManager(private val context: Context) {
             createBytes(accessToken, BACKUP_NAME, dbFile.readBytes(), "application/octet-stream", folderId)
         }
 
-        lastBackupAtMillis = System.currentTimeMillis()
+        setLastBackupAtMillis(userId, System.currentTimeMillis())
         fileId
     }
 

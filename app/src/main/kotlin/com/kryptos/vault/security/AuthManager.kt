@@ -12,6 +12,10 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.fmz.kryptos.R
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
 /**
  * Google Sign-In via Credential Manager. The ID token is persisted in an encrypted prefs file
  * (Android Keystore-backed) and is later usable to authorise Drive AppData backups.
@@ -21,6 +25,9 @@ class AuthManager(private val context: Context) {
 
     @Keep
     data class Account(val id: String, val email: String?, val displayName: String?, val photoUrl: String?)
+
+    private val _currentAccount = MutableStateFlow<Account?>(null)
+    val accountFlow: StateFlow<Account?> = _currentAccount.asStateFlow()
 
     private val prefs by lazy {
         val masterKey = MasterKey.Builder(context)
@@ -35,16 +42,21 @@ class AuthManager(private val context: Context) {
         )
     }
 
-    val currentAccount: Account?
-        get() {
-            val id = prefs.getString(KEY_ID, null) ?: return null
-            return Account(
+    init {
+        // Initialize flow from disk on creation
+        val id = prefs.getString(KEY_ID, null)
+        if (id != null) {
+            _currentAccount.value = Account(
                 id = id,
                 email = prefs.getString(KEY_EMAIL, null),
                 displayName = prefs.getString(KEY_NAME, null),
                 photoUrl = prefs.getString(KEY_PHOTO, null),
             )
         }
+    }
+
+    val currentAccount: Account?
+        get() = accountFlow.value
 
     suspend fun signIn(activityContext: Context): Result<Account> {
         val manager = CredentialManager.create(activityContext)
@@ -106,6 +118,7 @@ class AuthManager(private val context: Context) {
                         .putString(KEY_PHOTO, account.photoUrl)
                         .putString(KEY_TOKEN, gid.idToken)
                         .commit()
+                    _currentAccount.value = account
                     return Result.success(account)
                 }
             } catch (e: NoCredentialException) {
@@ -128,6 +141,7 @@ class AuthManager(private val context: Context) {
 
     suspend fun signOut() {
         prefs.edit().clear().apply()
+        _currentAccount.value = null
         runCatching {
             CredentialManager.create(context).clearCredentialState(
                 androidx.credentials.ClearCredentialStateRequest()

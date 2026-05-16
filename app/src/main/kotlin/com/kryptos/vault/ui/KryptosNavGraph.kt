@@ -1,14 +1,14 @@
 package com.kryptos.vault.ui
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.kryptos.vault.KryptosApp
 import com.kryptos.vault.data.Template
 import com.kryptos.vault.ui.detail.EntryDetailScreen
 import com.kryptos.vault.ui.edit.EntryEditScreen
@@ -39,7 +39,13 @@ private object Routes {
 @Composable
 fun KryptosNavGraph(unlocked: MutableState<Boolean>) {
     val nav = rememberNavController()
-    val vm: VaultViewModel = viewModel(factory = remember { VaultViewModel.Factory })
+    val app = LocalContext.current.applicationContext as KryptosApp
+    val account by app.authManager.accountFlow.collectAsState()
+
+    val vm: VaultViewModel = viewModel(
+        key = account?.id,
+        factory = VaultViewModel.Factory
+    )
 
     NavHost(navController = nav, startDestination = if (unlocked.value) Routes.LIST else Routes.LOCK) {
         composable(Routes.LOCK) {

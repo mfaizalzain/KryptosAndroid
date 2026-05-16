@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -56,6 +57,25 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
     var confirmRestore by remember { mutableStateOf(false) }
     
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+
+    LaunchedEffect(account?.id) {
+        val id = account?.id ?: return@LaunchedEffect
+        if (backup.getLastBackupAtMillis(id) == 0L) {
+            // Try to sync from Drive once if we have no local date
+            val activity = ctx.findActivity() ?: return@LaunchedEffect
+            val request = AuthorizationRequest.builder()
+                .setRequestedScopes(listOf(Scope(DriveBackupManager.DRIVE_APPDATA_SCOPE)))
+                .build()
+            try {
+                val authResult = Identity.getAuthorizationClient(activity).authorize(request).await()
+                authResult.accessToken?.let { token ->
+                    backup.refreshLastBackupDate(token, id)
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("AccountSheet", "Silent backup sync failed: ${e.message}")
+            }
+        }
+    }
 
     LaunchedEffect(Unit) { account = auth.currentAccount }
 
@@ -254,7 +274,7 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                                 color = MaterialTheme.colorScheme.primary
                             )
                         } else {
-                            Icon(Icons.Filled.Logout, contentDescription = null)
+                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
                         }
                         Spacer(Modifier.width(12.dp))
                         Text(if (working == "Signing out…") "Signing out…" else "Sign out")
@@ -327,7 +347,7 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                val last = backup.lastBackupAtMillis
+                val last = backup.getLastBackupAtMillis(account?.id)
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),

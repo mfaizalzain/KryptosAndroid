@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -179,7 +180,7 @@ fun EntryEditScreen(
             TopAppBar(
                 title = { Text(if (id == 0L) "New entry" else "Edit entry") },
                 navigationIcon = {
-                    IconButton(onClick = onDone) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onDone) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                 },
             )
         },
@@ -611,8 +612,11 @@ private val FieldsListSaver: Saver<SnapshotStateList<Pair<String, String>>, Any>
         restore = { flat ->
             val list = mutableStateListOf<Pair<String, String>>()
             var i = 0
-            while (i + 1 < flat.size) {
-                list.add(flat[i].toString() to flat[i + 1].toString())
+            val flatList = flat as List<*>
+            while (i + 1 < flatList.size) {
+                val first = flatList[i] as? String ?: ""
+                val second = flatList[i + 1] as? String ?: ""
+                list.add(first to second)
                 i += 2
             }
             list
