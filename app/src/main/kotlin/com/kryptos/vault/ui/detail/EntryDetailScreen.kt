@@ -40,7 +40,6 @@ import com.kryptos.vault.data.VaultEntry
 import com.kryptos.vault.security.SecureClipboard
 import com.kryptos.vault.ui.VaultViewModel
 import com.kryptos.vault.ui.cards.HeroCard
-import com.kryptos.vault.ui.cards.heroFieldKeys
 import com.kryptos.vault.ui.scan.QrGenerator
 import com.kryptos.vault.ui.scan.QrSharer
 import org.json.JSONObject
@@ -149,9 +148,8 @@ fun EntryDetailScreen(
         }
 
         val allFields = remember(current.fieldsJson) { FieldsCodec.decode(current.fieldsJson) }
-        val heroKeys = remember(current.template) { heroFieldKeys(current.template) }
-        val extraFields = remember(allFields, heroKeys) {
-            allFields.filter { it.first.lowercase() !in heroKeys && it.second.isNotBlank() }
+        val detailFields = remember(allFields) {
+            allFields.filter { it.second.isNotBlank() }
         }
 
         LazyColumn(
@@ -221,7 +219,7 @@ fun EntryDetailScreen(
                 }
             }
 
-            if (extraFields.isNotEmpty()) {
+            if (detailFields.isNotEmpty()) {
                 item {
                     Text(
                         text = "DETAILS",
@@ -232,8 +230,8 @@ fun EntryDetailScreen(
                 }
             }
 
-            items(extraFields.size) { i ->
-                val (name, value) = extraFields[i]
+            items(detailFields.size) { i ->
+                val (name, value) = detailFields[i]
                 val isSecret = looksSecret(name)
                 val show = !isSecret || (revealed[i] == true)
                 FieldCard(
