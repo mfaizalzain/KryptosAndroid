@@ -69,6 +69,7 @@ fun KryptosNavGraph(unlocked: MutableState<Boolean>) {
                 viewModel = vm,
                 onOpen = { nav.navigate(Routes.detail(it)) },
                 onAdd = { nav.navigate(Routes.edit(0)) },
+                onQrScan = { nav.navigate(Routes.QR_SCAN) },
                 onSignOut = {
                     unlocked.value = false
                     nav.navigate(Routes.LOCK) {

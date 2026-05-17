@@ -92,6 +92,7 @@ fun VaultListScreen(
     viewModel: VaultViewModel,
     onOpen: (Long) -> Unit,
     onAdd: () -> Unit,
+    onQrScan: () -> Unit,
     onSignOut: () -> Unit,
 ) {
     val entries by viewModel.entries.collectAsState()
@@ -149,6 +150,9 @@ fun VaultListScreen(
                     )
                 },
                 actions = {
+                    IconButton(onClick = { if (reachedLimit) showAccount = true else onQrScan() }) {
+                        Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan QR")
+                    }
                     IconButton(
                         onClick = { showAccount = true },
                         modifier = Modifier
