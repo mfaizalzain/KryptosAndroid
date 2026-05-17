@@ -14,8 +14,7 @@ fun Template.shareId(): String = when (this) {
 }
 
 fun templateFromShareId(value: String): Template? {
-    val normalized = value.trim()
-    return when (normalized) {
+    return when (value) {
         "idCard", "ID_CARD" -> Template.ID_CARD
         "passport", "PASSPORT" -> Template.PASSPORT
         "driversLicense", "DRIVERS_LICENSE" -> Template.DRIVERS_LICENSE

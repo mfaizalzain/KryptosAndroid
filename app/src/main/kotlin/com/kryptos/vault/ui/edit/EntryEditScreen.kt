@@ -90,7 +90,7 @@ fun EntryEditScreen(
         if (title.isBlank()) {
             titleError = true
             scope.launch {
-                val titleIndex = if (supportsCameraScan(template) || supportsNfcScan(template) || template == Template.QR_CODE) 3 else 2
+                val titleIndex = if (supportsImportPanel(template)) 3 else 2
                 listState.animateScrollToItem(titleIndex)
                 titleFocusRequester.requestFocus()
                 snackbarHostState.showSnackbar("Please enter a title.")
@@ -321,7 +321,7 @@ fun EntryEditScreen(
                 }
             }
 
-            if (supportsCameraScan(template) || supportsNfcScan(template) || template == Template.QR_CODE) {
+            if (supportsImportPanel(template)) {
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -344,6 +344,8 @@ fun EntryEditScreen(
                                     Template.PASSPORT -> "Scan the photo page with your camera, or read the chip over NFC for the most accurate result."
                                     Template.PAYMENT_CARD -> "Scan the card with your camera, or use NFC to securely read the card number and expiry directly from the chip. Note: Camera scan works best for embossed cards; for modern flat cards, use NFC scan instead."
                                     Template.QR_CODE -> "Scan an existing QR code to import its content and use this entry as a duplicator."
+                                    Template.API_KEY,
+                                    Template.NOTE -> "Scan a shared Kryptos entry from another device to fill this ${prettyTemplate(template).lowercase()}."
                                     else -> "Use your camera to scan the document for auto-fill, or scan a shared Kryptos entry from another device."
                                 },
                                 style = MaterialTheme.typography.bodySmall,
@@ -667,6 +669,9 @@ private fun supportsCameraScan(t: Template): Boolean = when (t) {
 }
 
 private fun supportsNfcScan(t: Template): Boolean = t == Template.PASSPORT || t == Template.PAYMENT_CARD
+
+private fun supportsImportPanel(t: Template): Boolean =
+    supportsCameraScan(t) || supportsNfcScan(t) || t == Template.API_KEY || t == Template.NOTE || t == Template.QR_CODE
 
 private fun prettyTemplate(t: Template): String = when (t) {
     Template.ID_CARD -> "ID card"

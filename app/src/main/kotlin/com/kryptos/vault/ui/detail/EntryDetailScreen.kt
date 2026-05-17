@@ -61,6 +61,11 @@ fun EntryDetailScreen(
 
     fun sharePayload(current: VaultEntry): String {
         val allFields = FieldsCodec.decode(current.fieldsJson)
+        if (current.template == Template.QR_CODE) {
+            return allFields.firstOrNull { it.first.equals("Content", ignoreCase = true) || it.first.equals("Data", ignoreCase = true) }?.second
+                ?: allFields.firstOrNull()?.second
+                ?: ""
+        }
         return JSONObject().apply {
             put("kryptos", 1)
             put("template", current.template.shareId())
