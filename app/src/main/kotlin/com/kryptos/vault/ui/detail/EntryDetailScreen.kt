@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -268,7 +269,9 @@ private fun QrCodeDialog(data: String, title: String, onDismiss: () -> Unit) {
         Card(
             shape = RoundedCornerShape(28.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier.size(360.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 360.dp)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
