@@ -17,10 +17,11 @@ Alternates:
 
 ## Short description (max 80 chars)
 
-**Encrypted vault for your passports, IDs, cards & notes. Zero-knowledge. Yours.**
-*(79 chars)*
+**Encrypted vault for IDs, cards & notes. Share by QR. Yours.**
+*(63 chars)*
 
 Alternates:
+- `Private vault for IDs, cards & notes. Share entries by QR.` (61)
 - `Zero-knowledge vault for IDs, passports, cards & notes. Encrypted on-device.` (76)
 - `Your private vault for documents, cards & notes. AES-256, biometric, offline.` (77)
 
@@ -29,7 +30,7 @@ Alternates:
 ## Full description (max 4000 chars)
 
 ```
-Kryptos is a zero-knowledge personal vault for your most sensitive documents — passports, ID cards, driver's licences, payment cards, API keys, and private notes. Everything is encrypted on your device with AES-256. We never see your data, and we can't.
+Kryptos is a zero-knowledge personal vault for your most sensitive documents — passports, ID cards, driver's licences, payment cards, API keys, and private notes. Everything is encrypted on your device with AES-256. You can share entries with another Kryptos user by QR when you choose to. We never see your data, and we can't.
 
 ▸ ZERO-KNOWLEDGE BY DESIGN
 Your vault is stored in a SQLCipher (AES-256) database. The encryption key lives in the Android Keystore — hardware-backed on supported devices — and is gated behind your biometric. There is no Kryptos server that holds your secrets. Even cloud backup uploads only opaque, encrypted bytes.
@@ -42,6 +43,9 @@ Read electronic passports (ICAO 9303 ePassport via JMRTD) and contactless EMV pa
 
 ▸ BEAUTIFUL HERO CARDS
 Each document type gets its own purpose-built, high-fidelity card UI — passports, driver's licences, credit cards, IDs, notes, API keys, tax numbers.
+
+▸ PRIVATE ENTRY SHARING
+Need to send an entry to someone else using Kryptos? Show a share QR code and they can scan it into their own vault with the correct category and fields filled in. It works across Android and iOS, without a Kryptos server in the middle.
 
 ▸ EXPIRY REMINDERS
 Get notified before your passport, ID, or card expires. Scheduled offline via WorkManager — no cloud dependency.
@@ -97,6 +101,7 @@ Welcome to Kryptos!
 
 • Zero-knowledge vault with SQLCipher AES-256 encryption
 • OCR scanning for passports, IDs, driver's licences (Malaysian + international)
+• Share entries by QR with category + fields included
 • NFC reading for ePassports and EMV cards
 • Biometric unlock & expiry reminders
 • Encrypted backup to your own Google Drive

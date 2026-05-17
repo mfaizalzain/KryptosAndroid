@@ -39,6 +39,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.kryptos.vault.data.FieldsCodec
 import com.kryptos.vault.data.Template
 import com.kryptos.vault.data.VaultEntry
+import com.kryptos.vault.data.templateFromShareId
 import com.kryptos.vault.ui.VaultViewModel
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -187,18 +188,51 @@ fun EntryEditScreen(
                 else fields.add(key to sanitizedValue)
             }
         } else if (!rawText.isNullOrBlank()) {
-            val qrParsed = runCatching {
+            val sharedEntry = runCatching {
                 val json = JSONObject(rawText)
+                val isSharedPayload = json.optInt("kryptos") == 1 || json.optString("type") == "kryptos_entry"
+                if (!isSharedPayload) return@runCatching null
+                val sharedTemplate = templateFromShareId(json.optString("template")) ?: return@runCatching null
+                val sharedFields = json.optJSONObject("fields") ?: return@runCatching null
                 val map = mutableListOf<Pair<String, String>>()
-                val keys = json.keys()
+                val keys = sharedFields.keys()
                 while (keys.hasNext()) {
                     val key = keys.next()
-                    map.add(key to json.get(key).toString())
+                    map.add(key to sharedFields.get(key).toString())
                 }
-                map
+                Triple(sharedTemplate, json.optString("title"), map)
             }.getOrNull()
 
-            if (qrParsed != null) {
+            val qrParsed = if (sharedEntry == null) {
+                runCatching {
+                    val json = JSONObject(rawText)
+                    val map = mutableListOf<Pair<String, String>>()
+                    val keys = json.keys()
+                    while (keys.hasNext()) {
+                        val key = keys.next()
+                        map.add(key to json.get(key).toString())
+                    }
+                    map
+                }.getOrNull()
+            } else {
+                null
+            }
+
+            if (sharedEntry != null) {
+                val (sharedTemplate, sharedTitle, sharedFields) = sharedEntry
+                template = sharedTemplate
+                if (sharedTitle.isNotBlank()) title = sharedTitle
+                fields.clear()
+                defaultFieldsFor(sharedTemplate).forEach { fields.add(it to "") }
+                sharedFields.forEach { (key, value) ->
+                    val isExpiry = sharedTemplate == Template.PAYMENT_CARD && (key.contains("expiry", ignoreCase = true) || key.contains("expires", ignoreCase = true))
+                    val sanitizedValue = if (isExpiry) value.filter { it.isDigit() }.take(4) else value
+
+                    val idx = fields.indexOfFirst { it.first.equals(key, ignoreCase = true) }
+                    if (idx >= 0) fields[idx] = fields[idx].first to sanitizedValue
+                    else fields.add(key to sanitizedValue)
+                }
+            } else if (qrParsed != null) {
                 qrParsed.forEach { (key, value) ->
                     val idx = fields.indexOfFirst { it.first.equals(key, ignoreCase = true) }
                     if (idx >= 0) fields[idx] = fields[idx].first to value
@@ -301,7 +335,7 @@ fun EntryEditScreen(
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             Text(
-                                if (template == Template.QR_CODE) "Import QR data" else "Fill from ${prettyTemplate(template).lowercase()}",
+                                if (template == Template.QR_CODE) "Import QR data" else "Fill or import ${prettyTemplate(template).lowercase()}",
                                 style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
@@ -310,7 +344,7 @@ fun EntryEditScreen(
                                     Template.PASSPORT -> "Scan the photo page with your camera, or read the chip over NFC for the most accurate result."
                                     Template.PAYMENT_CARD -> "Scan the card with your camera, or use NFC to securely read the card number and expiry directly from the chip. Note: Camera scan works best for embossed cards; for modern flat cards, use NFC scan instead."
                                     Template.QR_CODE -> "Scan an existing QR code to import its content and use this entry as a duplicator."
-                                    else -> "Use your camera to scan the document for auto-fill, or scan a QR code to quickly import data."
+                                    else -> "Use your camera to scan the document for auto-fill, or scan a shared Kryptos entry from another device."
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -363,7 +397,7 @@ fun EntryEditScreen(
                                         modifier = Modifier.size(18.dp),
                                     )
                                     Spacer(Modifier.width(8.dp))
-                                    Text("Scan QR")
+                                    Text(if (template == Template.QR_CODE) "Scan QR code" else "Scan shared entry")
                                 }
                             }
                         }

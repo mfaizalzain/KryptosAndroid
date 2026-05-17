@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.kryptos.vault.data.FieldsCodec
 import com.kryptos.vault.data.Template
+import com.kryptos.vault.data.shareId
 import com.kryptos.vault.data.VaultEntry
 import com.kryptos.vault.security.SecureClipboard
 import com.kryptos.vault.ui.VaultViewModel
@@ -58,6 +59,18 @@ fun EntryDetailScreen(
     var confirmDelete by remember { mutableStateOf(false) }
     var qrData by remember { mutableStateOf<String?>(null) }
 
+    fun sharePayload(current: VaultEntry): String {
+        val allFields = FieldsCodec.decode(current.fieldsJson)
+        return JSONObject().apply {
+            put("kryptos", 1)
+            put("template", current.template.shareId())
+            put("title", current.title)
+            put("fields", JSONObject().apply {
+                allFields.forEach { put(it.first, it.second) }
+            })
+        }.toString()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -81,18 +94,9 @@ fun EntryDetailScreen(
                 actions = {
                     IconButton(onClick = {
                         val current = entry ?: return@IconButton
-                        val allFields = FieldsCodec.decode(current.fieldsJson)
-                        if (current.template == Template.QR_CODE) {
-                            qrData = allFields.firstOrNull { it.first.equals("Content", ignoreCase = true) || it.first.equals("Data", ignoreCase = true) }?.second
-                                ?: allFields.firstOrNull()?.second
-                        } else {
-                            val json = JSONObject().apply {
-                                allFields.forEach { put(it.first, it.second) }
-                            }
-                            qrData = json.toString()
-                        }
+                        qrData = sharePayload(current)
                     }) {
-                        Icon(Icons.Default.QrCode, contentDescription = "Share as QR")
+                        Icon(Icons.Default.QrCode, contentDescription = "Share entry")
                     }
                     IconButton(onClick = onEdit) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit")
@@ -164,8 +168,20 @@ fun EntryDetailScreen(
                         fields = allFields,
                         attachment = current.attachment,
                         onCopy = { label, value -> SecureClipboard.copy(ctx, label, value) },
-                        onShare = { data, _ -> qrData = data }
+                        onShare = { _, _ -> qrData = sharePayload(current) }
                     )
+                }
+            }
+
+            item {
+                Button(
+                    onClick = { qrData = sharePayload(current) },
+                    shape = RoundedCornerShape(18.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Share entry")
                 }
             }
 
@@ -255,9 +271,17 @@ private fun QrCodeDialog(data: String, title: String, onDismiss: () -> Unit) {
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Share entry",
+                    text = "Share with another Kryptos user",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "They can scan this QR code in Kryptos to import the entry.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(16.dp))
                 Image(
@@ -273,7 +297,7 @@ private fun QrCodeDialog(data: String, title: String, onDismiss: () -> Unit) {
                 ) {
                     Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Share QR Code")
+                    Text("Share QR image")
                 }
                 TextButton(onClick = onDismiss) {
                     Text("Close")
