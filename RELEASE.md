@@ -8,13 +8,13 @@ Everything needed to build, sign, and ship a Kryptos release to Google Play.
 
 | | |
 |---|---|
-| **Version name** | 1.0.8 |
-| **Version code** | 9 |
+| **Version name** | 1.1.1 |
+| **Version code** | 12 |
 | **Application ID** | `com.fmz.kryptos` |
 | **Min SDK** | 26 (Android 8.0) |
 | **Target SDK** | 35 (Android 15) |
 | **AAB output** | `app/build/outputs/bundle/release/app-release.aab` |
-| **AAB size** | ~35 MB |
+| **AAB size** | ~48 MB |
 | **Signature** | Verified ✓ |
 
 ---
