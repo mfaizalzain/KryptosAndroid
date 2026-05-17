@@ -1241,7 +1241,7 @@ private fun QrCodeHero(
     onShare: ((String, String) -> Unit)? = null,
     interactive: Boolean,
 ) {
-    val data = fields.value("Content").ifBlank { fields.value("Data") }
+    val data = fields.value("Data").ifBlank { fields.value("Content") }
     val bmp = remember(data) { if (data.isNotBlank()) QrGenerator.generate(data) else null }
 
     Surface(

@@ -70,7 +70,7 @@ class VaultViewModel(
             Template.TAX_NUMBER -> listOf("Tax number")
             Template.API_KEY -> listOf("Key")
             Template.NOTE -> emptyList()
-            Template.QR_CODE -> listOf("Content", "Data")
+            Template.QR_CODE -> listOf("Data", "Content")
         }
 
         val identifiers = keys.mapNotNull { k ->

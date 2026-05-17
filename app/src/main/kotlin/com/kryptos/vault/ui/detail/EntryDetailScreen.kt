@@ -61,14 +61,35 @@ fun EntryDetailScreen(
 
     fun sharePayload(current: VaultEntry): String {
         val allFields = FieldsCodec.decode(current.fieldsJson)
+        val shareFields = if (current.template == Template.QR_CODE) {
+            val qrData = allFields
+                .firstOrNull { it.first.equals("Data", ignoreCase = true) || it.first.equals("Content", ignoreCase = true) }
+                ?.second
+                .orEmpty()
+            allFields
+                .filterNot { it.first.equals("Data", ignoreCase = true) || it.first.equals("Content", ignoreCase = true) }
+                .let { fields -> if (qrData.isBlank()) fields else listOf("Data" to qrData) + fields }
+        } else {
+            allFields
+        }
         return JSONObject().apply {
             put("kryptos", 1)
             put("template", current.template.shareId())
             put("title", current.title)
             put("fields", JSONObject().apply {
-                allFields.forEach { put(it.first, it.second) }
+                shareFields.forEach { put(it.first, it.second) }
             })
         }.toString()
+    }
+
+    fun rawQrPayload(current: VaultEntry): String? {
+        if (current.template != Template.QR_CODE) return null
+        val allFields = FieldsCodec.decode(current.fieldsJson)
+        return allFields
+            .firstOrNull { it.first.equals("Data", ignoreCase = true) || it.first.equals("Content", ignoreCase = true) }
+            ?.second
+            ?.takeIf { it.isNotBlank() }
+            ?: allFields.firstOrNull()?.second?.takeIf { it.isNotBlank() }
     }
 
     Scaffold(
@@ -137,6 +158,7 @@ fun EntryDetailScreen(
         qrData?.let { data ->
             QrCodeDialog(
                 data = data,
+                genericData = rawQrPayload(current),
                 title = current.title,
                 onDismiss = { qrData = null }
             )
@@ -254,9 +276,11 @@ fun EntryDetailScreen(
 }
 
 @Composable
-private fun QrCodeDialog(data: String, title: String, onDismiss: () -> Unit) {
+private fun QrCodeDialog(data: String, genericData: String?, title: String, onDismiss: () -> Unit) {
     val ctx = LocalContext.current
-    val bitmap = remember(data) { QrGenerator.generate(data) }
+    var showKryptosPayload by remember(data, genericData) { mutableStateOf(genericData == null) }
+    val displayData = if (showKryptosPayload || genericData == null) data else genericData
+    val bitmap = remember(displayData) { QrGenerator.generate(displayData) }
     
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -272,14 +296,18 @@ private fun QrCodeDialog(data: String, title: String, onDismiss: () -> Unit) {
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Share with another Kryptos user",
+                    text = if (showKryptosPayload) "Share with another Kryptos user" else "Share original QR code",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "They can scan this QR code in Kryptos to import the entry.",
+                    text = if (showKryptosPayload) {
+                        "They can scan this QR code in Kryptos to import the entry."
+                    } else {
+                        "Generic QR scanners will read this as the saved QR content."
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -299,6 +327,11 @@ private fun QrCodeDialog(data: String, title: String, onDismiss: () -> Unit) {
                     Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text("Share QR image")
+                }
+                if (genericData != null) {
+                    TextButton(onClick = { showKryptosPayload = !showKryptosPayload }) {
+                        Text(if (showKryptosPayload) "Show original QR" else "Show Kryptos import QR")
+                    }
                 }
                 TextButton(onClick = onDismiss) {
                     Text("Close")

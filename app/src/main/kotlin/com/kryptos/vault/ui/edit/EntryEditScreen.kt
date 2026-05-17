@@ -239,7 +239,7 @@ fun EntryEditScreen(
                     else fields.add(key to value)
                 }
             } else {
-                val targetField = if (template == Template.QR_CODE) "Content" else "Scanned text"
+                val targetField = if (template == Template.QR_CODE) "Data" else "Scanned text"
                 val idx = fields.indexOfFirst { it.first.equals(targetField, ignoreCase = true) }
                 if (idx >= 0) fields[idx] = fields[idx].first to rawText.trim()
                 else fields.add(targetField to rawText.trim())
@@ -718,5 +718,5 @@ private fun defaultFieldsFor(template: Template): List<String> = when (template)
     Template.TAX_NUMBER -> listOf("Full name", "Tax number", "Country")
     Template.API_KEY -> listOf("Service", "Environment", "Key", "Secret")
     Template.NOTE -> listOf("Content")
-    Template.QR_CODE -> listOf("Content")
+    Template.QR_CODE -> listOf("Data")
 }
