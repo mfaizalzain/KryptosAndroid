@@ -16,17 +16,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Fingerprint
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,7 +45,6 @@ import coil.compose.AsyncImage
 import com.kryptos.vault.KryptosApp
 import com.kryptos.vault.security.AuthManager
 import com.kryptos.vault.security.BiometricAuth
-import com.kryptos.vault.ui.account.AccountSheet
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.Color
@@ -70,8 +65,6 @@ fun LockScreen(onUnlocked: () -> Unit) {
     var account by remember { mutableStateOf<AuthManager.Account?>(auth.currentAccount) }
     var signingIn by remember { mutableStateOf(false) }
     var signInError by remember { mutableStateOf<String?>(null) }
-    var showAccount by remember { mutableStateOf(false) }
-
     fun authenticate() {
         activity?.let {
             BiometricAuth.prompt(
@@ -228,51 +221,8 @@ fun LockScreen(onUnlocked: () -> Unit) {
                         )
                     }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = { showAccount = true },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(52.dp),
-                            shape = RoundedCornerShape(28.dp)
-                        ) {
-                            Icon(Icons.Filled.History, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Restore")
-                        }
-
-                        OutlinedButton(
-                            onClick = {
-                                scope.launch {
-                                    auth.signOut()
-                                    account = null
-                                }
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(52.dp),
-                            shape = RoundedCornerShape(28.dp)
-                        ) {
-                            Icon(Icons.Filled.SwapHoriz, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Switch")
-                        }
-                    }
                 }
             }
-        }
-
-        if (showAccount) {
-            AccountSheet(
-                onDismiss = { showAccount = false },
-                onSignOut = {
-                    account = null
-                    showAccount = false
-                }
-            )
         }
     }
 }

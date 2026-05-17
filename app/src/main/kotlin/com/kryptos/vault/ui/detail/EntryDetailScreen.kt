@@ -4,6 +4,7 @@ import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -24,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -138,7 +140,6 @@ fun EntryDetailScreen(
 
         val allFields = remember(current.fieldsJson) { FieldsCodec.decode(current.fieldsJson) }
         val heroKeys = remember(current.template) { heroFieldKeys(current.template) }
-        val showAttachmentSeparately = current.template !in setOf(Template.ID_CARD, Template.PASSPORT)
         val extraFields = remember(allFields, heroKeys) {
             allFields.filter { it.first.lowercase() !in heroKeys && it.second.isNotBlank() }
         }
@@ -168,6 +169,36 @@ fun EntryDetailScreen(
                 }
             }
 
+            current.attachment?.let { bytes ->
+                item {
+                    Text(
+                        text = "ORIGINAL ATTACHMENT",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 8.dp, start = 4.dp)
+                    )
+                }
+                item {
+                    val bmp = remember(bytes) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }
+                    if (bmp != null) {
+                        Card(
+                            shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+                        ) {
+                            Image(
+                                bitmap = bmp.asImageBitmap(),
+                                contentDescription = "Original attachment",
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(bmp.width.toFloat() / bmp.height.toFloat())
+                                    .clip(RoundedCornerShape(24.dp)),
+                            )
+                        }
+                    }
+                }
+            }
+
             if (extraFields.isNotEmpty()) {
                 item {
                     Text(
@@ -191,34 +222,6 @@ fun EntryDetailScreen(
                     onToggle = { revealed[i] = !(revealed[i] ?: false) },
                     onCopy = { SecureClipboard.copy(ctx, name, value) },
                 )
-            }
-
-            current.attachment?.takeIf { showAttachmentSeparately }?.let { bytes ->
-                item {
-                    Text(
-                        text = "ATTACHMENT",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 8.dp, start = 4.dp)
-                    )
-                }
-                item {
-                    val bmp = remember(bytes) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }
-                    if (bmp != null) {
-                        Card(
-                            shape = RoundedCornerShape(24.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
-                        ) {
-                            Image(
-                                bitmap = bmp.asImageBitmap(),
-                                contentDescription = "Attachment",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(24.dp)),
-                            )
-                        }
-                    }
-                }
             }
 
             item {

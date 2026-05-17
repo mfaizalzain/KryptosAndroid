@@ -90,9 +90,17 @@ fun HeroCard(
     val effectiveCopy: (String, String) -> Unit = if (interactive) onCopy else { _, _ -> }
     when (template) {
         Template.ID_CARD -> IdCardHero(title, fields, attachment, effectiveCopy, interactive)
-        Template.PASSPORT -> PassportHero(title, fields, attachment, effectiveCopy, interactive)
+        Template.PASSPORT -> if (interactive) {
+            PassportHero(title, fields, attachment, effectiveCopy, interactive)
+        } else {
+            CompactPassportHero(title, fields)
+        }
         Template.DRIVERS_LICENSE -> DriversLicenseHero(title, fields, attachment, effectiveCopy, interactive)
-        Template.BIRTH_CERTIFICATE -> BirthCertificateHero(title, fields, attachment)
+        Template.BIRTH_CERTIFICATE -> if (interactive) {
+            BirthCertificateHero(title, fields, attachment)
+        } else {
+            CompactBirthCertificateHero(title, fields)
+        }
         Template.PAYMENT_CARD -> PaymentCardHero(title, fields, effectiveCopy, interactive)
         Template.BANK_ACCOUNT -> BankAccountHero(title, fields, effectiveCopy, interactive)
         Template.TAX_NUMBER -> TaxNumberHero(title, fields, effectiveCopy, interactive)
@@ -116,6 +124,9 @@ private fun List<Pair<String, String>>.firstNonBlank(vararg names: String): Stri
 }
 
 private val Mono = FontFamily.Monospace
+
+private fun Modifier.mainPageCardFrame(interactive: Boolean): Modifier =
+    if (interactive) this else this.aspectRatio(1.586f)
 
 @Composable
 private fun PhotoSlot(bytes: ByteArray?, modifier: Modifier) {
@@ -306,6 +317,74 @@ private fun IdCardHero(
 }
 
 // --- Passport --------------------------------------------------------------
+
+@Composable
+private fun CompactPassportHero(
+    title: String,
+    fields: List<Pair<String, String>>,
+) {
+    val bg = Brush.linearGradient(listOf(Color(0xFF1F2A4A), Color(0xFF2C3B66), Color(0xFF18213D)))
+    val passportNo = fields.value("Passport number")
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .aspectRatio(1.586f)
+            .clip(RoundedCornerShape(24.dp))
+            .background(bg),
+    ) {
+        Column(Modifier.fillMaxSize().padding(22.dp)) {
+            Text(
+                fields.value("Nationality").ifBlank { title }.ifBlank { "PASSPORT" }.uppercase(),
+                color = Color(0xFFE5C97A),
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+                letterSpacing = 2.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                "PASSPORT",
+                color = Color(0xFFE5C97A),
+                fontWeight = FontWeight.Black,
+                fontSize = 22.sp,
+                letterSpacing = 4.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.weight(1f))
+            LabelValue(
+                "Name",
+                listOf(fields.value("Given names"), fields.value("Surname"))
+                    .filter { it.isNotBlank() }
+                    .joinToString(" ")
+                    .ifBlank { title },
+                Color(0xFFE5C97A).copy(alpha = 0.72f),
+                Color.White,
+                14,
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.Bottom) {
+                LabelValue(
+                    "Passport no.",
+                    passportNo,
+                    Color(0xFFE5C97A).copy(alpha = 0.72f),
+                    Color.White,
+                    13,
+                    mono = true,
+                )
+                Spacer(Modifier.weight(1f))
+                LabelValue(
+                    "Expiry",
+                    fields.value("Expiry"),
+                    Color(0xFFE5C97A).copy(alpha = 0.72f),
+                    Color.White,
+                    13,
+                    mono = true,
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun PassportHero(
@@ -640,6 +719,8 @@ private fun BankAccountHero(
                 fields.value("Account holder"),
                 color = Color.White.copy(alpha = 0.85f),
                 fontSize = 13.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.weight(1f))
             LabelValue(
@@ -648,15 +729,17 @@ private fun BankAccountHero(
                 onCopy = if (interactive && iban.isNotBlank()) ({ onCopy("IBAN", iban) }) else null,
             )
             Spacer(Modifier.height(10.dp))
-            Row {
+            Row(verticalAlignment = Alignment.Bottom) {
                 LabelValue(
                     "Account", acct,
                     Color.White.copy(alpha = 0.7f), Color.White, 13, mono = true,
                     onCopy = if (interactive && acct.isNotBlank()) ({ onCopy("Account number", acct) }) else null,
                 )
                 Spacer(Modifier.weight(1f))
-                LabelValue("SWIFT/BIC", fields.value("SWIFT/BIC"),
-                    Color.White.copy(alpha = 0.7f), Color.White, 13, mono = true)
+                if (fields.value("SWIFT/BIC").isNotBlank()) {
+                    LabelValue("SWIFT/BIC", fields.value("SWIFT/BIC"),
+                        Color.White.copy(alpha = 0.7f), Color.White, 13, mono = true)
+                }
             }
         }
     }
@@ -682,10 +765,11 @@ private fun ApiKeyHero(
 
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = Color(0xFFEAF2FF),
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(24.dp)),
+            .mainPageCardFrame(interactive)
+            .border(1.dp, Color(0xFF7DA7E8).copy(alpha = 0.35f), RoundedCornerShape(24.dp)),
     ) {
         Column(Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -701,10 +785,13 @@ private fun ApiKeyHero(
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
+                    letterSpacing = 1.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
                 )
                 if (env.isNotBlank()) {
-                    Spacer(Modifier.weight(1f))
+                    Spacer(Modifier.width(8.dp))
                     Surface(
                         color = MaterialTheme.colorScheme.primaryContainer,
                         shape = RoundedCornerShape(8.dp)
@@ -722,38 +809,32 @@ private fun ApiKeyHero(
             
             Spacer(Modifier.height(14.dp))
 
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(Modifier.padding(8.dp)) {
+            Column(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                TerminalLine(
+                    prompt = "KEY",
+                    value = key,
+                    masked = !revealKey || !interactive,
+                    onToggle = { revealKey = !revealKey },
+                    onCopy = { if (key.isNotBlank()) onCopy("Key", key) },
+                    interactive = interactive,
+                    accent = MaterialTheme.colorScheme.primary,
+                    onSurf = MaterialTheme.colorScheme.onSurface
+                )
+                if (secret.isNotBlank() || revealSecret) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
                     TerminalLine(
-                        prompt = "KEY",
-                        value = key,
-                        masked = !revealKey || !interactive,
-                        onToggle = { revealKey = !revealKey },
-                        onCopy = { if (key.isNotBlank()) onCopy("Key", key) },
+                        prompt = "SECRET",
+                        value = secret,
+                        masked = !revealSecret || !interactive,
+                        onToggle = { revealSecret = !revealSecret },
+                        onCopy = { if (secret.isNotBlank()) onCopy("Secret", secret) },
                         interactive = interactive,
                         accent = MaterialTheme.colorScheme.primary,
                         onSurf = MaterialTheme.colorScheme.onSurface
                     )
-                    if (secret.isNotBlank() || revealSecret) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 4.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                        )
-                        TerminalLine(
-                            prompt = "SECRET",
-                            value = secret,
-                            masked = !revealSecret || !interactive,
-                            onToggle = { revealSecret = !revealSecret },
-                            onCopy = { if (secret.isNotBlank()) onCopy("Secret", secret) },
-                            interactive = interactive,
-                            accent = MaterialTheme.colorScheme.primary,
-                            onSurf = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
                 }
             }
         }
@@ -921,6 +1002,70 @@ private fun DriversLicenseHero(
 // --- Birth Certificate -----------------------------------------------------
 
 @Composable
+private fun CompactBirthCertificateHero(
+    title: String,
+    fields: List<Pair<String, String>>,
+) {
+    val parchment = Color(0xFFFAF6E8)
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = parchment,
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1.586f)
+            .border(1.dp, Color(0xFF8B6F31).copy(alpha = 0.4f), RoundedCornerShape(24.dp)),
+    ) {
+        Column(Modifier.fillMaxSize().padding(22.dp)) {
+            Text(
+                "CERTIFICATE OF BIRTH",
+                color = Color(0xFF8B6F31),
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                letterSpacing = 2.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(8.dp))
+            LabelValue(
+                "Full name",
+                fields.value("Full name").ifBlank { title },
+                Color(0xFF6B5E3B),
+                Color(0xFF1A1404),
+                17,
+            )
+            Spacer(Modifier.weight(1f))
+            Row(verticalAlignment = Alignment.Bottom) {
+                LabelValue(
+                    "Date of birth",
+                    fields.value("Date of birth"),
+                    Color(0xFF6B5E3B),
+                    Color(0xFF1A1404),
+                    13,
+                    mono = true,
+                )
+                Spacer(Modifier.width(18.dp))
+                LabelValue(
+                    "Place of birth",
+                    fields.value("Place of birth"),
+                    Color(0xFF6B5E3B),
+                    Color(0xFF1A1404),
+                    13,
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            LabelValue(
+                "Registration no.",
+                fields.value("Registration number"),
+                Color(0xFF6B5E3B),
+                Color(0xFF1A1404),
+                13,
+                mono = true,
+            )
+        }
+    }
+}
+
+@Composable
 private fun BirthCertificateHero(
     title: String,
     fields: List<Pair<String, String>>,
@@ -1007,10 +1152,11 @@ private fun TaxNumberHero(
 
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = Color(0xFFFFF0D8),
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(24.dp)),
+            .mainPageCardFrame(interactive)
+            .border(1.dp, Color(0xFFE3A24A).copy(alpha = 0.35f), RoundedCornerShape(24.dp)),
     ) {
         Column(Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1026,7 +1172,9 @@ private fun TaxNumberHero(
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
+                    letterSpacing = 1.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             
@@ -1037,7 +1185,9 @@ private fun TaxNumberHero(
                     text = name,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             
@@ -1045,39 +1195,37 @@ private fun TaxNumberHero(
                 Text(
                     text = country,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
 
             Spacer(Modifier.height(14.dp))
 
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.secondaryContainer,
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(enabled = interactive && taxNo.isNotBlank()) {
                         onCopy("Tax number", taxNo)
-                    }
+                    },
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
+                Column {
                     Text(
                         "TAX NO.",
-                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold
                     )
-                    Spacer(Modifier.width(12.dp))
                     Text(
                         taxNo.ifBlank { "•••• •••• ••••" },
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.titleMedium,
                         fontFamily = Mono,
-                        letterSpacing = 2.sp
+                        letterSpacing = 2.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -1098,10 +1246,11 @@ private fun QrCodeHero(
 
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = Color(0xFFEAF7EE),
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(24.dp)),
+            .mainPageCardFrame(interactive)
+            .border(1.dp, Color(0xFF71B985).copy(alpha = 0.35f), RoundedCornerShape(24.dp)),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -1192,6 +1341,7 @@ private fun NoteHero(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier
             .fillMaxWidth()
+            .mainPageCardFrame(interactive)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(24.dp)),
     ) {
         Column(Modifier.padding(18.dp)) {
@@ -1208,30 +1358,28 @@ private fun NoteHero(
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
+                    letterSpacing = 1.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
                 )
             }
             
             Spacer(Modifier.height(12.dp))
 
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.tertiaryContainer,
+            Text(
+                text = content.ifBlank { "No content" },
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(enabled = interactive && content.isNotBlank()) {
                         onCopy("Note content", content)
-                    }
-            ) {
-                Text(
-                    text = content.ifBlank { "No content" },
-                    modifier = Modifier.padding(12.dp),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    maxLines = 5,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+                    },
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Start,
+                maxLines = 5,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

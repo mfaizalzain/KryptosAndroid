@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -368,7 +369,7 @@ private fun HeroCardTile(entry: VaultEntry, onClick: () -> Unit) {
                 BitmapFactory.decodeByteArray(attachment, 0, attachment.size)
             }
             if (bitmap != null) {
-                Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
+                Box(modifier = Modifier.fillMaxWidth().aspectRatio(1.586f)) {
                     Image(
                         bitmap = bitmap.asImageBitmap(),
                         contentDescription = entry.title,
