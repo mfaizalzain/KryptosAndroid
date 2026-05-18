@@ -20,6 +20,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.PermIdentity
@@ -85,28 +88,181 @@ fun HeroCard(
     onShare: ((data: String, title: String) -> Unit)? = null,
     interactive: Boolean = true,
 ) {
-    // In non-interactive mode (used by the list as thumbnails) we drop all internal
-    // click handlers so the parent's tap-to-open isn't swallowed by reveal/copy controls.
-    val effectiveCopy: (String, String) -> Unit = if (interactive) onCopy else { _, _ -> }
-    when (template) {
-        Template.ID_CARD -> IdCardHero(title, fields, attachment, effectiveCopy, interactive)
-        Template.PASSPORT -> if (interactive) {
-            PassportHero(title, fields, attachment, effectiveCopy, interactive)
-        } else {
-            CompactPassportHero(title, fields)
+    if (interactive) {
+        FullHeroCard(
+            template = template,
+            title = title,
+            fields = fields,
+            attachment = attachment,
+            onCopy = onCopy,
+        )
+    } else {
+        CompactHeroCard(
+            template = template,
+            title = title,
+            fields = fields,
+            attachment = attachment,
+        )
+    }
+}
+
+@Composable
+fun CompactHeroCard(
+    template: Template,
+    title: String,
+    fields: List<Pair<String, String>>,
+    attachment: ByteArray?,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier
+            .fillMaxWidth()
+            .height(132.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(compactBackground(template))
+            .border(1.dp, Color.White.copy(alpha = 0.14f), RoundedCornerShape(14.dp)),
+    ) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.linearGradient(
+                        listOf(Color.White.copy(alpha = 0.18f), Color.Transparent),
+                    ),
+                ),
+        )
+
+        when (template) {
+            Template.PAYMENT_CARD -> CompactPaymentCard(title, fields, attachment)
+            Template.API_KEY -> CompactSecretCard(
+                template = Template.API_KEY,
+                attachment = attachment,
+                title = fields.value("Service").ifBlank { title.ifBlank { "API Key" } },
+                primaryValue = maskSecret(fields.firstNonBlank("Key", "Secret")),
+                secondaryLabel = "Environment",
+                secondaryValue = fields.value("Environment"),
+            )
+            Template.NOTE -> CompactNoteCard(title, fields, attachment)
+            Template.QR_CODE -> CompactQrCard(title, fields)
+            Template.ID_CARD,
+            Template.PASSPORT,
+            Template.DRIVERS_LICENSE -> CompactIdentityCard(template, title, fields, attachment)
+            else -> CompactDocumentCard(template, title, fields, attachment)
         }
-        Template.DRIVERS_LICENSE -> DriversLicenseHero(title, fields, attachment, effectiveCopy, interactive)
-        Template.BIRTH_CERTIFICATE -> if (interactive) {
-            BirthCertificateHero(title, fields, attachment)
-        } else {
-            CompactBirthCertificateHero(title, fields)
+    }
+}
+
+@Composable
+private fun FullHeroCard(
+    template: Template,
+    title: String,
+    fields: List<Pair<String, String>>,
+    attachment: ByteArray?,
+    onCopy: (String, String) -> Unit,
+) {
+    val contentColor = heroContentColor(template)
+    val labelColor = contentColor.copy(alpha = 0.68f)
+    val visibleFields = fields.filter { it.second.isNotBlank() }
+    val leadFields = primaryFieldsFor(template)
+    val primaryFields = visibleFields
+        .filter { field -> leadFields.any { field.first.equals(it, ignoreCase = true) } }
+        .ifEmpty { visibleFields.take(3) }
+    val additionalFields = visibleFields
+        .filterNot { field -> primaryFields.any { it.first.equals(field.first, ignoreCase = true) } }
+
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(22.dp))
+            .background(compactBackground(template))
+            .border(1.dp, Color.White.copy(alpha = 0.22f), RoundedCornerShape(22.dp)),
+    ) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.linearGradient(
+                        listOf(Color.White.copy(alpha = 0.18f), Color.Transparent),
+                    ),
+                ),
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                FullHeroSlot(template, attachment, fields)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.Top) {
+                        Text(
+                            title.ifBlank { compactFallbackTitle(template) },
+                            color = contentColor,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (template == Template.PAYMENT_CARD) {
+                            Icon(
+                                Icons.Filled.CreditCard,
+                                contentDescription = null,
+                                tint = contentColor,
+                                modifier = Modifier.size(26.dp),
+                            )
+                        }
+                    }
+                    if (primaryFields.isEmpty()) {
+                        Text(
+                            "No details yet",
+                            color = contentColor.copy(alpha = 0.74f),
+                            fontSize = 15.sp,
+                        )
+                    } else {
+                        primaryFields.take(if (template == Template.NOTE) 1 else 3).forEach { (name, value) ->
+                            FullLabelValue(
+                                label = displayLabelFor(template, name),
+                                value = displayValueFor(template, name, value),
+                                labelColor = labelColor,
+                                valueColor = contentColor,
+                                maxLines = if (template == Template.NOTE) 6 else 1,
+                                mono = shouldUseMono(name),
+                                onCopy = { onCopy(name, value) },
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (additionalFields.isNotEmpty() && template != Template.NOTE) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    additionalFields.chunked(2).take(3).forEach { rowFields ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            rowFields.forEach { (name, value) ->
+                                FullLabelValue(
+                                    label = displayLabelFor(template, name),
+                                    value = displayValueFor(template, name, value),
+                                    labelColor = labelColor,
+                                    valueColor = contentColor,
+                                    mono = shouldUseMono(name),
+                                    onCopy = { onCopy(name, value) },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            if (rowFields.size == 1) Spacer(Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
         }
-        Template.PAYMENT_CARD -> PaymentCardHero(title, fields, effectiveCopy, interactive)
-        Template.BANK_ACCOUNT -> BankAccountHero(title, fields, effectiveCopy, interactive)
-        Template.TAX_NUMBER -> TaxNumberHero(title, fields, effectiveCopy, interactive)
-        Template.API_KEY -> ApiKeyHero(title, fields, effectiveCopy, interactive)
-        Template.NOTE -> NoteHero(title, fields, effectiveCopy, interactive)
-        Template.QR_CODE -> QrCodeHero(title, fields, effectiveCopy, onShare, interactive)
     }
 }
 
@@ -124,6 +280,553 @@ private fun List<Pair<String, String>>.firstNonBlank(vararg names: String): Stri
 }
 
 private val Mono = FontFamily.Monospace
+
+private fun compactBackground(template: Template): Brush = Brush.linearGradient(
+    when (template) {
+        Template.ID_CARD -> listOf(Color(0xFF0D337F), Color(0xFF1155D8))
+        Template.PASSPORT -> listOf(Color(0xFF10162F), Color(0xFF1B356E))
+        Template.DRIVERS_LICENSE -> listOf(Color(0xFF0A4D73), Color(0xFF1B8CA6))
+        Template.BIRTH_CERTIFICATE -> listOf(Color(0xFF0D5A50), Color(0xFF2F8B73))
+        Template.PAYMENT_CARD -> listOf(Color(0xFF151424), Color(0xFF2E174F), Color(0xFF65306F))
+        Template.BANK_ACCOUNT -> listOf(Color(0xFF0D5264), Color(0xFF17777A))
+        Template.TAX_NUMBER -> listOf(Color(0xFF713019), Color(0xFFA6521F))
+        Template.API_KEY -> listOf(Color(0xFF141821), Color(0xFF3B4252))
+        Template.NOTE -> listOf(Color(0xFFF0B429), Color(0xFFFFD166))
+        Template.QR_CODE -> listOf(Color(0xFF145087), Color(0xFF1A91C7))
+    },
+)
+
+@Composable
+private fun CompactIdentityCard(
+    template: Template,
+    title: String,
+    fields: List<Pair<String, String>>,
+    attachment: ByteArray?,
+) {
+    val number = fields.firstNonBlank("Passport number", "ID number", "License number")
+    val name = fields.firstNonBlank("Full name", "Name")
+        .ifBlank {
+            listOf(fields.value("Given names"), fields.value("Surname"))
+                .filter { it.isNotBlank() }
+                .joinToString(" ")
+        }
+
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        PhotoSlot(
+            attachment,
+            Modifier
+                .width(58.dp)
+                .fillMaxHeight(),
+        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Text(
+                title.ifBlank {
+                    when (template) {
+                        Template.PASSPORT -> "Passport"
+                        Template.DRIVERS_LICENSE -> "License"
+                        else -> "ID Card"
+                    }
+                },
+                color = Color.White,
+                fontSize = 19.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            LabelValue(
+                label = if (template == Template.PASSPORT) "Number" else "Identifier",
+                value = number,
+                labelColor = Color.White.copy(alpha = 0.68f),
+                valueColor = Color.White,
+                valueSp = 17,
+            )
+            LabelValue(
+                label = "Name",
+                value = name.ifBlank { title },
+                labelColor = Color.White.copy(alpha = 0.68f),
+                valueColor = Color.White,
+                valueSp = 16,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompactDocumentCard(
+    template: Template,
+    title: String,
+    fields: List<Pair<String, String>>,
+    attachment: ByteArray?,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        CompactIconSlot(template, attachment)
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                title.ifBlank { compactFallbackTitle(template) },
+                color = Color.White,
+                fontSize = 19.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            val visibleFields = fields.filter { it.second.isNotBlank() }.take(2)
+            if (visibleFields.isEmpty()) {
+                Text(
+                    "No details yet",
+                    color = Color.White.copy(alpha = 0.74f),
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            } else {
+                visibleFields.forEach { (label, value) ->
+                    LabelValue(
+                        label = label,
+                        value = value,
+                        labelColor = Color.White.copy(alpha = 0.68f),
+                        valueColor = Color.White,
+                        valueSp = 16,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompactPaymentCard(title: String, fields: List<Pair<String, String>>, attachment: ByteArray?) {
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        CompactIconSlot(Template.PAYMENT_CARD, attachment)
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(verticalAlignment = Alignment.Top) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        title.ifBlank { fields.value("Issuer").ifBlank { "Payment Card" } },
+                        color = Color.White,
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (fields.value("Issuer").isNotBlank() && fields.value("Issuer") != title) {
+                        Text(
+                            fields.value("Issuer"),
+                            color = Color.White.copy(alpha = 0.72f),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+                Icon(
+                    Icons.Filled.CreditCard,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            Text(
+                maskCardNumber(fields.firstNonBlank("Number", "Card number")),
+                color = Color.White,
+                fontSize = 17.sp,
+                fontFamily = Mono,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(verticalAlignment = Alignment.Bottom) {
+                LabelValue(
+                    label = "Cardholder",
+                    value = fields.value("Cardholder"),
+                    labelColor = Color.White.copy(alpha = 0.68f),
+                    valueColor = Color.White,
+                    valueSp = 13,
+                )
+                Spacer(Modifier.weight(1f))
+                LabelValue(
+                    label = "Expires",
+                    value = formattedExpiry(fields.value("Expiry")),
+                    labelColor = Color.White.copy(alpha = 0.68f),
+                    valueColor = Color.White,
+                    valueSp = 13,
+                    mono = true,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompactSecretCard(
+    template: Template,
+    attachment: ByteArray?,
+    title: String,
+    primaryValue: String,
+    secondaryLabel: String,
+    secondaryValue: String,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        CompactIconSlot(template, attachment)
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                title,
+                color = Color.White,
+                fontSize = 19.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                primaryValue,
+                color = Color.White,
+                fontSize = 17.sp,
+                fontFamily = Mono,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            LabelValue(
+                label = secondaryLabel,
+                value = secondaryValue,
+                labelColor = Color.White.copy(alpha = 0.68f),
+                valueColor = Color.White,
+                valueSp = 14,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompactNoteCard(title: String, fields: List<Pair<String, String>>, attachment: ByteArray?) {
+    val textColor = heroContentColor(Template.NOTE)
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        CompactIconSlot(Template.NOTE, attachment)
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                title.ifBlank { "Secure Note" },
+                color = textColor,
+                fontSize = 19.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                fields.value("Content").ifBlank { "No content" },
+                color = textColor.copy(alpha = 0.86f),
+                fontSize = 13.sp,
+                lineHeight = 17.sp,
+                maxLines = 4,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompactQrCard(title: String, fields: List<Pair<String, String>>) {
+    val data = fields.value("Data").ifBlank { fields.value("Content") }
+    val bmp = remember(data) { if (data.isNotBlank()) QrGenerator.generate(data) else null }
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.White),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (bmp != null) {
+                Image(
+                    bitmap = bmp.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(6.dp),
+                )
+            } else {
+                Icon(
+                    Icons.Filled.QrCode,
+                    contentDescription = null,
+                    tint = Color(0xFF145087),
+                    modifier = Modifier.size(38.dp),
+                )
+            }
+        }
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                title.ifBlank { "QR Code" },
+                color = Color.White,
+                fontSize = 19.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                data.ifBlank { "No QR data" },
+                color = Color.White.copy(alpha = 0.82f),
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompactIconSlot(template: Template, attachment: ByteArray?) {
+    val bmp = remember(attachment) { attachment?.let { BitmapFactory.decodeByteArray(it, 0, it.size) } }
+    Box(
+        modifier = Modifier
+            .width(58.dp)
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(10.dp))
+            .background(Color.White.copy(alpha = 0.18f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (bmp != null) {
+            Image(
+                bitmap = bmp.asImageBitmap(),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            Icon(
+                imageVector = when (template) {
+                    Template.BANK_ACCOUNT -> Icons.Filled.AccountBalance
+                    Template.TAX_NUMBER -> Icons.AutoMirrored.Filled.Assignment
+                    Template.PAYMENT_CARD -> Icons.Filled.CreditCard
+                    Template.API_KEY -> Icons.Filled.Key
+                    Template.QR_CODE -> Icons.Filled.QrCode
+                    else -> Icons.Filled.Description
+                },
+                contentDescription = null,
+                tint = heroContentColor(template).copy(alpha = 0.78f),
+                modifier = Modifier.size(28.dp),
+            )
+        }
+    }
+}
+
+private fun compactFallbackTitle(template: Template): String = when (template) {
+    Template.ID_CARD -> "ID Card"
+    Template.PASSPORT -> "Passport"
+    Template.DRIVERS_LICENSE -> "License"
+    Template.BIRTH_CERTIFICATE -> "Certificate"
+    Template.PAYMENT_CARD -> "Payment Card"
+    Template.BANK_ACCOUNT -> "Bank Account"
+    Template.TAX_NUMBER -> "Tax Number"
+    Template.API_KEY -> "API Key"
+    Template.NOTE -> "Secure Note"
+    Template.QR_CODE -> "QR Code"
+}
+
+private fun heroContentColor(template: Template): Color =
+    if (template == Template.NOTE) Color(0xFF3F2B00) else Color.White
+
+private fun primaryFieldsFor(template: Template): List<String> = when (template) {
+    Template.ID_CARD -> listOf("ID number", "Full name", "Date of birth")
+    Template.PASSPORT -> listOf("Passport number", "Surname", "Given names")
+    Template.DRIVERS_LICENSE -> listOf("License number", "Full name", "Expiry")
+    Template.BIRTH_CERTIFICATE -> listOf("Full name", "Date of birth", "Registration number")
+    Template.PAYMENT_CARD -> listOf("Number", "Card number", "Cardholder", "Expiry")
+    Template.BANK_ACCOUNT -> listOf("Bank", "Account holder", "Account number")
+    Template.TAX_NUMBER -> listOf("Tax number", "Full name", "Country")
+    Template.API_KEY -> listOf("Service", "Environment", "Key")
+    Template.NOTE -> listOf("Content")
+    Template.QR_CODE -> listOf("Data", "Content")
+}
+
+@Composable
+private fun FullHeroSlot(
+    template: Template,
+    attachment: ByteArray?,
+    fields: List<Pair<String, String>>,
+) {
+    if (template == Template.QR_CODE) {
+        val data = fields.value("Data").ifBlank { fields.value("Content") }
+        val bmp = remember(data) { if (data.isNotBlank()) QrGenerator.generate(data) else null }
+        Box(
+            modifier = Modifier
+                .size(104.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color.White),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (bmp != null) {
+                Image(
+                    bitmap = bmp.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
+                )
+            } else {
+                Icon(
+                    Icons.Filled.QrCode,
+                    contentDescription = null,
+                    tint = Color(0xFF145087),
+                    modifier = Modifier.size(54.dp),
+                )
+            }
+        }
+    } else {
+        val bmp = remember(attachment) { attachment?.let { BitmapFactory.decodeByteArray(it, 0, it.size) } }
+        Box(
+            modifier = Modifier
+                .width(92.dp)
+                .height(118.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color.White.copy(alpha = 0.18f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (bmp != null) {
+                Image(
+                    bitmap = bmp.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                Icon(
+                    imageVector = when (template) {
+                        Template.PAYMENT_CARD -> Icons.Filled.CreditCard
+                        Template.API_KEY -> Icons.Filled.Key
+                        else -> Icons.Filled.Description
+                    },
+                    contentDescription = null,
+                    tint = heroContentColor(template).copy(alpha = 0.78f),
+                    modifier = Modifier.size(38.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FullLabelValue(
+    label: String,
+    value: String,
+    labelColor: Color,
+    valueColor: Color,
+    modifier: Modifier = Modifier,
+    maxLines: Int = 1,
+    mono: Boolean = false,
+    onCopy: (() -> Unit)? = null,
+) {
+    Column(
+        modifier = modifier.then(if (onCopy != null) Modifier.clickable(onClick = onCopy) else Modifier),
+    ) {
+        Text(
+            label.uppercase(),
+            color = labelColor,
+            fontSize = 12.sp,
+            letterSpacing = 1.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            value.ifBlank { "—" },
+            color = valueColor,
+            fontSize = 17.sp,
+            fontFamily = if (mono) Mono else FontFamily.Default,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+private fun displayLabelFor(template: Template, name: String): String {
+    if (template == Template.PASSPORT && name.equals("Passport number", ignoreCase = true)) return "Number"
+    if ((template == Template.ID_CARD || template == Template.DRIVERS_LICENSE) &&
+        (name.equals("ID number", ignoreCase = true) || name.equals("License number", ignoreCase = true))
+    ) return "Identifier"
+    return name
+}
+
+private fun displayValueFor(template: Template, name: String, value: String): String {
+    val lower = name.lowercase()
+    return when {
+        template == Template.PAYMENT_CARD && (lower == "number" || lower.contains("card number")) -> maskCardNumber(value)
+        lower == "cvv" || lower == "cvc" || lower.contains("secret") || lower == "key" || lower.contains("password") || lower.contains("pin") -> maskSecret(value)
+        template == Template.PAYMENT_CARD && lower.contains("expiry") -> formattedExpiry(value)
+        else -> value
+    }
+}
+
+private fun shouldUseMono(name: String): Boolean {
+    val lower = name.lowercase()
+    return lower.contains("number") ||
+        lower.contains("expiry") ||
+        lower.contains("cvv") ||
+        lower.contains("cvc") ||
+        lower == "key" ||
+        lower.contains("secret") ||
+        lower.contains("pin") ||
+        lower.contains("token")
+}
+
+private fun maskSecret(value: String): String =
+    if (value.isBlank()) "••••••••••••••••" else "•".repeat(value.length.coerceAtMost(18))
+
+private fun formattedExpiry(value: String): String {
+    val digits = value.filter { it.isDigit() }
+    return if (digits.length == 4) "${digits.take(2)}/${digits.takeLast(2)}" else value
+}
 
 private fun Modifier.mainPageCardFrame(interactive: Boolean): Modifier =
     if (interactive) this else this.aspectRatio(1.586f)

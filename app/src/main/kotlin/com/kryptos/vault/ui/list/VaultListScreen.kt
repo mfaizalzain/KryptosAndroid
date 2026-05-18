@@ -1,14 +1,9 @@
 package com.kryptos.vault.ui.list
 
-import android.graphics.BitmapFactory
-import androidx.compose.foundation.Image
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,6 +23,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.AccountCircle
@@ -41,7 +37,6 @@ import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -81,7 +76,7 @@ import com.kryptos.vault.data.Template
 import com.kryptos.vault.data.VaultEntry
 import com.kryptos.vault.ui.VaultViewModel
 import com.kryptos.vault.ui.account.AccountSheet
-import com.kryptos.vault.ui.cards.HeroCard
+import com.kryptos.vault.ui.cards.CompactHeroCard
 import kotlin.math.absoluteValue
 
 private const val STACK_THRESHOLD = 1
@@ -263,7 +258,7 @@ fun VaultListScreen(
                             }
                         } else {
                             items(items, key = { "row_${it.id}" }) { entry ->
-                                Box(modifier = Modifier.padding(horizontal = 40.dp)) {
+                                Box(modifier = Modifier.padding(horizontal = 16.dp)) {
                                     HeroCardTile(entry = entry, onClick = { onOpen(entry.id) })
                                 }
                             }
@@ -355,49 +350,13 @@ private fun EmptyState(message: String, modifier: Modifier = Modifier) {
 
 @Composable
 private fun HeroCardTile(entry: VaultEntry, onClick: () -> Unit) {
-    val attachment = entry.attachment
-    val isScannedTemplate = entry.template in setOf(
-        Template.ID_CARD,
-        Template.PAYMENT_CARD,
-        Template.DRIVERS_LICENSE
-    )
-
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(24.dp),
-        shadowElevation = 2.dp,
+        shape = RoundedCornerShape(14.dp),
+        shadowElevation = 3.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
-        if (attachment != null && isScannedTemplate) {
-            val bitmap = remember(attachment) {
-                BitmapFactory.decodeByteArray(attachment, 0, attachment.size)
-            }
-            if (bitmap != null) {
-                Box(modifier = Modifier.fillMaxWidth().aspectRatio(1.586f)) {
-                    Image(
-                        bitmap = bitmap.asImageBitmap(),
-                        contentDescription = entry.title,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                    Surface(
-                        color = Color.Black.copy(alpha = 0.5f),
-                        modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth()
-                    ) {
-                        Text(
-                            text = entry.title,
-                            color = Color.White,
-                            style = MaterialTheme.typography.labelMedium,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                        )
-                    }
-                }
-            } else {
-                DefaultHeroCard(entry)
-            }
-        } else {
-            DefaultHeroCard(entry)
-        }
+        DefaultHeroCard(entry)
     }
 }
 
@@ -406,13 +365,11 @@ private fun DefaultHeroCard(entry: VaultEntry) {
     val fields = remember(entry.fieldsJson) {
         runCatching { FieldsCodec.decode(entry.fieldsJson) }.getOrDefault(emptyList())
     }
-    HeroCard(
+    CompactHeroCard(
         template = entry.template,
         title = entry.title.ifBlank { "Untitled Entry" },
         fields = fields,
         attachment = entry.attachment,
-        onCopy = { _, _ -> },
-        interactive = false,
     )
 }
 
@@ -423,8 +380,7 @@ private fun EntryStack(entries: List<VaultEntry>, onOpen: (Long) -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         HorizontalPager(
             state = pagerState,
-            // Narrower content padding allows more of the neighboring cards to "peek" in
-            contentPadding = PaddingValues(horizontal = 40.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp),
             pageSpacing = 16.dp,
             modifier = Modifier.fillMaxWidth(),
         ) { page ->
@@ -496,7 +452,7 @@ private fun iconFor(t: Template): ImageVector = when (t) {
     Template.DRIVERS_LICENSE -> Icons.Filled.DirectionsCar
     Template.BIRTH_CERTIFICATE -> Icons.AutoMirrored.Filled.Article
     Template.PAYMENT_CARD -> Icons.Filled.CreditCard
-    Template.BANK_ACCOUNT -> Icons.Filled.Savings
+    Template.BANK_ACCOUNT -> Icons.Filled.AccountBalance
     Template.TAX_NUMBER -> Icons.AutoMirrored.Filled.Assignment
     Template.API_KEY -> Icons.Filled.Key
     Template.NOTE -> Icons.Filled.Description
