@@ -121,10 +121,9 @@ fun CompactHeroCard(
         modifier
             .fillMaxWidth()
             .height(132.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(compactBackground(template))
+            .background(compactBackground(template), RoundedCornerShape(14.dp))
             .border(
-                1.dp, 
+                1.5.dp, 
                 Color.White.copy(alpha = 0.28f), 
                 RoundedCornerShape(14.dp)
             ),
@@ -180,8 +179,7 @@ private fun FullHeroCard(
     Box(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
-            .background(compactBackground(template))
+            .background(compactBackground(template), RoundedCornerShape(22.dp))
             .border(
                 1.dp, 
                 Color.White.copy(alpha = 0.35f), 
