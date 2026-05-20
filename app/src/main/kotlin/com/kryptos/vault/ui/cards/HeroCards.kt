@@ -124,8 +124,8 @@ fun CompactHeroCard(
             .clip(RoundedCornerShape(14.dp))
             .background(compactBackground(template))
             .border(
-                1.dp, 
-                Color.White.copy(alpha = 0.14f), 
+                1.5.dp, 
+                Color.White.copy(alpha = 0.45f), 
                 RoundedCornerShape(14.dp)
             ),
     ) {
@@ -183,8 +183,8 @@ private fun FullHeroCard(
             .clip(RoundedCornerShape(22.dp))
             .background(compactBackground(template))
             .border(
-                1.dp, 
-                Color.White.copy(alpha = 0.22f), 
+                1.5.dp, 
+                Color.White.copy(alpha = 0.50f), 
                 RoundedCornerShape(22.dp)
             ),
     ) {
