@@ -169,15 +169,6 @@ fun EntryDetailScreen(
         }
 
         val allFields = remember(current.fieldsJson) { FieldsCodec.decode(current.fieldsJson) }
-        val heroFields = remember(current.fieldsJson, current.template) {
-            if (current.template == Template.PAYMENT_CARD) {
-                allFields.filterNot { (name, _) ->
-                    name.equals("Issuer", ignoreCase = true) || name.equals("CVV", ignoreCase = true) || name.equals("CVC", ignoreCase = true) || name.equals("Security code", ignoreCase = true)
-                }
-            } else {
-                allFields
-            }
-        }
         val detailFields = remember(allFields) {
             allFields.filter { it.second.isNotBlank() }
         }
@@ -199,7 +190,7 @@ fun EntryDetailScreen(
                     HeroCard(
                         template = current.template,
                         title = current.title,
-                        fields = heroFields,
+                        fields = allFields,
                         attachment = current.attachment,
                         onCopy = { label, value -> SecureClipboard.copy(ctx, label, value) },
                         onShare = { _, _ -> qrData = sharePayload(current) }
