@@ -65,7 +65,7 @@ private val DarkColorScheme = darkColorScheme(
 @Composable
 fun KryptosTheme(
     dark: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val colorScheme = when {

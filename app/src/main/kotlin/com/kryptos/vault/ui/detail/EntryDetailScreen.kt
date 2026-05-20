@@ -3,6 +3,8 @@ package com.kryptos.vault.ui.detail
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Column
@@ -22,6 +24,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -216,19 +220,26 @@ fun EntryDetailScreen(
                     )
                 }
                 item {
-                    val bmp = remember(bytes) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }
-                    if (bmp != null) {
+                    var bmp by remember(bytes) { mutableStateOf<android.graphics.Bitmap?>(null) }
+                    LaunchedEffect(bytes) {
+                        val decoded = withContext(Dispatchers.Default) {
+                            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                        }
+                        bmp = decoded
+                    }
+                    val currentBmp = bmp
+                    if (currentBmp != null) {
                         Card(
                             shape = RoundedCornerShape(24.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
                         ) {
                             Image(
-                                bitmap = bmp.asImageBitmap(),
+                                bitmap = currentBmp.asImageBitmap(),
                                 contentDescription = "Original attachment",
                                 contentScale = ContentScale.Fit,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .aspectRatio(bmp.width.toFloat() / bmp.height.toFloat())
+                                    .aspectRatio(currentBmp.width.toFloat() / currentBmp.height.toFloat())
                                     .clip(RoundedCornerShape(24.dp)),
                             )
                         }
@@ -280,7 +291,13 @@ private fun QrCodeDialog(data: String, genericData: String?, title: String, onDi
     val ctx = LocalContext.current
     var showKryptosPayload by remember(data, genericData) { mutableStateOf(genericData == null) }
     val displayData = if (showKryptosPayload || genericData == null) data else genericData
-    val bitmap = remember(displayData) { QrGenerator.generate(displayData) }
+    var bitmap by remember(displayData) { mutableStateOf<android.graphics.Bitmap?>(null) }
+    LaunchedEffect(displayData) {
+        val generated = withContext(Dispatchers.Default) {
+            QrGenerator.generate(displayData)
+        }
+        bitmap = generated
+    }
     
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -313,14 +330,33 @@ private fun QrCodeDialog(data: String, genericData: String?, title: String, onDi
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(16.dp))
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = "QR Code",
-                    modifier = Modifier.size(200.dp).clip(RoundedCornerShape(12.dp))
-                )
+                Box(
+                    modifier = Modifier.size(200.dp).clip(RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val currentBmp = bitmap
+                    if (currentBmp != null) {
+                        Image(
+                            bitmap = currentBmp.asImageBitmap(),
+                            contentDescription = "QR Code",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
+                }
                 Spacer(Modifier.height(16.dp))
                 Button(
-                    onClick = { QrSharer.share(ctx, bitmap, title) },
+                    onClick = {
+                        val currentBmp = bitmap
+                        if (currentBmp != null) {
+                            QrSharer.share(ctx, currentBmp, title)
+                        }
+                    },
+                    enabled = bitmap != null,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(28.dp)
                 ) {

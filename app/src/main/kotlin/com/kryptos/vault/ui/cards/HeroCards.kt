@@ -37,10 +37,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -120,7 +123,11 @@ fun CompactHeroCard(
             .height(132.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(compactBackground(template))
-            .border(1.dp, Color.White.copy(alpha = 0.14f), RoundedCornerShape(14.dp)),
+            .border(
+                1.dp, 
+                if (template == Template.NOTE) Color(0xFFD4AF37).copy(alpha = 0.45f) else Color.White.copy(alpha = 0.14f), 
+                RoundedCornerShape(14.dp)
+            ),
     ) {
         Box(
             Modifier
@@ -175,7 +182,11 @@ private fun FullHeroCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
             .background(compactBackground(template))
-            .border(1.dp, Color.White.copy(alpha = 0.22f), RoundedCornerShape(22.dp)),
+            .border(
+                1.dp, 
+                if (template == Template.NOTE) Color(0xFFD4AF37).copy(alpha = 0.55f) else Color.White.copy(alpha = 0.22f), 
+                RoundedCornerShape(22.dp)
+            ),
     ) {
         Box(
             Modifier
@@ -291,7 +302,7 @@ private fun compactBackground(template: Template): Brush = Brush.linearGradient(
         Template.BANK_ACCOUNT -> listOf(Color(0xFF0D5264), Color(0xFF17777A))
         Template.TAX_NUMBER -> listOf(Color(0xFF713019), Color(0xFFA6521F))
         Template.API_KEY -> listOf(Color(0xFF141821), Color(0xFF3B4252))
-        Template.NOTE -> listOf(Color(0xFFF0B429), Color(0xFFFFD166))
+        Template.NOTE -> listOf(Color(0xFF1E2431), Color(0xFF283142)) // Gorgeous dark matte slate background
         Template.QR_CODE -> listOf(Color(0xFF145087), Color(0xFF1A91C7))
     },
 )
@@ -570,7 +581,17 @@ private fun CompactNoteCard(title: String, fields: List<Pair<String, String>>, a
 @Composable
 private fun CompactQrCard(title: String, fields: List<Pair<String, String>>) {
     val data = fields.value("Data").ifBlank { fields.value("Content") }
-    val bmp = remember(data) { if (data.isNotBlank()) QrGenerator.generate(data) else null }
+    var bmp by remember(data) { mutableStateOf<android.graphics.Bitmap?>(null) }
+    LaunchedEffect(data) {
+        if (data.isNotBlank()) {
+            val generated = withContext(Dispatchers.Default) {
+                QrGenerator.generate(data)
+            }
+            bmp = generated
+        } else {
+            bmp = null
+        }
+    }
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -585,9 +606,10 @@ private fun CompactQrCard(title: String, fields: List<Pair<String, String>>) {
                 .background(Color.White),
             contentAlignment = Alignment.Center,
         ) {
-            if (bmp != null) {
+            val currentBmp = bmp
+            if (currentBmp != null) {
                 Image(
-                    bitmap = bmp.asImageBitmap(),
+                    bitmap = currentBmp.asImageBitmap(),
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
@@ -628,7 +650,17 @@ private fun CompactQrCard(title: String, fields: List<Pair<String, String>>) {
 
 @Composable
 private fun CompactIconSlot(template: Template, attachment: ByteArray?) {
-    val bmp = remember(attachment) { attachment?.let { BitmapFactory.decodeByteArray(it, 0, it.size) } }
+    var bmp by remember(attachment) { mutableStateOf<android.graphics.Bitmap?>(null) }
+    LaunchedEffect(attachment) {
+        if (attachment != null) {
+            val decoded = withContext(Dispatchers.Default) {
+                BitmapFactory.decodeByteArray(attachment, 0, attachment.size)
+            }
+            bmp = decoded
+        } else {
+            bmp = null
+        }
+    }
     Box(
         modifier = Modifier
             .width(58.dp)
@@ -637,9 +669,10 @@ private fun CompactIconSlot(template: Template, attachment: ByteArray?) {
             .background(Color.White.copy(alpha = 0.18f)),
         contentAlignment = Alignment.Center,
     ) {
-        if (bmp != null) {
+        val currentBmp = bmp
+        if (currentBmp != null) {
             Image(
-                bitmap = bmp.asImageBitmap(),
+                bitmap = currentBmp.asImageBitmap(),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
             )
@@ -675,7 +708,7 @@ private fun compactFallbackTitle(template: Template): String = when (template) {
 }
 
 private fun heroContentColor(template: Template): Color =
-    if (template == Template.NOTE) Color(0xFF3F2B00) else Color.White
+    if (template == Template.NOTE) Color(0xFFE2C175) else Color.White // Warm soft gold accent for text/icons on note card
 
 private fun primaryFieldsFor(template: Template): List<String> = when (template) {
     Template.ID_CARD -> listOf("ID number", "Full name", "Date of birth")
@@ -698,7 +731,17 @@ private fun FullHeroSlot(
 ) {
     if (template == Template.QR_CODE) {
         val data = fields.value("Data").ifBlank { fields.value("Content") }
-        val bmp = remember(data) { if (data.isNotBlank()) QrGenerator.generate(data) else null }
+        var bmp by remember(data) { mutableStateOf<android.graphics.Bitmap?>(null) }
+        LaunchedEffect(data) {
+            if (data.isNotBlank()) {
+                val generated = withContext(Dispatchers.Default) {
+                    QrGenerator.generate(data)
+                }
+                bmp = generated
+            } else {
+                bmp = null
+            }
+        }
         Box(
             modifier = Modifier
                 .size(104.dp)
@@ -706,9 +749,10 @@ private fun FullHeroSlot(
                 .background(Color.White),
             contentAlignment = Alignment.Center,
         ) {
-            if (bmp != null) {
+            val currentBmp = bmp
+            if (currentBmp != null) {
                 Image(
-                    bitmap = bmp.asImageBitmap(),
+                    bitmap = currentBmp.asImageBitmap(),
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
@@ -724,7 +768,17 @@ private fun FullHeroSlot(
             }
         }
     } else {
-        val bmp = remember(attachment) { attachment?.let { BitmapFactory.decodeByteArray(it, 0, it.size) } }
+        var bmp by remember(attachment) { mutableStateOf<android.graphics.Bitmap?>(null) }
+        LaunchedEffect(attachment) {
+            if (attachment != null) {
+                val decoded = withContext(Dispatchers.Default) {
+                    BitmapFactory.decodeByteArray(attachment, 0, attachment.size)
+                }
+                bmp = decoded
+            } else {
+                bmp = null
+            }
+        }
         Box(
             modifier = Modifier
                 .width(92.dp)
@@ -733,9 +787,10 @@ private fun FullHeroSlot(
                 .background(Color.White.copy(alpha = 0.18f)),
             contentAlignment = Alignment.Center,
         ) {
-            if (bmp != null) {
+            val currentBmp = bmp
+            if (currentBmp != null) {
                 Image(
-                    bitmap = bmp.asImageBitmap(),
+                    bitmap = currentBmp.asImageBitmap(),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -833,15 +888,26 @@ private fun Modifier.mainPageCardFrame(interactive: Boolean): Modifier =
 
 @Composable
 private fun PhotoSlot(bytes: ByteArray?, modifier: Modifier) {
-    val bmp = remember(bytes) { bytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) } }
+    var bmp by remember(bytes) { mutableStateOf<android.graphics.Bitmap?>(null) }
+    LaunchedEffect(bytes) {
+        if (bytes != null) {
+            val decoded = withContext(Dispatchers.Default) {
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            }
+            bmp = decoded
+        } else {
+            bmp = null
+        }
+    }
     Box(
         modifier
             .clip(RoundedCornerShape(8.dp))
             .background(Color(0x33000000)),
         contentAlignment = Alignment.Center,
     ) {
-        if (bmp != null) {
-            Image(bitmap = bmp.asImageBitmap(), contentDescription = null, modifier = Modifier.fillMaxSize())
+        val currentBmp = bmp
+        if (currentBmp != null) {
+            Image(bitmap = currentBmp.asImageBitmap(), contentDescription = null, modifier = Modifier.fillMaxSize())
         } else {
             Icon(
                 imageVector = Icons.Filled.PermIdentity,

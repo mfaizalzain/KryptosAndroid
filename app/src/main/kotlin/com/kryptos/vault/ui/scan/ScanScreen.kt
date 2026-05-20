@@ -2,17 +2,18 @@ package com.kryptos.vault.ui.scan
 
 import android.app.Activity
 import android.graphics.Bitmap
+import com.kryptos.vault.ui.findActivity
 import android.graphics.ImageDecoder
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -29,9 +30,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,10 +42,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
@@ -63,7 +77,7 @@ fun ScanScreen(
     onApply: (parsedFieldsJson: String, rawText: String, attachment: ByteArray) -> Unit,
 ) {
     val ctx = LocalContext.current
-    val activity = ctx as Activity
+    val activity = remember(ctx) { ctx.findActivity() }
     val scope = rememberCoroutineScope()
 
     var capturedBytes by remember { mutableStateOf<ByteArray?>(null) }
@@ -126,13 +140,17 @@ fun ScanScreen(
     }
 
     fun startScan() {
-        scanner.getStartScanIntent(activity)
-            .addOnSuccessListener { sender ->
-                launcher.launch(IntentSenderRequest.Builder(sender).build())
-            }
-            .addOnFailureListener {
-                error = it.localizedMessage ?: "Couldn't start scanner. Make sure Google Play Services is up to date."
-            }
+        if (activity != null) {
+            scanner.getStartScanIntent(activity)
+                .addOnSuccessListener { sender ->
+                    launcher.launch(IntentSenderRequest.Builder(sender).build())
+                }
+                .addOnFailureListener {
+                    error = it.localizedMessage ?: "Couldn't start scanner. Make sure Google Play Services is up to date."
+                }
+        } else {
+            error = "Unable to find base Activity context wrapper"
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -142,103 +160,395 @@ fun ScanScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Scan document") },
-                navigationIcon = {
-                    IconButton(onClick = onCancel) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    val bytes = capturedBytes
-                    if (bytes != null) {
-                        TextButton(onClick = {
-                            val parsedJson = FieldsCodec.encode(parsed.toList())
-                            onApply(parsedJson, rawText, bytes)
-                        }) { Text("Use") }
-                    }
-                },
-            )
-        },
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            val bmp = capturedBitmap
-            if (bmp != null) {
-                Card(
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    ),
+    // Deep premium background gradient
+    val backgroundBrush = Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFF070B14),
+            Color(0xFF111728)
+        )
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundBrush)
+    ) {
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = { 
+                        Text(
+                            text = "Scan Document", 
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        ) 
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onCancel) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack, 
+                                contentDescription = "Back",
+                                tint = Color.White
+                            )
+                        }
+                    },
+                    actions = {
+                        val bytes = capturedBytes
+                        if (bytes != null) {
+                            TextButton(onClick = {
+                                val parsedJson = FieldsCodec.encode(parsed.toList())
+                                onApply(parsedJson, rawText, bytes)
+                            }) { 
+                                Text(
+                                    text = "Use", 
+                                    color = Color(0xFF00E5FF),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                ) 
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent
+                    )
+                )
+            },
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+            ) {
+                val bmp = capturedBitmap
+                
+                // Holographic Scanner Frame or Photo Preview Container
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Image(
-                        bitmap = bmp.asImageBitmap(),
-                        contentDescription = "Scanned document",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(280.dp),
+                    val glowTransition = rememberInfiniteTransition(label = "ScannerGlow")
+                    
+                    val glowOffset by glowTransition.animateFloat(
+                        initialValue = 0f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(4000, easing = LinearEasing),
+                            repeatMode = RepeatMode.Restart
+                        ),
+                        label = "GlowOffset"
+                    )
+
+                    val borderGlowBrush = Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF00E5FF),
+                            Color(0xFF00FF87),
+                            Color(0xFF00E5FF)
+                        ),
+                        start = Offset(0f, 0f),
+                        end = Offset(1000f * glowOffset, 1000f)
+                    )
+
+                    val laserY by glowTransition.animateFloat(
+                        initialValue = 0f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(2200, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "LaserY"
+                    )
+
+                    if (bmp != null) {
+                        // Document Preview with Glowing Border
+                        Surface(
+                            shape = RoundedCornerShape(24.dp),
+                            color = Color(0x10FFFFFF),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .border(BorderStroke(2.dp, borderGlowBrush), RoundedCornerShape(24.dp))
+                                .clip(RoundedCornerShape(24.dp))
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                Image(
+                                    bitmap = bmp.asImageBitmap(),
+                                    contentDescription = "Scanned document",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+
+                                // Gliding neon horizontal laser sweep animation
+                                Canvas(modifier = Modifier.fillMaxSize()) {
+                                    val y = size.height * laserY
+                                    drawLine(
+                                        brush = Brush.horizontalGradient(
+                                            colors = listOf(
+                                                Color.Transparent,
+                                                Color(0xFF00E5FF),
+                                                Color.Transparent
+                                            )
+                                        ),
+                                        start = Offset(0f, y),
+                                        end = Offset(size.width, y),
+                                        strokeWidth = 3.5.dp.toPx()
+                                    )
+
+                                    drawRect(
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(
+                                                Color(0x2200E5FF),
+                                                Color.Transparent
+                                            )
+                                        ),
+                                        topLeft = Offset(0f, y - 24.dp.toPx()),
+                                        size = Size(size.width, 24.dp.toPx())
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        // Futuristic HUD Targeting Frame
+                        Surface(
+                            shape = RoundedCornerShape(24.dp),
+                            color = Color(0x06FFFFFF),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)), RoundedCornerShape(24.dp))
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                // Dynamic radar sweep line if busy
+                                if (busy) {
+                                    Canvas(modifier = Modifier.fillMaxSize()) {
+                                        val y = size.height * laserY
+                                        drawLine(
+                                            brush = Brush.horizontalGradient(
+                                                colors = listOf(
+                                                    Color.Transparent,
+                                                    Color(0xFF00E5FF),
+                                                    Color.Transparent
+                                                )
+                                            ),
+                                            start = Offset(0f, y),
+                                            end = Offset(size.width, y),
+                                            strokeWidth = 2.dp.toPx()
+                                        )
+                                    }
+                                }
+
+                                // Interactive HUD crosshairs
+                                Canvas(modifier = Modifier.fillMaxSize()) {
+                                    val length = 20.dp.toPx()
+                                    val stroke = 3.dp.toPx()
+                                    val margin = 16.dp.toPx()
+                                    val bracketColor = if (busy) Color(0xFFD4AF37) else Color(0xFF00E5FF).copy(alpha = 0.5f)
+
+                                    // Top-Left
+                                    drawLine(bracketColor, Offset(margin, margin), Offset(margin + length, margin), strokeWidth = stroke)
+                                    drawLine(bracketColor, Offset(margin, margin), Offset(margin, margin + length), strokeWidth = stroke)
+                                    
+                                    // Top-Right
+                                    drawLine(bracketColor, Offset(size.width - margin, margin), Offset(size.width - margin - length, margin), strokeWidth = stroke)
+                                    drawLine(bracketColor, Offset(size.width - margin, margin), Offset(size.width - margin, margin + length), strokeWidth = stroke)
+                                    
+                                    // Bottom-Left
+                                    drawLine(bracketColor, Offset(margin, size.height - margin), Offset(margin + length, size.height - margin), strokeWidth = stroke)
+                                    drawLine(bracketColor, Offset(margin, size.height - margin), Offset(margin, size.height - margin - length), strokeWidth = stroke)
+                                    
+                                    // Bottom-Right
+                                    drawLine(bracketColor, Offset(size.width - margin, size.height - margin), Offset(size.width - margin - length, size.height - margin), strokeWidth = stroke)
+                                    drawLine(bracketColor, Offset(size.width - margin, size.height - margin), Offset(size.width - margin, size.height - margin - length), strokeWidth = stroke)
+                                }
+
+                                if (busy) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        androidx.compose.material3.CircularProgressIndicator(
+                                            color = Color(0xFFD4AF37),
+                                            modifier = Modifier.size(32.dp),
+                                            strokeWidth = 3.dp
+                                        )
+                                        Spacer(Modifier.height(12.dp))
+                                        Text(
+                                            text = "PROCESSING SECURE SCAN…",
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                fontFamily = FontFamily.Monospace,
+                                                fontWeight = FontWeight.Bold,
+                                                letterSpacing = 1.sp
+                                            ),
+                                            color = Color(0xFFD4AF37)
+                                        )
+                                    }
+                                } else {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center,
+                                        modifier = Modifier.padding(24.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.DocumentScanner,
+                                            contentDescription = null,
+                                            tint = Color(0xFF00E5FF).copy(alpha = 0.6f),
+                                            modifier = Modifier.size(48.dp)
+                                        )
+                                        Spacer(Modifier.height(16.dp))
+                                        Text(
+                                            text = if (template == Template.PAYMENT_CARD) {
+                                                "Align credit card inside targeting brackets. Camera works best for embossed text. Try NFC scan for flat debit cards."
+                                            } else {
+                                                "Align document page inside the targeting frame. Google AI scanner will crop edges and extract text automatically."
+                                            },
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            textAlign = TextAlign.Center,
+                                            color = Color.White.copy(alpha = 0.5f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Auto-fill Detection Results
+                if (parsed.isNotEmpty()) {
+                    Text(
+                        text = "AUTO-FILL RECOGNITION PREVIEW",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.5.sp
+                        ),
+                        color = Color(0xFF00E5FF),
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        parsed.forEach { (k, v) ->
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0x0C00E5FF),
+                                border = BorderStroke(1.dp, Color(0xFF00E5FF).copy(alpha = 0.15f)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(14.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = k.uppercase(),
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontFamily = FontFamily.Monospace,
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 0.5.sp
+                                        ),
+                                        color = Color.White.copy(alpha = 0.6f)
+                                    )
+                                    Text(
+                                        text = v,
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontWeight = FontWeight.SemiBold
+                                        ),
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else if (capturedBitmap != null && rawText.isNotBlank()) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0x08FFFFFF),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Text(
+                                text = "RAW EXTRACTED TEXT (NO DIRECT FIELDS DETECTED)",
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = Color.White.copy(alpha = 0.5f)
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = rawText.take(300) + if (rawText.length > 300) "…" else "",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.7f),
+                                lineHeight = 18.sp
+                            )
+                        }
+                    }
+                }
+
+                error?.let {
+                    Text(
+                        text = it, 
+                        color = Color(0xFFFF5252), 
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(horizontal = 4.dp)
                     )
                 }
-            } else if (busy) {
-                Text("Processing scan…", style = MaterialTheme.typography.bodyMedium)
-            } else {
-                Text(
-                    if (template == Template.PAYMENT_CARD) {
-                        "Position your card in the frame. Tip: Camera scan works best for embossed cards. For modern flat cards, use the 'Scan NFC chip' option instead."
-                    } else {
-                        "Position the document inside the camera frame. The scanner will detect edges automatically and crop, then run OCR."
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
 
-            if (parsed.isNotEmpty()) {
-                Text(
-                    "Auto-fill preview",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                parsed.forEach { (k, v) ->
-                    Text("$k: $v", style = MaterialTheme.typography.bodyMedium)
+                // Control Action Buttons
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Button(
+                        onClick = ::startScan,
+                        shape = RoundedCornerShape(28.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF00E5FF),
+                            contentColor = Color(0xFF070B14)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                    ) {
+                        Icon(Icons.Filled.DocumentScanner, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = if (capturedBitmap == null) "OPEN CAMERA SCANNER" else "RESCAN DOCUMENT",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+
+                    OutlinedButton(
+                        onClick = onCancel,
+                        shape = RoundedCornerShape(28.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color.White
+                        ),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                    ) { 
+                        Text(
+                            text = if (capturedBitmap == null) "Cancel" else "Discard",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium
+                        ) 
+                    }
                 }
-            } else if (capturedBitmap != null && rawText.isNotBlank()) {
-                Text(
-                    "Couldn't detect labelled fields — raw text will be saved into a \"Scanned text\" field.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(rawText.take(300), style = MaterialTheme.typography.bodySmall)
             }
-
-            error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-            }
-
-            Button(
-                onClick = ::startScan,
-                shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Icon(Icons.Filled.DocumentScanner, contentDescription = null)
-                Text(
-                    if (capturedBitmap == null) "  Open scanner" else "  Rescan",
-                )
-            }
-            OutlinedButton(
-                onClick = onCancel,
-                shape = RoundedCornerShape(28.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(if (capturedBitmap == null) "Cancel" else "Discard") }
         }
     }
 }

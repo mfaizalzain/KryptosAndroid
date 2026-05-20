@@ -1,5 +1,6 @@
 package com.kryptos.vault.ui.lock
 
+import com.kryptos.vault.ui.findFragmentActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,11 +54,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.background
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.ui.graphics.graphicsLayer
 
 @Composable
 fun LockScreen(onUnlocked: () -> Unit) {
     val ctx = LocalContext.current
-    val activity = ctx as? FragmentActivity
+    val activity = remember(ctx) { ctx.findFragmentActivity() }
     val auth = remember { (ctx.applicationContext as KryptosApp).authManager }
     val scope = rememberCoroutineScope()
 
@@ -65,6 +72,10 @@ fun LockScreen(onUnlocked: () -> Unit) {
     var account by remember { mutableStateOf<AuthManager.Account?>(auth.currentAccount) }
     var signingIn by remember { mutableStateOf(false) }
     var signInError by remember { mutableStateOf<String?>(null) }
+
+    // Coroutine-driven shake animation for security container
+    val shakeAnim = remember { androidx.compose.animation.core.Animatable(0f) }
+
     fun authenticate() {
         activity?.let {
             BiometricAuth.prompt(
@@ -72,7 +83,17 @@ fun LockScreen(onUnlocked: () -> Unit) {
                 title = "Unlock Kryptos",
                 subtitle = "Authenticate to access your vault",
                 onSuccess = onUnlocked,
-                onFailure = { attempts++ },
+                onFailure = {
+                    attempts++
+                    scope.launch {
+                        // Shake physics: rapid oscillations decaying back to center
+                        repeat(3) {
+                            shakeAnim.animateTo(24f, animationSpec = androidx.compose.animation.core.tween(50))
+                            shakeAnim.animateTo(-24f, animationSpec = androidx.compose.animation.core.tween(50))
+                        }
+                        shakeAnim.animateTo(0f, animationSpec = androidx.compose.animation.core.tween(50))
+                    }
+                },
             )
         }
     }
@@ -91,136 +112,224 @@ fun LockScreen(onUnlocked: () -> Unit) {
         if (account != null) authenticate()
     }
 
+    // Rich premium custom matte slate dark gradient mesh
+    val backgroundBrush = Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFF0F131D),
+            Color(0xFF1C2230)
+        )
+    )
+
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        color = Color.Transparent
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 32.dp, vertical = 64.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .background(backgroundBrush)
         ) {
-            // Header Area
             Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 32.dp, vertical = 64.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.Center
             ) {
-                Surface(
-                    shape = RoundedCornerShape(32.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(112.dp)
+                // Header Area
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            painter = painterResource(com.fmz.kryptos.R.drawable.ic_launcher_monochrome),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(64.dp)
-                        )
+                    // Pulsing concentric security shield
+                    val transition = rememberInfiniteTransition(label = "Shield Pulsing")
+                    val wave1 by transition.animateFloat(
+                        initialValue = 1f,
+                        targetValue = 1.55f,
+                        animationSpec = infiniteRepeatable(
+                            animation = androidx.compose.animation.core.tween(2400, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                            repeatMode = androidx.compose.animation.core.RepeatMode.Restart
+                        ),
+                        label = "Wave 1"
+                    )
+                    val alpha1 by transition.animateFloat(
+                        initialValue = 0.55f,
+                        targetValue = 0.0f,
+                        animationSpec = infiniteRepeatable(
+                            animation = androidx.compose.animation.core.tween(2400, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                            repeatMode = androidx.compose.animation.core.RepeatMode.Restart
+                        ),
+                        label = "Alpha 1"
+                    )
+                    val wave2 by transition.animateFloat(
+                        initialValue = 1f,
+                        targetValue = 1.35f,
+                        animationSpec = infiniteRepeatable(
+                            animation = androidx.compose.animation.core.tween(2400, delayMillis = 1200, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                            repeatMode = androidx.compose.animation.core.RepeatMode.Restart
+                        ),
+                        label = "Wave 2"
+                    )
+                    val alpha2 by transition.animateFloat(
+                        initialValue = 0.35f,
+                        targetValue = 0.0f,
+                        animationSpec = infiniteRepeatable(
+                            animation = androidx.compose.animation.core.tween(2400, delayMillis = 1200, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                            repeatMode = androidx.compose.animation.core.RepeatMode.Restart
+                        ),
+                        label = "Alpha 2"
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .graphicsLayer { translationX = shakeAnim.value }
+                            .size(160.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val baseHaloColor = Color(0xFF8F9CAE) // Muted matte slate gray accent
+                        val goldHaloColor = Color(0xFFD4AF37) // Warm premium gold accent
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            val baseRadius = 56.dp.toPx()
+                            // Wave 1 - Matte Slate
+                            drawCircle(
+                                color = baseHaloColor,
+                                radius = baseRadius * wave1,
+                                alpha = alpha1,
+                                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
+                            )
+                            // Wave 2 - Gold
+                            drawCircle(
+                                color = goldHaloColor,
+                                radius = baseRadius * wave2,
+                                alpha = alpha2,
+                                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
+                            )
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(32.dp),
+                            color = Color(0xFF2E3547), // Muted matte slate card base
+                            modifier = Modifier.size(112.dp),
+                            border = BorderStroke(1.5.dp, Color(0xFFD4AF37).copy(alpha = 0.35f)), // Gold accent border
+                            shadowElevation = 12.dp
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    painter = painterResource(com.fmz.kryptos.R.drawable.ic_launcher_monochrome),
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(64.dp)
+                                )
+                            }
+                        }
                     }
-                }
-                Text(
-                    text = "Kryptos",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.ExtraBold
-                )
-                Text(
-                    text = "Your private vault.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-            }
 
-            Spacer(Modifier.height(64.dp))
-
-            // Middle Area (Account or Onboarding)
-            Box(
-                modifier = Modifier.weight(1f, fill = false),
-                contentAlignment = Alignment.Center
-            ) {
-                val current = account
-                if (current != null) {
-                    AccountBadge(current)
-                } else {
                     Text(
-                        text = "Securely back up your data with encrypted cloud storage. Your data never leaves your device unencrypted.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 16.dp)
+                        text = "Kryptos",
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = Color.White,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp
+                    )
+                    Text(
+                        text = "Your private vault.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Center
                     )
                 }
-            }
 
-            Spacer(Modifier.height(64.dp))
+                Spacer(Modifier.height(64.dp))
 
-            // Footer Area (Actions)
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                val current = account
-                if (current == null) {
-                    Button(
-                        onClick = ::signIn,
-                        enabled = !signingIn,
-                        shape = RoundedCornerShape(28.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White,
-                            contentColor = Color(0xFF1F1F1F)
-                        ),
-                        border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
-                    ) {
-                        if (signingIn) {
-                            androidx.compose.material3.CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.primary
+                // Middle Area (Account or Onboarding)
+                Box(
+                    modifier = Modifier.weight(1f, fill = false),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val current = account
+                    if (current != null) {
+                        AccountBadge(current)
+                    } else {
+                        Text(
+                            text = "Securely back up your data with encrypted cloud storage. Your data never leaves your device unencrypted.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(64.dp))
+
+                // Footer Area (Actions)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    val current = account
+                    if (current == null) {
+                        Button(
+                            onClick = ::signIn,
+                            enabled = !signingIn,
+                            shape = RoundedCornerShape(28.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.White,
+                                contentColor = Color(0xFF1F1F1F)
+                            ),
+                            border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                        ) {
+                            if (signingIn) {
+                                androidx.compose.material3.CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            } else {
+                                GoogleIcon(Modifier.size(22.dp))
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                text = if (signingIn) "Signing in…" else "Sign in with Google",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Medium
                             )
-                        } else {
-                            GoogleIcon(Modifier.size(22.dp))
                         }
-                        Spacer(Modifier.width(12.dp))
-                        Text(
-                            text = if (signingIn) "Signing in…" else "Sign in with Google",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
 
-                    signInError?.let {
-                        Text(
-                            text = it,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
+                        signInError?.let {
+                            Text(
+                                text = it,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                    } else {
+                        Button(
+                            onClick = ::authenticate,
+                            shape = RoundedCornerShape(28.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFD4AF37),
+                                contentColor = Color(0xFF0F131D)
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                        ) {
+                            Icon(Icons.Filled.Fingerprint, contentDescription = null)
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                text = if (attempts == 0) "Unlock Vault" else "Try Again",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
-                } else {
-                    Button(
-                        onClick = ::authenticate,
-                        shape = RoundedCornerShape(28.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                    ) {
-                        Icon(Icons.Filled.Fingerprint, contentDescription = null)
-                        Spacer(Modifier.width(12.dp))
-                        Text(
-                            text = if (attempts == 0) "Unlock Vault" else "Try Again",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
-
                 }
             }
         }
