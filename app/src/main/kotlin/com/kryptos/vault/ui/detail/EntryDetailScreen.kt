@@ -192,6 +192,7 @@ fun EntryDetailScreen(
                         title = current.title,
                         fields = allFields,
                         attachment = current.attachment,
+                        interactive = false,
                         onCopy = { label, value -> SecureClipboard.copy(ctx, label, value) },
                         onShare = { _, _ -> qrData = sharePayload(current) }
                     )
