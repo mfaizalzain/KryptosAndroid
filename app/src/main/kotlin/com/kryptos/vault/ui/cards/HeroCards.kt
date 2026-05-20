@@ -125,7 +125,7 @@ fun CompactHeroCard(
             .background(compactBackground(template))
             .border(
                 1.dp, 
-                if (template == Template.NOTE) Color(0xFFD4AF37).copy(alpha = 0.45f) else Color.White.copy(alpha = 0.14f), 
+                Color.White.copy(alpha = 0.28f), 
                 RoundedCornerShape(14.dp)
             ),
     ) {
@@ -184,7 +184,7 @@ private fun FullHeroCard(
             .background(compactBackground(template))
             .border(
                 1.dp, 
-                if (template == Template.NOTE) Color(0xFFD4AF37).copy(alpha = 0.55f) else Color.White.copy(alpha = 0.22f), 
+                Color.White.copy(alpha = 0.35f), 
                 RoundedCornerShape(22.dp)
             ),
     ) {
@@ -302,7 +302,7 @@ private fun compactBackground(template: Template): Brush = Brush.linearGradient(
         Template.BANK_ACCOUNT -> listOf(Color(0xFF0D5264), Color(0xFF17777A))
         Template.TAX_NUMBER -> listOf(Color(0xFF713019), Color(0xFFA6521F))
         Template.API_KEY -> listOf(Color(0xFF141821), Color(0xFF3B4252))
-        Template.NOTE -> listOf(Color(0xFF1E2431), Color(0xFF283142)) // Gorgeous dark matte slate background
+        Template.NOTE -> listOf(Color(0xFFF0B429), Color(0xFFFFD166))
         Template.QR_CODE -> listOf(Color(0xFF145087), Color(0xFF1A91C7))
     },
 )
@@ -708,7 +708,7 @@ private fun compactFallbackTitle(template: Template): String = when (template) {
 }
 
 private fun heroContentColor(template: Template): Color =
-    if (template == Template.NOTE) Color(0xFFE2C175) else Color.White // Warm soft gold accent for text/icons on note card
+    if (template == Template.NOTE) Color(0xFF3F2B00) else Color.White
 
 private fun primaryFieldsFor(template: Template): List<String> = when (template) {
     Template.ID_CARD -> listOf("ID number", "Full name", "Date of birth")
@@ -2011,7 +2011,15 @@ private fun QrCodeHero(
     interactive: Boolean,
 ) {
     val data = fields.value("Data").ifBlank { fields.value("Content") }
-    val bmp = remember(data) { if (data.isNotBlank()) QrGenerator.generate(data) else null }
+    var bmp by remember(data) { mutableStateOf<android.graphics.Bitmap?>(null) }
+    LaunchedEffect(data) {
+        if (data.isNotBlank()) {
+            val generated = withContext(Dispatchers.Default) {
+                QrGenerator.generate(data)
+            }
+            bmp = generated
+        }
+    }
 
     Surface(
         shape = RoundedCornerShape(24.dp),
@@ -2027,9 +2035,10 @@ private fun QrCodeHero(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // QR Code Section
-            if (bmp != null) {
+            val currentBmp = bmp
+            if (currentBmp != null) {
                 Image(
-                    bitmap = bmp.asImageBitmap(),
+                    bitmap = currentBmp.asImageBitmap(),
                     contentDescription = "QR Code",
                     modifier = Modifier
                         .size(80.dp)

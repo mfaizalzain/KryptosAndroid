@@ -44,6 +44,14 @@
 -keep interface org.bouncycastle.** { *; }
 -dontwarn org.bouncycastle.**
 
+# JMRTD + Scuba (ePassport NFC reader — loaded via ServiceLoader SPI, stripped by R8)
+-keep class net.sf.scuba.** { *; }
+-keep interface net.sf.scuba.** { *; }
+-dontwarn net.sf.scuba.**
+-keep class org.jmrtd.** { *; }
+-keep interface org.jmrtd.** { *; }
+-dontwarn org.jmrtd.**
+
 -keep class javax.net.ssl.** { *; }
 -dontwarn javax.net.ssl.**
 
