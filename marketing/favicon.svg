@@ -1,8 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 108 108">
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <clipPath id="squircle">
-      <path d="M54,4 C92,4 104,16 104,54 C104,92 92,104 54,104 C16,104 4,92 4,54 C4,16 16,4 54,4 Z"/>
-    </clipPath>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#0F1730"/>
       <stop offset="1" stop-color="#1F2A4A"/>
@@ -11,27 +8,16 @@
       <stop offset="0" stop-color="#7BA8FF"/>
       <stop offset="1" stop-color="#0056D2"/>
     </linearGradient>
-    <!-- Cutout for keyhole, used as mask so the bg shows through -->
     <mask id="keyhole">
-      <rect width="108" height="108" fill="white"/>
-      <!-- Keyhole sits in the upper portion of the vertical bar -->
-      <circle cx="36" cy="42" r="4.2" fill="black"/>
-      <path d="M33.5,42 L33.5,50 L38.5,50 L38.5,42 Z" fill="black"/>
+      <rect width="512" height="512" fill="white"/>
+      <circle cx="170" cy="200" r="20" fill="black"/>
+      <path d="M158,200 L158,238 L182,238 L182,200 Z" fill="black"/>
     </mask>
   </defs>
-  <g clip-path="url(#squircle)">
-    <rect width="108" height="108" fill="url(#bg)"/>
-
-    <!-- The K monogram -->
-    <g mask="url(#keyhole)" fill="url(#kg)">
-      <!-- Vertical bar -->
-      <rect x="26" y="24" width="20" height="60" rx="3"/>
-      <!-- Upper arm -->
-      <path d="M46,54 L70,24 L84,24 L60,54 Z"/>
-      <!-- Lower arm -->
-      <path d="M46,54 L70,84 L84,84 L60,54 Z"/>
-    </g>
-
-    <!-- Tiny accent dot above the keyhole for refinement -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g mask="url(#keyhole)" fill="url(#kg)">
+    <rect x="122" y="114" width="96" height="284" rx="14"/>
+    <path d="M218,256 L332,114 L398,114 L284,256 Z"/>
+    <path d="M218,256 L332,398 L398,398 L284,256 Z"/>
   </g>
 </svg>

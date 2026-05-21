@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Monochrome variant for Android 13+ themed icons. The system tints the fill. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -9,15 +8,15 @@
     <path
         android:fillColor="#FF000000"
         android:fillType="evenOdd"
-        android:pathData="M33,26 L45,26 L45,82 L33,82 Z
-                          M35.5,42 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0 Z
-                          M37,44 L41,44 L41,50 L37,50 Z" />
+        android:pathData="M26,24 L46,24 L46,84 L26,84 Z
+                          M31.8,42 a4.2,4.2 0 1,0 8.4,0 a4.2,4.2 0 1,0 -8.4,0
+                          M33.5,42 L38.5,42 L38.5,50 L33.5,50 Z" />
 
     <path
         android:fillColor="#FF000000"
-        android:pathData="M45,54 L69,26 L78,26 L54,54 Z" />
+        android:pathData="M46,54 L70,24 L84,24 L60,54 Z" />
 
     <path
         android:fillColor="#FF000000"
-        android:pathData="M45,54 L69,82 L78,82 L54,54 Z" />
+        android:pathData="M46,54 L70,84 L84,84 L60,54 Z" />
 </vector>
