@@ -29,7 +29,7 @@ android {
             "706867595241-e3ck7u69mnp2dtgf38vpu22k4ic5pcv9.apps.googleusercontent.com")
         minSdk = 26
         targetSdk = 35
-        versionCode = 20
+        versionCode = 21
         versionName = "1.1.9"
     }
 
