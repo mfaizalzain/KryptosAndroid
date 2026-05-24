@@ -41,6 +41,8 @@ import com.kryptos.vault.data.Template
 import com.kryptos.vault.data.VaultEntry
 import com.kryptos.vault.data.templateFromShareId
 import com.kryptos.vault.ui.VaultViewModel
+import com.kryptos.vault.ui.scan.QrPayloadType
+import com.kryptos.vault.ui.scan.QrPayloads
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.time.Instant
@@ -99,11 +101,12 @@ fun EntryEditScreen(
         }
         titleError = false
 
+        val savableFields = fieldsForSave(template, fields.toList())
         val entry = VaultEntry(
             id = id,
             template = template,
             title = title,
-            fieldsJson = FieldsCodec.encode(fields.toList()),
+            fieldsJson = FieldsCodec.encode(savableFields),
             attachment = existingAttachment,
             createdAt = existingCreatedAt ?: System.currentTimeMillis(),
         )
@@ -404,6 +407,19 @@ fun EntryEditScreen(
                             }
                         }
                     }
+                }
+            }
+
+            if (template == Template.QR_CODE) {
+                item {
+                    QrTypePanel(
+                        selected = QrPayloads.selectedType(fields.toList()),
+                        onSelect = { type ->
+                            fields.clear()
+                            fields.addAll(QrPayloads.defaultFields(type))
+                            if (title.isBlank()) title = type.defaultQrTitle()
+                        },
+                    )
                 }
             }
 
@@ -718,5 +734,84 @@ private fun defaultFieldsFor(template: Template): List<String> = when (template)
     Template.TAX_NUMBER -> listOf("Full name", "Tax number", "Country")
     Template.API_KEY -> listOf("Service", "Environment", "Key", "Secret")
     Template.NOTE -> listOf("Content")
-    Template.QR_CODE -> listOf("Data")
+    Template.QR_CODE -> QrPayloads.defaultFields(QrPayloadType.TEXT).map { it.first }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun QrTypePanel(
+    selected: QrPayloadType,
+    onSelect: (QrPayloadType) -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                "QR content type",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                "Choose a standard format so other phones can open contacts, Wi-Fi, messages, maps, events, and payment addresses directly.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                QrPayloadType.entries.forEach { type ->
+                    FilterChip(
+                        selected = selected == type,
+                        onClick = { onSelect(type) },
+                        label = { Text(type.label) },
+                        leadingIcon = {
+                            Icon(
+                                type.icon(),
+                                contentDescription = null,
+                                modifier = Modifier.size(FilterChipDefaults.IconSize),
+                            )
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun fieldsForSave(template: Template, fields: List<Pair<String, String>>): List<Pair<String, String>> =
+    if (template == Template.QR_CODE) QrPayloads.withGeneratedData(fields) else fields
+
+private fun QrPayloadType.defaultQrTitle(): String = when (this) {
+    QrPayloadType.TEXT -> "QR code"
+    QrPayloadType.CONTACT -> "Contact QR"
+    QrPayloadType.WIFI -> "Wi-Fi QR"
+    QrPayloadType.EMAIL -> "Email QR"
+    QrPayloadType.PHONE -> "Phone QR"
+    QrPayloadType.SMS -> "SMS QR"
+    QrPayloadType.LOCATION -> "Location QR"
+    QrPayloadType.CALENDAR -> "Calendar QR"
+    QrPayloadType.PAYMENT -> "Payment QR"
+}
+
+private fun QrPayloadType.icon(): ImageVector = when (this) {
+    QrPayloadType.TEXT -> Icons.Default.TextFields
+    QrPayloadType.CONTACT -> Icons.Default.ContactPhone
+    QrPayloadType.WIFI -> Icons.Default.Wifi
+    QrPayloadType.EMAIL -> Icons.Default.Email
+    QrPayloadType.PHONE -> Icons.Default.Phone
+    QrPayloadType.SMS -> Icons.Default.Sms
+    QrPayloadType.LOCATION -> Icons.Default.Place
+    QrPayloadType.CALENDAR -> Icons.Default.Event
+    QrPayloadType.PAYMENT -> Icons.Default.Payments
 }
