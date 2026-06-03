@@ -27,6 +27,7 @@ coil = "2.7.0"
 playServicesAuth = "21.3.0"
 billing = "8.3.0"
 workmanager = "2.10.0"
+playServicesAds = "23.6.0"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -61,6 +62,7 @@ bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk15to18", version.ref 
 bouncycastle-util = { module = "org.bouncycastle:bcutil-jdk15to18", version.ref = "bouncycastle" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
 billing-ktx = { module = "com.android.billingclient:billing-ktx", version.ref = "billing" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workmanager" }

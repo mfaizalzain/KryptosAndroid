@@ -43,6 +43,7 @@ import com.kryptos.vault.data.shareId
 import com.kryptos.vault.data.VaultEntry
 import com.kryptos.vault.security.SecureClipboard
 import com.kryptos.vault.ui.VaultViewModel
+import com.kryptos.vault.ui.components.NativeAdCard
 import com.kryptos.vault.ui.cards.HeroCard
 import com.kryptos.vault.ui.scan.QrGenerator
 import com.kryptos.vault.ui.scan.QrSharer
@@ -269,6 +270,13 @@ fun EntryDetailScreen(
                     revealed = show,
                     onToggle = { revealed[i] = !(revealed[i] ?: false) },
                     onCopy = { SecureClipboard.copy(ctx, name, value) },
+                )
+            }
+
+            item {
+                NativeAdCard(
+                    adUnitId = "ca-app-pub-1016705366714872/4650414807",
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
 

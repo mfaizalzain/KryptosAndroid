@@ -20,6 +20,10 @@
         android:fullBackupContent="false"
         android:supportsRtl="true">
 
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-1016705366714872~5626630721"/>
+
         <activity
             android:name="com.kryptos.vault.MainActivity"
             android:exported="true"

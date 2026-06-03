@@ -6,6 +6,7 @@ import android.content.ContextWrapper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -297,56 +298,48 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
 
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
 
-            // --- Premium section ---
-            Section("Pro Version") {
-                if (isPremium) {
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Filled.WorkspacePremium,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onTertiaryContainer
+            // --- Support section ---
+            Section("Support") {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            ctx.startActivity(
+                                android.content.Intent(
+                                    android.content.Intent.ACTION_VIEW,
+                                    android.net.Uri.parse("https://buymeacoffee.com/faizalmzain")
+                                )
                             )
-                            Spacer(Modifier.width(12.dp))
+                        },
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("☕️", style = MaterialTheme.typography.headlineMedium)
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                "Pro version unlocked. Thank you for your support!",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                fontWeight = FontWeight.Medium
+                                "Buy Me a Coffee",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                "Support development with a small donation",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                    }
-                } else {
-                    Text(
-                        "Upgrade to Pro to remove the ${BillingManager.FREE_ENTRY_LIMIT} entry limit and support future development.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Button(
-                        onClick = { ctx.findActivity()?.let { billing.purchasePremium(it) } },
-                        shape = RoundedCornerShape(28.dp),
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiary,
-                            contentColor = MaterialTheme.colorScheme.onTertiary
+                        Icon(
+                            Icons.Filled.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    ) {
-                        Icon(Icons.Filled.WorkspacePremium, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(12.dp))
-                        Text("Upgrade to Pro (One-time)")
-                    }
-                    TextButton(
-                        onClick = { billing.restorePurchases() },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Already purchased? Restore Purchase")
                     }
                 }
             }

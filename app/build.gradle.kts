@@ -138,9 +138,11 @@ dependencies {
 
     implementation(libs.coil.compose)
     implementation(libs.play.services.auth)
+    implementation(libs.play.services.ads)
     implementation(libs.billing.ktx)
     implementation(libs.zxing.core)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation("com.google.guava:guava:33.3.1-android")
 
     debugImplementation(libs.androidx.ui.tooling)
 }

@@ -1,6 +1,7 @@
 package com.kryptos.vault
 
 import android.app.Application
+import com.google.android.gms.ads.MobileAds
 import com.kryptos.vault.backup.DriveBackupManager
 import com.kryptos.vault.data.VaultDatabase
 import com.kryptos.vault.data.VaultRepository
@@ -86,5 +87,7 @@ class KryptosApp : Application() {
         // JMRTD relies on full BouncyCastle for some MAC/ciphers Android's stripped BC lacks.
         // Add it to the end of providers so it doesn't override default System TLS/SSL.
         Security.addProvider(BouncyCastleProvider())
+        // Initialize AdMob SDK
+        MobileAds.initialize(this) {}
     }
 }

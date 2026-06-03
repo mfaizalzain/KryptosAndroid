@@ -31,14 +31,15 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
         )
     }
 
-    private val _isPremium = MutableStateFlow(prefs.getBoolean(KEY_IS_PREMIUM, false))
+    private val _isPremium = MutableStateFlow(true)
     val isPremium: StateFlow<Boolean> = _isPremium
 
     private val _remindersEnabled = MutableStateFlow(prefs.getBoolean(KEY_REMINDERS_ENABLED, true))
     val remindersEnabled: StateFlow<Boolean> = _remindersEnabled
 
     init {
-        startConnection()
+        // Connection disabled as Pro billing is replaced by Buy Me a Coffee
+        // startConnection()
     }
 
     fun setRemindersEnabled(enabled: Boolean) {
@@ -66,44 +67,20 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
             .build()
             
         billingClient.queryPurchasesAsync(params) { result, purchases ->
-            android.util.Log.d("BillingMgr", "queryPurchases: code=${result.responseCode}, msg=${result.debugMessage}, count=${purchases?.size}")
+            android.util.Log.d("BillingMgr", "queryPurchases: code=${result.responseCode}, msg=${result.debugMessage}, count=${purchases.size}")
             if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                 val hasPro = purchases.any { purchase ->
                     purchase.products.contains(PRODUCT_ID_PRO) && purchase.purchaseState == Purchase.PurchaseState.PURCHASED
                 }
                 android.util.Log.d("BillingMgr", "Has pro purchase: $hasPro")
-                setPremium(hasPro)
+                // Keep premium true regardless of Google Play billing status
+                setPremium(true)
             }
         }
     }
 
     fun purchasePremium(activity: Activity) {
-        val productList = listOf(
-            QueryProductDetailsParams.Product.newBuilder()
-                .setProductId(PRODUCT_ID_PRO)
-                .setProductType(BillingClient.ProductType.INAPP)
-                .build()
-        )
-        val params = QueryProductDetailsParams.newBuilder().setProductList(productList).build()
-
-        billingClient.queryProductDetailsAsync(params) { billingResult, queryProductDetailsResult ->
-            val productDetailsList = queryProductDetailsResult.productDetailsList
-            android.util.Log.d("BillingMgr", "queryProductDetails: code=${billingResult.responseCode}, msg=${billingResult.debugMessage}, products=${productDetailsList?.size}")
-            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && !productDetailsList.isNullOrEmpty()) {
-                val productDetails = productDetailsList[0]
-                android.util.Log.d("BillingMgr", "Launching billing flow for ${productDetails.productId}")
-                val flowParams = BillingFlowParams.newBuilder()
-                    .setProductDetailsParamsList(listOf(
-                        BillingFlowParams.ProductDetailsParams.newBuilder()
-                            .setProductDetails(productDetails)
-                            .build()
-                    ))
-                    .build()
-                billingClient.launchBillingFlow(activity, flowParams)
-            } else {
-                android.util.Log.e("BillingMgr", "Product query failed or empty: code=${billingResult.responseCode}, msg=${billingResult.debugMessage}")
-            }
-        }
+        // No-op as premium is unlocked
     }
 
     override fun onPurchasesUpdated(billingResult: BillingResult, purchases: List<Purchase>?) {
@@ -136,13 +113,12 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
     }
 
     fun restorePurchases() {
-        android.util.Log.d("BillingMgr", "restorePurchases manually triggered")
-        queryPurchases()
+        // No-op as premium is unlocked
     }
 
     private fun setPremium(value: Boolean) {
-        prefs.edit().putBoolean(KEY_IS_PREMIUM, value).apply()
-        _isPremium.value = value
+        prefs.edit().putBoolean(KEY_IS_PREMIUM, true).apply()
+        _isPremium.value = true
     }
 
     companion object {

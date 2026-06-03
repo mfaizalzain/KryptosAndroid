@@ -41,6 +41,7 @@ import com.kryptos.vault.data.Template
 import com.kryptos.vault.data.VaultEntry
 import com.kryptos.vault.data.templateFromShareId
 import com.kryptos.vault.ui.VaultViewModel
+import com.kryptos.vault.ui.components.NativeAdCard
 import com.kryptos.vault.ui.scan.QrPayloadType
 import com.kryptos.vault.ui.scan.QrPayloads
 import kotlinx.coroutines.launch
@@ -570,6 +571,12 @@ fun EntryEditScreen(
                     onClick = { fields.add("Field" to "") },
                     label = { Text("Add field") },
                     leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                )
+            }
+            item {
+                NativeAdCard(
+                    adUnitId = "ca-app-pub-1016705366714872/4650414807",
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
         }
