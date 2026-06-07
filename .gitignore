@@ -7,6 +7,10 @@ local.properties
 
 # Log/OS Files
 *.log
+.DS_Store
+
+# Local upload/release scripts
+upload_*.py
 
 # Android Studio generated files and folders
 captures/
