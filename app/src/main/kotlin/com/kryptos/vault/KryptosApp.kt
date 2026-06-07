@@ -19,7 +19,7 @@ class KryptosApp : Application() {
 
     val authManager: AuthManager by lazy { AuthManager(this) }
     val backupManager: DriveBackupManager by lazy { DriveBackupManager(this) }
-    val billingManager: BillingManager by lazy { BillingManager(this) }
+    val billingManager: BillingManager by lazy { BillingManager(this) } // reminders only; ads replace IAP
 
     /** Returns the repository for the given userId. Creates a new DB connection if the user changed. */
     fun getRepository(userId: String?): VaultRepository {

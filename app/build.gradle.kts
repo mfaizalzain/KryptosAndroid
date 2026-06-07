@@ -29,8 +29,8 @@ android {
             "706867595241-e3ck7u69mnp2dtgf38vpu22k4ic5pcv9.apps.googleusercontent.com")
         minSdk = 26
         targetSdk = 35
-        versionCode = 21
-        versionName = "1.1.9"
+        versionCode = 22
+        versionName = "1.2.0"
     }
 
     signingConfigs {
@@ -139,7 +139,6 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.play.services.auth)
     implementation(libs.play.services.ads)
-    implementation(libs.billing.ktx)
     implementation(libs.zxing.core)
     implementation(libs.androidx.work.runtime.ktx)
     implementation("com.google.guava:guava:33.3.1-android")

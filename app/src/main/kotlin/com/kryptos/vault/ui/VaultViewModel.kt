@@ -5,34 +5,24 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import android.app.Activity
 import android.content.Context
 import com.kryptos.vault.KryptosApp
-import com.kryptos.vault.BillingManager
 import com.kryptos.vault.data.FieldsCodec
 import com.kryptos.vault.data.Template
 import com.kryptos.vault.data.VaultEntry
 import com.kryptos.vault.data.VaultRepository
 import com.kryptos.vault.notif.ExpiryScheduler
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class VaultViewModel(
     private val repo: VaultRepository,
-    private val billingManager: BillingManager,
     private val appContext: Context,
 ) : ViewModel() {
 
-    val entries: StateFlow<List<VaultEntry>> = repo.observeAll()
+    val entries = repo.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val isPremium: StateFlow<Boolean> = billingManager.isPremium
-
-    fun purchasePremium(activity: Activity) = billingManager.purchasePremium(activity)
-
-    fun restorePurchases() = billingManager.restorePurchases()
 
     suspend fun get(id: Long) = repo.get(id)
 
@@ -104,7 +94,7 @@ class VaultViewModel(
             initializer {
                 val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as KryptosApp
                 val userId = app.authManager.currentAccount?.id
-                VaultViewModel(app.getRepository(userId), app.billingManager, app)
+                VaultViewModel(app.getRepository(userId), app)
             }
         }
     }

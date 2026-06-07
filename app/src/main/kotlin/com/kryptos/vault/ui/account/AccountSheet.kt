@@ -27,7 +27,6 @@ import coil.compose.AsyncImage
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.Scope
-import com.kryptos.vault.BillingManager
 import com.kryptos.vault.KryptosApp
 import com.kryptos.vault.backup.DriveBackupManager
 import com.kryptos.vault.security.AuthManager
@@ -44,12 +43,10 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
     val app = ctx.applicationContext as KryptosApp
     val auth = remember { app.authManager }
     val backup = remember { app.backupManager }
-    val billing = remember { app.billingManager }
     val scope = rememberCoroutineScope()
 
     var account by remember { mutableStateOf<AuthManager.Account?>(auth.currentAccount) }
-    val isPremium by billing.isPremium.collectAsState()
-    val remindersEnabled by billing.remindersEnabled.collectAsState()
+    val remindersEnabled by app.billingManager.remindersEnabled.collectAsState()
     var working by remember { mutableStateOf<String?>(null) }
     var feedback by remember { mutableStateOf<String?>(null) }
     var pendingAccessToken by remember { mutableStateOf<String?>(null) }
@@ -413,18 +410,6 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                         Text("Restore")
                     }
                 }
-                if (isPremium) {
-                    OutlinedButton(
-                        onClick = { runDriveFlow(BackupAction.BACKUP_OWN) },
-                        enabled = current != null && working == null,
-                        shape = RoundedCornerShape(28.dp),
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                    ) {
-                        Icon(Icons.Filled.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Back up to My Drive (Pro)")
-                    }
-                }
                 if (working != null && working != "Signing out…") {
                     Text(working!!, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                 }
@@ -457,7 +442,7 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                     }
                     Switch(
                         checked = remindersEnabled,
-                        onCheckedChange = { billing.setRemindersEnabled(it) }
+                        onCheckedChange = { app.billingManager.setRemindersEnabled(it) }
                     )
                 }
             }
