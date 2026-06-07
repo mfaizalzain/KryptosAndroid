@@ -64,12 +64,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.kryptos.vault.BillingManager
 import com.kryptos.vault.KryptosApp
 import com.kryptos.vault.data.FieldsCodec
 import com.kryptos.vault.data.Template
@@ -77,6 +82,7 @@ import com.kryptos.vault.data.VaultEntry
 import com.kryptos.vault.ui.VaultViewModel
 import com.kryptos.vault.ui.account.AccountSheet
 import com.kryptos.vault.ui.cards.CompactHeroCard
+import com.kryptos.vault.ui.components.NativeAdCard
 import kotlin.math.absoluteValue
 
 private const val STACK_THRESHOLD = 1
@@ -91,14 +97,11 @@ fun VaultListScreen(
     onSignOut: () -> Unit,
 ) {
     val entries by viewModel.entries.collectAsState()
-    val isPremium by viewModel.isPremium.collectAsState()
     val ctx = LocalContext.current
     val auth = remember { (ctx.applicationContext as KryptosApp).authManager }
     val photoUrl = auth.currentAccount?.photoUrl
     var showAccount by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
-    
-    val reachedLimit = !isPremium && entries.size >= BillingManager.FREE_ENTRY_LIMIT
 
     val filtered = remember(entries, query) {
         val q = query.trim().lowercase()
@@ -145,7 +148,7 @@ fun VaultListScreen(
                     )
                 },
                 actions = {
-                    IconButton(onClick = { if (reachedLimit) showAccount = true else onQrScan() }) {
+                    IconButton(onClick = { onQrScan() }) {
                         Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan QR")
                     }
                     IconButton(
@@ -182,17 +185,17 @@ fun VaultListScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                text = { Text(if (reachedLimit) "Unlock Pro" else "Add Entry") },
+                text = { Text("Add Entry") },
                 icon = { 
                     Icon(
-                        if (reachedLimit) Icons.Filled.WorkspacePremium else Icons.Filled.Add, 
+                        Icons.Filled.Add, 
                         contentDescription = null
                     ) 
                 },
-                onClick = { if (reachedLimit) showAccount = true else onAdd() },
+                onClick = { onAdd() },
                 shape = RoundedCornerShape(20.dp),
-                containerColor = if (reachedLimit) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
-                contentColor = if (reachedLimit) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onPrimary
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             )
         },
     ) { padding ->
@@ -201,25 +204,33 @@ fun VaultListScreen(
                 .fillMaxSize()
                 .padding(padding),
         ) {
+            val keyboardController = LocalSoftwareKeyboardController.current
+            val focusManager = LocalFocusManager.current
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                placeholder = { Text("Search your vault") },
+                placeholder = { Text(stringResource(com.fmz.kryptos.R.string.search_vault_placeholder)) },
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                 trailingIcon = {
                     if (query.isNotEmpty()) {
                         IconButton(onClick = { query = "" }) {
-                            Icon(Icons.Filled.Close, contentDescription = "Clear")
+                            Icon(Icons.Filled.Close, contentDescription = stringResource(com.fmz.kryptos.R.string.search_clear))
                         }
                     }
                 },
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = {
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                }),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    cursorColor = MaterialTheme.colorScheme.primary,
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -228,12 +239,12 @@ fun VaultListScreen(
 
             if (entries.isEmpty()) {
                 EmptyState(
-                    "Your vault is empty.\nTap the button below to secure your first document.",
+                    stringResource(com.fmz.kryptos.R.string.vault_empty),
                     Modifier.weight(1f)
                 )
             } else if (filtered.isEmpty()) {
                 EmptyState(
-                    "No entries match \"$query\".",
+                    stringResource(com.fmz.kryptos.R.string.vault_no_match, query),
                     Modifier.weight(1f)
                 )
             } else {
@@ -263,6 +274,13 @@ fun VaultListScreen(
                                 }
                             }
                         }
+                    }
+                    // Native ad at the bottom of the list
+                    item {
+                        NativeAdCard(
+                            adUnitId = "ca-app-pub-1016705366714872/4650414807",
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
                     }
                 }
             }

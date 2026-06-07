@@ -32,6 +32,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -221,10 +224,15 @@ fun EntryDetailScreen(
                     )
                 }
                 item {
+                    val configuration = LocalConfiguration.current
+                    val density = LocalDensity.current
+                    val targetWidthPx = with(density) {
+                        (configuration.screenWidthDp.dp - 48.dp).toPx().toInt().coerceAtLeast(1)
+                    }
                     var bmp by remember(bytes) { mutableStateOf<android.graphics.Bitmap?>(null) }
-                    LaunchedEffect(bytes) {
+                    LaunchedEffect(bytes, targetWidthPx) {
                         val decoded = withContext(Dispatchers.Default) {
-                            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                            decodeSampledBitmap(bytes, targetWidthPx)
                         }
                         bmp = decoded
                     }
@@ -274,20 +282,21 @@ fun EntryDetailScreen(
             }
 
             item {
-                NativeAdCard(
-                    adUnitId = "ca-app-pub-1016705366714872/4650414807",
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
-
-            item {
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Tap any field to copy. The clipboard clears automatically after 30 seconds for your security.",
+                    stringResource(com.fmz.kryptos.R.string.clipboard_security_note),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                )
+            }
+
+            item {
+                Spacer(Modifier.height(16.dp))
+                NativeAdCard(
+                    adUnitId = "ca-app-pub-1016705366714872/4650414807",
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
         }
@@ -430,15 +439,17 @@ private fun FieldCard(
                     )
                 }
             }
-            IconButton(onClick = onCopy) {
-                Icon(
-                    Icons.Filled.ContentCopy,
-                    contentDescription = "Copy",
-                    modifier = Modifier.size(20.dp)
-                )
-            }
         }
     }
+}
+
+private fun decodeSampledBitmap(bytes: ByteArray, reqWidth: Int): android.graphics.Bitmap? {
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+    var sample = 1
+    while (bounds.outWidth / (sample * 2) >= reqWidth) sample *= 2
+    val opts = BitmapFactory.Options().apply { inSampleSize = sample }
+    return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
 }
 
 private fun looksSecret(name: String): Boolean {

@@ -3,4 +3,9 @@
     <string name="biometric_title">Unlock Kryptos</string>
     <string name="biometric_subtitle">Authenticate to access your vault</string>
     <string name="biometric_cancel">Cancel</string>
+    <string name="search_vault_placeholder">Search your vault</string>
+    <string name="search_clear">Clear</string>
+    <string name="vault_empty">Your vault is empty.\nTap the button below to secure your first document.</string>
+    <string name="vault_no_match">No entries match \"%1$s\".</string>
+    <string name="clipboard_security_note">Tap any field to copy. The clipboard clears automatically after 30 seconds for your security.</string>
 </resources>
