@@ -97,6 +97,7 @@ fun VaultListScreen(
     onSignOut: () -> Unit,
 ) {
     val entries by viewModel.entries.collectAsState()
+    val adsRemoved by viewModel.adsRemoved.collectAsState()
     val ctx = LocalContext.current
     val auth = remember { (ctx.applicationContext as KryptosApp).authManager }
     val photoUrl = auth.currentAccount?.photoUrl
@@ -276,11 +277,13 @@ fun VaultListScreen(
                         }
                     }
                     // Native ad at the bottom of the list
-                    item {
-                        NativeAdCard(
-                            adUnitId = "ca-app-pub-1016705366714872/4650414807",
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                        )
+                    if (!adsRemoved) {
+                        item {
+                            NativeAdCard(
+                                adUnitId = "ca-app-pub-1016705366714872/4650414807",
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            )
+                        }
                     }
                 }
             }

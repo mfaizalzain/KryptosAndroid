@@ -5,7 +5,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import android.app.Activity
 import android.content.Context
+import com.kryptos.vault.BillingManager
 import com.kryptos.vault.KryptosApp
 import com.kryptos.vault.data.FieldsCodec
 import com.kryptos.vault.data.Template
@@ -18,11 +20,18 @@ import kotlinx.coroutines.launch
 
 class VaultViewModel(
     private val repo: VaultRepository,
+    private val billingManager: BillingManager,
     private val appContext: Context,
 ) : ViewModel() {
 
     val entries = repo.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val adsRemoved = billingManager.adsRemoved
+
+    fun purchaseRemoveAds(activity: Activity) = billingManager.purchaseRemoveAds(activity)
+
+    fun restorePurchases() = billingManager.restorePurchases()
 
     suspend fun get(id: Long) = repo.get(id)
 
@@ -94,7 +103,7 @@ class VaultViewModel(
             initializer {
                 val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as KryptosApp
                 val userId = app.authManager.currentAccount?.id
-                VaultViewModel(app.getRepository(userId), app)
+                VaultViewModel(app.getRepository(userId), app.billingManager, app)
             }
         }
     }

@@ -62,6 +62,7 @@ fun EntryDetailScreen(
 ) {
     var entry by remember { mutableStateOf<VaultEntry?>(null) }
     LaunchedEffect(id) { entry = viewModel.get(id) }
+    val adsRemoved by viewModel.adsRemoved.collectAsState()
     val ctx = LocalContext.current
     val revealed = remember { mutableStateMapOf<Int, Boolean>() }
     var confirmDelete by remember { mutableStateOf(false) }
@@ -292,12 +293,14 @@ fun EntryDetailScreen(
                 )
             }
 
-            item {
-                Spacer(Modifier.height(16.dp))
-                NativeAdCard(
-                    adUnitId = "ca-app-pub-1016705366714872/4650414807",
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+            if (!adsRemoved) {
+                item {
+                    Spacer(Modifier.height(16.dp))
+                    NativeAdCard(
+                        adUnitId = "ca-app-pub-1016705366714872/4650414807",
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
             }
         }
     }

@@ -80,6 +80,7 @@ fun EntryEditScreen(
     var existingCreatedAt by remember { mutableStateOf<Long?>(null) }
     var duplicateToConfirm by remember { mutableStateOf<VaultEntry?>(null) }
     var isSaving by remember { mutableStateOf(false) }
+    val adsRemoved by viewModel.adsRemoved.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
     var datePickerTargetIndex by remember { mutableStateOf<Int?>(null) }
@@ -573,11 +574,13 @@ fun EntryEditScreen(
                     leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
             }
-            item {
-                NativeAdCard(
-                    adUnitId = "ca-app-pub-1016705366714872/4650414807",
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+            if (!adsRemoved) {
+                item {
+                    NativeAdCard(
+                        adUnitId = "ca-app-pub-1016705366714872/4650414807",
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
             }
         }
 
