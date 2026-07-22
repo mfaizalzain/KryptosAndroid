@@ -29,8 +29,8 @@ android {
             "706867595241-e3ck7u69mnp2dtgf38vpu22k4ic5pcv9.apps.googleusercontent.com")
         minSdk = 26
         targetSdk = 36
-        versionCode = 24
-        versionName = "1.3.0"
+        versionCode = 25
+        versionName = "1.3.1"
     }
 
     signingConfigs {
