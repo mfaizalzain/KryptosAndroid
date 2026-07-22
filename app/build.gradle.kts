@@ -21,14 +21,14 @@ val keystoreProps = Properties().apply {
 
 android {
     namespace = "com.fmz.kryptos"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.fmz.kryptos"
         resValue("string", "google_web_client_id",
             "706867595241-e3ck7u69mnp2dtgf38vpu22k4ic5pcv9.apps.googleusercontent.com")
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 24
         versionName = "1.3.0"
     }

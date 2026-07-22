@@ -87,9 +87,9 @@ class BillingManager(context: Context) : PurchasesUpdatedListener {
                 )
             )
             .build()
-        billingClient.queryProductDetailsAsync(params) { result, queryResult ->
+        billingClient.queryProductDetailsAsync(params) { result, queryProductDetailsResult ->
             if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                productDetails = queryResult.productDetailsList.firstOrNull()
+                productDetails = queryProductDetailsResult.productDetailsList.firstOrNull()
             } else {
                 android.util.Log.w("BillingMgr", "queryProductDetails failed: ${result.debugMessage}")
             }
