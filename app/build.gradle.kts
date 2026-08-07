@@ -145,4 +145,9 @@ dependencies {
     implementation("com.google.guava:guava:33.3.1-android")
 
     debugImplementation(libs.androidx.ui.tooling)
+
+    // Unit tests (pure JVM — QR payloads, field codec, card masking)
+    testImplementation("junit:junit:4.13.2")
+    // org.json is mocked by Android unit tests by default; use the real impl for codec tests
+    testImplementation("org.json:json:20260719")
 }
