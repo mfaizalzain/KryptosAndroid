@@ -120,8 +120,7 @@ fun QrScanScreen(
                                     preview,
                                     imageAnalysis
                                 )
-                            } catch (e: Exception) {
-                                android.util.Log.e("QrScan", "Binding failed", e)
+                            } catch (_: Exception) {
                             }
                         }, ContextCompat.getMainExecutor(ctx))
                         

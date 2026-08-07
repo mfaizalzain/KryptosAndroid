@@ -128,14 +128,11 @@ fun EntryEditScreen(
 
         scope.launch {
             try {
-                android.util.Log.d("EntryEditScreen", "Saving entry: $title")
                 kotlinx.coroutines.withTimeout(10000) {
                     viewModel.upsert(entry)
                 }
-                android.util.Log.d("EntryEditScreen", "Save success. Navigating back.")
                 onDone()
             } catch (t: Throwable) {
-                android.util.Log.e("EntryEditScreen", "Save FAILED", t)
                 snackbarHostState.showSnackbar("Error: ${t.localizedMessage ?: "Failed to save"}")
                 isSaving = false
             }

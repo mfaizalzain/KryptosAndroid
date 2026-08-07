@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -23,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.Identity
@@ -64,19 +68,26 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
     var account by remember { mutableStateOf<AuthManager.Account?>(auth.currentAccount) }
     val remindersEnabled by app.billingManager.remindersEnabled.collectAsState()
     val adsRemoved by app.billingManager.adsRemoved.collectAsState()
+    val billingMessage by app.billingManager.message.collectAsState()
     var working by remember { mutableStateOf<String?>(null) }
     var feedback by remember { mutableStateOf<String?>(null) }
     var pendingAccessToken by remember { mutableStateOf<String?>(null) }
     var pendingAction by remember { mutableStateOf<BackupAction?>(null) }
+    var pendingProvidedPassphrase by remember { mutableStateOf<String?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
     var confirmRestore by remember { mutableStateOf(false) }
+    var confirmPassphraseSetup by remember { mutableStateOf(false) }
+    var showRestorePassphraseDialog by remember { mutableStateOf(false) }
+    var restorePassphraseInput by remember { mutableStateOf("") }
+    var passphraseDraft by remember { mutableStateOf("") }
+    var passphraseConfirm by remember { mutableStateOf("") }
+    var passphraseError by remember { mutableStateOf<String?>(null) }
     
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
 
     LaunchedEffect(account?.id) {
         val id = account?.id ?: return@LaunchedEffect
         if (backup.getLastBackupAtMillis(id) == 0L) {
-            android.util.Log.d("AccountSheet", "Checking Drive for existing backup for user: $id")
             val activity = ctx.findActivity() ?: return@LaunchedEffect
             val scopes = listOf(
                 DriveBackupManager.DRIVE_APPDATA_SCOPE,
@@ -95,8 +106,8 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                         backup.refreshLastBackupDate(token, id)
                     }
                 }
-            } catch (e: Exception) {
-                android.util.Log.w("AccountSheet", "Silent backup sync failed: ${e.message}")
+            } catch (_: Exception) {
+                // Silent refresh is best-effort; the user can trigger a manual refresh from Settings.
             }
         }
     }
@@ -124,13 +135,17 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
             return@rememberLauncherForActivityResult
         }
         pendingAccessToken = token
+        val enteredPassphrase = pendingProvidedPassphrase
+        pendingProvidedPassphrase = null
         runDriveAction(scope, backup, token, action, account?.id, app,
             onWorking = { working = it },
-            onFeedback = { feedback = it })
+            onFeedback = { feedback = it },
+            providedPassphrase = enteredPassphrase,
+            onPassphraseRequired = { showRestorePassphraseDialog = true })
         pendingAction = null
     }
 
-    fun runDriveFlow(action: BackupAction) {
+    fun runDriveFlow(action: BackupAction, providedPassphrase: String? = null) {
         val activity = ctx.findActivity()
         if (activity == null) {
             feedback = "Internal error: Activity not found."
@@ -140,6 +155,7 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
         working = "Authorizing Drive..."
         feedback = null
         pendingAction = action
+        pendingProvidedPassphrase = providedPassphrase
 
         val scopeStrings = when (action) {
             BackupAction.BACKUP -> listOf(DriveBackupManager.DRIVE_APPDATA_SCOPE)
@@ -157,7 +173,6 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
             
         scope.launch {
             try {
-                android.util.Log.d("DriveBackup", "Requesting Drive authorization...")
                 val authResult = withTimeout(15000) {
                     Identity.getAuthorizationClient(activity).authorize(request).await()
                 }
@@ -179,14 +194,17 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                         pendingAction = null
                     } else {
                         working = "Processing..."
+                        val enteredPassphrase = pendingProvidedPassphrase
+                        pendingProvidedPassphrase = null
                         runDriveAction(scope, backup, token, action, account?.id, app,
                             onWorking = { working = it },
-                            onFeedback = { feedback = it })
+                            onFeedback = { feedback = it },
+                            providedPassphrase = enteredPassphrase,
+                            onPassphraseRequired = { showRestorePassphraseDialog = true })
                         pendingAction = null
                     }
                 }
             } catch (t: Throwable) {
-                android.util.Log.e("DriveBackup", "Auth failed", t)
                 working = null
                 feedback = if (t is kotlinx.coroutines.TimeoutCancellationException) {
                     "Authorization timed out. Check internet."
@@ -257,6 +275,7 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
             Section("Support") {
                 SupportSection(
                     adsRemoved = adsRemoved,
+                    message = billingMessage,
                     onRemoveAds = {
                         val activity = ctx.findActivity()
                         if (activity == null) {
@@ -284,6 +303,17 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                     onRefresh = { runDriveFlow(BackupAction.REFRESH) },
                     onBackup = { runDriveFlow(BackupAction.BACKUP) },
                     onRestore = { confirmRestore = true },
+                    passphraseSet = backup.hasBackupPassphrase(account?.id),
+                    onSetPassphrase = {
+                        passphraseDraft = ""
+                        passphraseConfirm = ""
+                        passphraseError = null
+                        confirmPassphraseSetup = true
+                    },
+                    onRemovePassphrase = {
+                        backup.removeBackupPassphrase(account?.id)
+                        feedback = "Backup passphrase removed. New backups will upload the raw key again."
+                    },
                 )
             }
 
@@ -346,6 +376,114 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
             },
             dismissButton = {
                 TextButton(onClick = { confirmRestore = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+
+    if (confirmPassphraseSetup) {
+        AlertDialog(
+            onDismissRequest = {
+                confirmPassphraseSetup = false
+                passphraseDraft = ""
+                passphraseConfirm = ""
+                passphraseError = null
+            },
+            title = { Text("Backup passphrase") },
+            text = {
+                Column {
+                    Text(
+                        "This passphrase wraps your vault key before it's uploaded. It is never sent to Google Drive, " +
+                            "and if you forget it the backup cannot be recovered on a new device.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = passphraseDraft,
+                        onValueChange = { passphraseDraft = it },
+                        label = { Text("Passphrase (min 6 characters)") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = passphraseConfirm,
+                        onValueChange = { passphraseConfirm = it },
+                        label = { Text("Confirm passphrase") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    passphraseError?.let {
+                        Spacer(Modifier.height(8.dp))
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    when {
+                        passphraseDraft.length < 6 -> passphraseError = "Backup passphrase must be at least 6 characters."
+                        passphraseDraft != passphraseConfirm -> passphraseError = "Passphrases don't match."
+                        else -> {
+                            backup.setBackupPassphrase(account?.id, passphraseDraft)
+                            passphraseDraft = ""
+                            passphraseConfirm = ""
+                            passphraseError = null
+                            confirmPassphraseSetup = false
+                            feedback = "Backup passphrase set. Future backups will be protected."
+                        }
+                    }
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    confirmPassphraseSetup = false
+                    passphraseDraft = ""
+                    passphraseConfirm = ""
+                    passphraseError = null
+                }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+
+    if (showRestorePassphraseDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showRestorePassphraseDialog = false
+                restorePassphraseInput = ""
+            },
+            title = { Text("Backup passphrase") },
+            text = {
+                Column {
+                    Text(
+                        "This backup is protected by a passphrase. Enter it to restore.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = restorePassphraseInput,
+                        onValueChange = { restorePassphraseInput = it },
+                        label = { Text("Backup passphrase") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val entered = restorePassphraseInput
+                    restorePassphraseInput = ""
+                    showRestorePassphraseDialog = false
+                    runDriveFlow(BackupAction.RESTORE, providedPassphrase = entered)
+                }) { Text(stringResource(R.string.restore)) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showRestorePassphraseDialog = false
+                    restorePassphraseInput = ""
+                }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }

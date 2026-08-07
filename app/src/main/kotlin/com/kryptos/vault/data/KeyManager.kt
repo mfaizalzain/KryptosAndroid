@@ -1,8 +1,6 @@
 package com.kryptos.vault.data
 
 import android.content.Context
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import java.security.SecureRandom
 
 /**
@@ -19,61 +17,31 @@ object KeyManager {
     }
 
     fun getDatabasePassphrase(context: Context, userId: String? = null): ByteArray {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        val prefs = EncryptedSharedPreferences.create(
-            context,
-            PREFS,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
+        val prefs = SecurePrefs(context, PREFS)
         val key = keyFor(userId)
-        val stored = prefs.getString(key, null)
+        val stored = prefs.getString(key)
         if (stored != null) return android.util.Base64.decode(stored, android.util.Base64.NO_WRAP)
 
-        val legacy = if (userId != null) prefs.getString(KEY, null) else null
+        val legacy = if (userId != null) prefs.getString(KEY) else null
         if (legacy != null) {
-            prefs.edit().putString(key, legacy).apply()
+            prefs.putString(key, legacy)
             return android.util.Base64.decode(legacy, android.util.Base64.NO_WRAP)
         }
 
         val bytes = ByteArray(32).also { SecureRandom().nextBytes(it) }
-        prefs.edit()
-            .putString(key, android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP))
-            .apply()
+        prefs.putString(key, android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP))
         return bytes
     }
 
     /** Overwrites the local passphrase — only call when restoring a Drive backup. */
     fun setDatabasePassphrase(context: Context, passphrase: ByteArray, userId: String? = null) {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        val prefs = EncryptedSharedPreferences.create(
-            context,
-            PREFS,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+        SecurePrefs(context, PREFS).putString(
+            keyFor(userId),
+            android.util.Base64.encodeToString(passphrase, android.util.Base64.NO_WRAP),
         )
-        prefs.edit()
-            .putString(keyFor(userId), android.util.Base64.encodeToString(passphrase, android.util.Base64.NO_WRAP))
-            .commit()
     }
 
     fun clearPassphrase(context: Context, userId: String? = null) {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        val prefs = EncryptedSharedPreferences.create(
-            context,
-            PREFS,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
-        prefs.edit().remove(keyFor(userId)).commit()
+        SecurePrefs(context, PREFS).remove(keyFor(userId))
     }
 }

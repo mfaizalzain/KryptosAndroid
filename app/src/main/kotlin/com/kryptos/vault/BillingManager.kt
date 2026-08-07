@@ -2,8 +2,6 @@ package com.kryptos.vault
 
 import android.app.Activity
 import android.content.Context
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
@@ -15,6 +13,7 @@ import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
+import com.kryptos.vault.data.SecurePrefs
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -29,16 +28,7 @@ class BillingManager(context: Context) : PurchasesUpdatedListener {
         .build()
 
     private val prefs by lazy {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        EncryptedSharedPreferences.create(
-            context,
-            "kryptos_billing_prefs",
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
+        SecurePrefs(context, "kryptos_billing_prefs")
     }
 
     private val _adsRemoved = MutableStateFlow(prefs.getBoolean(KEY_ADS_REMOVED, false))
@@ -47,22 +37,25 @@ class BillingManager(context: Context) : PurchasesUpdatedListener {
     private val _remindersEnabled = MutableStateFlow(prefs.getBoolean(KEY_REMINDERS_ENABLED, true))
     val remindersEnabled: StateFlow<Boolean> = _remindersEnabled
 
+    private val _message = MutableStateFlow<String?>(null)
+    val message: StateFlow<String?> = _message
+
     private var productDetails: ProductDetails? = null
     private var connected = false
+    private var restoringPurchases = false
 
     init {
         startConnection()
     }
 
     fun setRemindersEnabled(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_REMINDERS_ENABLED, enabled).apply()
+        prefs.putBoolean(KEY_REMINDERS_ENABLED, enabled)
         _remindersEnabled.value = enabled
     }
 
     private fun startConnection() {
         billingClient.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(result: BillingResult) {
-                android.util.Log.d("BillingMgr", "Connected: code=${result.responseCode}, msg=${result.debugMessage}")
                 if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                     connected = true
                     queryProductDetails()
@@ -71,7 +64,6 @@ class BillingManager(context: Context) : PurchasesUpdatedListener {
             }
             override fun onBillingServiceDisconnected() {
                 connected = false
-                android.util.Log.w("BillingMgr", "Billing service disconnected")
             }
         })
     }
@@ -90,8 +82,6 @@ class BillingManager(context: Context) : PurchasesUpdatedListener {
         billingClient.queryProductDetailsAsync(params) { result, queryProductDetailsResult ->
             if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                 productDetails = queryProductDetailsResult.productDetailsList.firstOrNull()
-            } else {
-                android.util.Log.w("BillingMgr", "queryProductDetails failed: ${result.debugMessage}")
             }
         }
     }
@@ -108,7 +98,26 @@ class BillingManager(context: Context) : PurchasesUpdatedListener {
                 }
                 if (owned != null) {
                     if (!owned.isAcknowledged) acknowledge(owned) else setAdsRemoved(true)
+                    if (restoringPurchases) {
+                        restoringPurchases = false
+                        _message.value = "Restore complete."
+                    }
+                } else if (purchases.any { it.products.contains(PRODUCT_ID_REMOVE_ADS) }) {
+                    if (restoringPurchases) {
+                        restoringPurchases = false
+                        _message.value = "A purchase is pending approval."
+                    }
+                } else if (purchases.none { it.products.contains(PRODUCT_ID_REMOVE_ADS) }) {
+                    // Successful query with no matching purchase (e.g. refunded): reconcile.
+                    setAdsRemoved(false)
+                    if (restoringPurchases) {
+                        restoringPurchases = false
+                        _message.value = "No purchases found to restore."
+                    }
                 }
+            } else if (restoringPurchases) {
+                restoringPurchases = false
+                _message.value = "Could not reach Google Play. Try again."
             }
         }
     }
@@ -134,6 +143,8 @@ class BillingManager(context: Context) : PurchasesUpdatedListener {
     }
 
     fun restorePurchases() {
+        restoringPurchases = true
+        _message.value = "Restoring purchases…"
         if (connected) queryPurchases() else startConnection()
     }
 
@@ -161,7 +172,7 @@ class BillingManager(context: Context) : PurchasesUpdatedListener {
     }
 
     private fun setAdsRemoved(value: Boolean) {
-        prefs.edit().putBoolean(KEY_ADS_REMOVED, value).apply()
+        prefs.putBoolean(KEY_ADS_REMOVED, value)
         _adsRemoved.value = value
     }
 

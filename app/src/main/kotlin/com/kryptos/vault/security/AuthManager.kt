@@ -6,10 +6,9 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.kryptos.vault.data.SecurePrefs
 import com.fmz.kryptos.R
 
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,16 +29,7 @@ class AuthManager(private val context: Context) {
     val accountFlow: StateFlow<Account?> = _currentAccount.asStateFlow()
 
     private val prefs by lazy {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        EncryptedSharedPreferences.create(
-            context,
-            "kryptos_auth_prefs",
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
+        SecurePrefs(context, "kryptos_auth_prefs")
     }
 
     init {
@@ -82,56 +72,36 @@ class AuthManager(private val context: Context) {
                 if (cred.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                     val gid = GoogleIdTokenCredential.createFrom(cred.data)
                     
-                    // Debug logging to understand the issue
                     val uri = gid.profilePictureUri
                     val idToken = gid.idToken
                     val photoFromUri = uri?.toString()
                     val photoFromJwt = idToken?.let { extractPictureFromIdToken(it) }
-                    
-                    android.util.Log.d("AuthManager", "=== PHOTO DEBUG ===")
-                    android.util.Log.d("AuthManager", "profilePictureUri=$uri")
-                    android.util.Log.d("AuthManager", "idToken present=${idToken != null} (len=${idToken?.length})")
-                    android.util.Log.d("AuthManager", "photoFromUri=$photoFromUri")
-                    android.util.Log.d("AuthManager", "photoFromJwt=$photoFromJwt")
-                    android.util.Log.d("AuthManager", "displayName=${gid.displayName}")
-                    android.util.Log.d("AuthManager", "id=${gid.id}")
-                    
+
                     // Use first non-null source for photo
                     val photoUrl = photoFromUri ?: photoFromJwt ?: ""
-                    
-                    android.util.Log.d("AuthManager", "Final photoUrl selected: '$photoUrl'")
-                    if (photoUrl.isEmpty()) {
-                        android.util.Log.w("AuthManager", "WARNING: No photo URL found in any source (URI or JWT)")
-                    }
-                    
+
                     val account = Account(
                         id = gid.id,
                         email = gid.id.takeIf { it.contains('@') },
                         displayName = gid.displayName,
                         photoUrl = photoUrl,
                     )
-                    android.util.Log.d("AuthManager", "Final photoUrl=$photoUrl")
-                    prefs.edit()
-                        .putString(KEY_ID, account.id)
-                        .putString(KEY_EMAIL, account.email)
-                        .putString(KEY_NAME, account.displayName)
-                        .putString(KEY_PHOTO, account.photoUrl)
-                        .putString(KEY_TOKEN, gid.idToken)
-                        .commit()
+                    prefs.putString(KEY_ID, account.id)
+                    account.email?.let { prefs.putString(KEY_EMAIL, it) }
+                    account.displayName?.let { prefs.putString(KEY_NAME, it) }
+                    account.photoUrl?.let { prefs.putString(KEY_PHOTO, it) }
+                    prefs.putString(KEY_TOKEN, gid.idToken)
                     _currentAccount.value = account
                     return Result.success(account)
                 }
             } catch (e: NoCredentialException) {
                 lastException = e
-                android.util.Log.w("AuthManager", "No credential found (attempt ${attempt + 1})")
                 if (attempt == 0) {
                     kotlinx.coroutines.delay(500) // Brief pause before retry
                 }
             } catch (e: GetCredentialException) {
-                android.util.Log.e("AuthManager", "Sign-in error", e)
                 return Result.failure(Exception("Sign-in failed: ${e.message}"))
             } catch (e: Exception) {
-                android.util.Log.e("AuthManager", "Unexpected error", e)
                 return Result.failure(e)
             }
         }
@@ -140,7 +110,7 @@ class AuthManager(private val context: Context) {
     }
 
     suspend fun signOut() {
-        prefs.edit().clear().apply()
+        prefs.clear()
         _currentAccount.value = null
         runCatching {
             CredentialManager.create(context).clearCredentialState(
@@ -168,7 +138,6 @@ class AuthManager(private val context: Context) {
                 android.util.Base64.DEFAULT
             )
             val jsonString = String(decoded, Charsets.UTF_8)
-            android.util.Log.d("AuthManager", "Decoded JWT Payload: $jsonString")
             val json = org.json.JSONObject(jsonString)
             
             // Try different possible keys for the picture
@@ -178,7 +147,6 @@ class AuthManager(private val context: Context) {
                 
             pic.takeIf { it.isNotBlank() }
         } catch (e: Exception) {
-            android.util.Log.w("AuthManager", "Failed to extract picture from ID token", e)
             null
         }
     }

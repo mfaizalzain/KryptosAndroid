@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.ContextWrapper
 import com.kryptos.vault.KryptosApp
 import com.kryptos.vault.backup.DriveBackupManager
+import com.kryptos.vault.backup.BackupPassphraseIncorrectException
+import com.kryptos.vault.backup.BackupPassphraseRequiredException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -20,6 +22,8 @@ internal fun runDriveAction(
     app: KryptosApp,
     onWorking: (String?) -> Unit,
     onFeedback: (String?) -> Unit,
+    providedPassphrase: String? = null,
+    onPassphraseRequired: () -> Unit = {},
 ) {
     scope.launch {
         try {
@@ -39,10 +43,18 @@ internal fun runDriveAction(
                 BackupAction.RESTORE -> {
                     onWorking("Restoring vault...")
                     app.closeDatabase()
+                    var needsPassphrase = false
                     val ok = try {
-                        backup.restore(accessToken, userId)
+                        backup.restore(accessToken, userId, providedPassphrase)
+                    } catch (e: BackupPassphraseRequiredException) {
+                        needsPassphrase = true
+                        onFeedback(e.localizedMessage ?: "Backup passphrase required.")
+                        onPassphraseRequired()
+                        false
+                    } catch (e: BackupPassphraseIncorrectException) {
+                        onFeedback(e.localizedMessage ?: "The backup passphrase is incorrect.")
+                        false
                     } catch (e: Exception) {
-                        android.util.Log.e("AccountSheet", "Restore failed", e)
                         onFeedback("Restore failed: ${e.localizedMessage}")
                         false
                     }
@@ -50,7 +62,7 @@ internal fun runDriveAction(
                         onFeedback("Restore successful. Restarting app…")
                         kotlinx.coroutines.delay(1500)
                         android.os.Process.killProcess(android.os.Process.myPid())
-                    } else {
+                    } else if (!needsPassphrase) {
                         onFeedback("No backup found in Drive.")
                     }
                 }

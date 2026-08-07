@@ -421,7 +421,10 @@ private fun displayValueFor(template: Template, name: String, value: String): St
     val lower = name.lowercase()
     return when {
         template == Template.PAYMENT_CARD && (lower == "number" || lower.contains("card number")) -> maskCardNumber(value)
-        lower == "cvv" || lower == "cvc" || lower.contains("secret") || lower == "key" || lower.contains("password") || lower.contains("pin") -> maskSecret(value)
+        lower == "cvv" || lower == "cvc" || lower.contains("secret") || lower == "key" ||
+            lower.contains("password") || lower.contains("pin") ||
+            lower.contains("account number") || lower == "account no" || lower == "iban" ||
+            lower.contains("tax number") || lower == "tax id" -> maskSecret(value)
         template == Template.PAYMENT_CARD && lower.contains("expiry") -> formattedExpiry(value)
         else -> value
     }
@@ -446,4 +449,3 @@ internal fun formattedExpiry(value: String): String {
     val digits = value.filter { it.isDigit() }
     return if (digits.length == 4) "${digits.take(2)}/${digits.takeLast(2)}" else value
 }
-

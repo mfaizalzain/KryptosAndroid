@@ -271,7 +271,7 @@ fun EntryDetailScreen(
 
             items(detailFields.size) { i ->
                 val (name, value) = detailFields[i]
-                val isSecret = looksSecret(name)
+                val isSecret = looksSecretFor(current.template, name)
                 val show = !isSecret || (revealed[i] == true)
                 FieldCard(
                     name = name,
@@ -458,5 +458,14 @@ private fun decodeSampledBitmap(bytes: ByteArray, reqWidth: Int): android.graphi
 
 private fun looksSecret(name: String): Boolean {
     val n = name.lowercase()
-    return listOf("password", "pin", "cvv", "secret", "token", "key", "code", "ssn").any { it in n }
+    return listOf(
+        "password", "pin", "cvv", "cvc", "secret", "token", "key", "code", "ssn",
+        "account number", "account no", "iban", "tax number", "tax id"
+    ).any { it in n }
+}
+
+private fun looksSecretFor(template: Template, name: String): Boolean {
+    val n = name.lowercase()
+    if (template == Template.PAYMENT_CARD && (n == "number" || n.contains("card number"))) return true
+    return looksSecret(name)
 }

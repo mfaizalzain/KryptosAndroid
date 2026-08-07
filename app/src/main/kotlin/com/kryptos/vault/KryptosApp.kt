@@ -75,9 +75,10 @@ class KryptosApp : Application() {
 
         listOf(
             "kryptos_secure_prefs", "kryptos_auth_prefs", "kryptos_backup_prefs",
-            "kryptos_billing_prefs", "kryptos_backup_prefs"
+            "kryptos_billing_prefs"
         ).forEach {
             deleteSharedPreferences(it)
+            deleteSharedPreferences("${it}_v2")
         }
     }
 

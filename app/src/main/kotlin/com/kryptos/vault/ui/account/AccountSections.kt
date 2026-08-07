@@ -131,6 +131,7 @@ internal fun AccountHeader(
 @Composable
 internal fun SupportSection(
     adsRemoved: Boolean,
+    message: String?,
     onRemoveAds: () -> Unit,
     onRestorePurchases: () -> Unit,
 ) {
@@ -205,6 +206,14 @@ internal fun SupportSection(
             )
         }
     }
+    message?.let {
+        Text(
+            it,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+    }
 }
 
 @Composable
@@ -216,6 +225,9 @@ internal fun BackupSection(
     onRefresh: () -> Unit,
     onBackup: () -> Unit,
     onRestore: () -> Unit,
+    passphraseSet: Boolean,
+    onSetPassphrase: () -> Unit,
+    onRemovePassphrase: () -> Unit,
 ) {
     Text(
         "Backups include your encrypted documents and the unique key needed to unlock them.",
@@ -279,6 +291,42 @@ internal fun BackupSection(
             Icon(Icons.Filled.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.restore))
+        }
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                if (passphraseSet) "Backup passphrase set" else "No backup passphrase",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+            )
+            Text(
+                if (passphraseSet) {
+                    "Cloud backups are protected. Keep this passphrase safe — it cannot be recovered."
+                } else {
+                    "Backups upload the raw key. Set a passphrase for zero-knowledge protection."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (passphraseSet) {
+            TextButton(onClick = onSetPassphrase, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp)) {
+                Text("Change")
+            }
+            TextButton(onClick = onRemovePassphrase, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp)) {
+                Text("Remove", color = MaterialTheme.colorScheme.error)
+            }
+        } else {
+            TextButton(onClick = onSetPassphrase, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp)) {
+                Text("Set")
+            }
         }
     }
     if (working != null && working != "Signing out…") {

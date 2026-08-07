@@ -27,7 +27,6 @@ internal fun metaName(userId: String?) = userSuffix(userId)?.let { "kryptos$it.m
 /// Low-level Google Drive REST client (files list/upload/update/folder/download).
 object DriveApiClient {
     suspend fun findExisting(accessToken: String, name: String = BACKUP_NAME, space: String = "appDataFolder"): BackupInfo? = withContext(Dispatchers.IO) {
-        android.util.Log.d("DriveBackup", "Searching for: $name in $space")
         val query = "name='$name' and trashed=false"
         val url = URL("https://www.googleapis.com/drive/v3/files?spaces=$space&q=${java.net.URLEncoder.encode(query, "UTF-8")}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc")
 
@@ -141,7 +140,6 @@ object DriveApiClient {
     }
 
     suspend fun requestBytes(accessToken: String, method: String, url: URL, body: ByteArray? = null, contentType: String? = null): ByteArray = withContext(Dispatchers.IO) {
-        android.util.Log.d("DriveBackup", "Request: $method $url")
         var lastErr: Exception? = null
         repeat(3) { attempt ->
             try {
@@ -164,7 +162,6 @@ object DriveApiClient {
                 throw IOException("Drive API $code: ${String(res)}")
             } catch (e: Exception) {
                 lastErr = e
-                android.util.Log.w("DriveBackup", "Attempt ${attempt+1} failed: ${e.message}")
                 kotlinx.coroutines.delay(2000L * (attempt + 1))
             }
         }

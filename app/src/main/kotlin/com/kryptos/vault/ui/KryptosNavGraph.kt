@@ -100,7 +100,6 @@ fun KryptosNavGraph(unlocked: MutableState<Boolean>) {
                 viewModel = vm,
                 savedStateHandle = entry.savedStateHandle,
                 onDone = { 
-                    android.util.Log.e("NavGraph", "onDone called for EDIT. Popping backstack.")
                     nav.popBackStack() 
                 },
                 onScan = { template -> nav.navigate(Routes.scan(template)) },

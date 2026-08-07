@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.HorizontalDivider
@@ -31,6 +32,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kryptos.vault.data.Template
+import com.kryptos.vault.security.PasswordGenerator
 import androidx.compose.ui.res.stringResource
 import com.fmz.kryptos.R
 
@@ -94,18 +96,29 @@ internal fun EditableFieldRow(
             )
         }
 
+        val generate: String? = generateFor(name, template)
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             label = { if (!isDefault) Text(stringResource(R.string.value)) },
             shape = RoundedCornerShape(20.dp),
-            trailingIcon = if (isDateField(name, template)) {
-                {
-                    IconButton(onClick = onPickDate) {
-                        Icon(Icons.Default.CalendarToday, contentDescription = "Pick date")
+            trailingIcon = when {
+                isDateField(name, template) -> {
+                    {
+                        IconButton(onClick = onPickDate) {
+                            Icon(Icons.Default.CalendarToday, contentDescription = "Pick date")
+                        }
                     }
                 }
-            } else null,
+                generate != null -> {
+                    {
+                        IconButton(onClick = { onValueChange(generate) }) {
+                            Icon(Icons.Default.Casino, contentDescription = "Generate secure value")
+                        }
+                    }
+                }
+                else -> null
+            },
             visualTransformation = if (template == Template.PAYMENT_CARD && (name.contains("expiry", ignoreCase = true) || name.contains("expires", ignoreCase = true))) {
                 ExpiryVisualTransformation()
             } else VisualTransformation.None,
@@ -140,5 +153,16 @@ internal fun EditableFieldRow(
             modifier = Modifier.padding(vertical = 4.dp),
             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
         )
+    }
+}
+
+private fun generateFor(name: String, template: Template): String? {
+    val n = name.lowercase()
+    return when {
+        n.contains("pin") -> PasswordGenerator.pin()
+        template == Template.API_KEY && (n == "key" || n.contains("secret")) -> PasswordGenerator.apiKey()
+        listOf("password", "secret", "token", "passphrase", "passcode", "key", "code").any { n.contains(it) } ->
+            PasswordGenerator.password()
+        else -> null
     }
 }

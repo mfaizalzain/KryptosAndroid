@@ -10,14 +10,10 @@ class VaultRepository(private val db: VaultDatabase) {
     suspend fun get(id: Long) = dao.getById(id)
     suspend fun count(): Int = dao.count()
     suspend fun upsert(entry: VaultEntry): Long {
-        android.util.Log.e("VaultRepository", "upsert: id=${entry.id}")
         return if (entry.id == 0L) {
-            val newId = dao.insert(entry)
-            android.util.Log.e("VaultRepository", "upsert: inserted new entry, newId=$newId")
-            newId
+            dao.insert(entry)
         } else {
             dao.update(entry.copy(updatedAt = System.currentTimeMillis()))
-            android.util.Log.e("VaultRepository", "upsert: updated existing entry, id=${entry.id}")
             entry.id
         }
     }

@@ -1,9 +1,8 @@
 package com.kryptos.vault.backup
 
 import android.content.Context
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import com.kryptos.vault.data.KeyManager
+import com.kryptos.vault.data.SecurePrefs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.zetetic.database.sqlcipher.SQLiteDatabase
@@ -34,16 +33,7 @@ class DriveBackupManager(private val context: Context) {
 
 
     private val prefs by lazy {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        EncryptedSharedPreferences.create(
-            context,
-            "kryptos_backup_prefs",
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
+        SecurePrefs(context, "kryptos_backup_prefs")
     }
 
 
@@ -54,7 +44,46 @@ class DriveBackupManager(private val context: Context) {
 
     private fun setLastBackupAtMillis(userId: String?, value: Long) {
         val key = if (userId == null) KEY_LAST_BACKUP else "${KEY_LAST_BACKUP}_$userId"
-        prefs.edit().putLong(key, value).apply()
+        prefs.putLong(key, value)
+    }
+
+    // MARK: - Backup passphrase
+
+    private fun passphrasePrefKey(userId: String?): String {
+        val suffix = userId?.replace(Regex("[^a-zA-Z0-9]"), "_") ?: ""
+        return "backup_passphrase$suffix"
+    }
+
+    fun setBackupPassphrase(userId: String?, passphrase: String) {
+        require(passphrase.length >= BackupKeyProtection.MIN_PASSPHRASE_LENGTH) {
+            "Backup passphrase must be at least ${BackupKeyProtection.MIN_PASSPHRASE_LENGTH} characters."
+        }
+        prefs.putString(passphrasePrefKey(userId), passphrase)
+    }
+
+    fun removeBackupPassphrase(userId: String?) {
+        prefs.remove(passphrasePrefKey(userId))
+    }
+
+    fun hasBackupPassphrase(userId: String?): Boolean =
+        !prefs.getString(passphrasePrefKey(userId)).isNullOrEmpty()
+
+    private fun backupPassphrase(userId: String?): String? =
+        prefs.getString(passphrasePrefKey(userId))
+
+    private fun buildKeyPayload(userId: String?): Pair<ByteArray, String> {
+        val passphrase = KeyManager.getDatabasePassphrase(context, userId)
+        val wrapPassphrase = backupPassphrase(userId)
+        return if (wrapPassphrase != null) {
+            BackupKeyProtection.wrap(wrapPassphrase, passphrase) to "application/octet-stream"
+        } else {
+            val keyJson = JSONObject().apply {
+                put("v", 1)
+                put("userId", userId ?: JSONObject.NULL)
+                put("passphrase", android.util.Base64.encodeToString(passphrase, android.util.Base64.NO_WRAP))
+            }.toString().toByteArray()
+            keyJson to "application/json"
+        }
     }
 
     private fun getDbFile(userId: String?): File {
@@ -83,12 +112,10 @@ class DriveBackupManager(private val context: Context) {
         repo?.checkpoint()
 
         if (!dbFile.exists()) {
-            android.util.Log.e("DriveBackup", "Database file does not exist at: ${dbFile.absolutePath}")
             throw IOException("No vault file found to back up. Add an entry first.")
         }
 
         val backupBytes = createBackupBundle(dbFile)
-        android.util.Log.i("DriveBackup", "Starting backup bundle of ${backupBytes.size} bytes...")
         val backupName = bundleName(userId)
         val existing = DriveApiClient.findExisting(accessToken, backupName)
         val fileId = if (existing != null) {
@@ -99,24 +126,18 @@ class DriveBackupManager(private val context: Context) {
         }
 
         // Key backup
-        val passphrase = KeyManager.getDatabasePassphrase(context, userId)
-        val keyJson = JSONObject().apply {
-            put("v", 1)
-            put("userId", userId ?: JSONObject.NULL)
-            put("passphrase", android.util.Base64.encodeToString(passphrase, android.util.Base64.NO_WRAP))
-        }.toString().toByteArray()
-        
+        val (keyPayload, keyMime) = buildKeyPayload(userId)
+
         val scopedKeyName = keyName(userId)
         val keyExisting = DriveApiClient.findExisting(accessToken, scopedKeyName)
         if (keyExisting != null) {
-            DriveApiClient.updateBytes(accessToken, keyExisting.fileId, keyJson, "application/json")
+            DriveApiClient.updateBytes(accessToken, keyExisting.fileId, keyPayload, keyMime)
         } else {
-            DriveApiClient.createBytes(accessToken, scopedKeyName, keyJson, "application/json", "appDataFolder")
+            DriveApiClient.createBytes(accessToken, scopedKeyName, keyPayload, keyMime, "appDataFolder")
         }
         uploadMetadata(accessToken, userId, entryCount, "appDataFolder")
 
         setLastBackupAtMillis(userId, System.currentTimeMillis())
-        android.util.Log.i("DriveBackup", "Backup success.")
         fileId
     }
 
@@ -149,12 +170,7 @@ class DriveBackupManager(private val context: Context) {
         }
 
         // Key backup (Crucial for Pro users to restore on fresh install!)
-        val passphrase = KeyManager.getDatabasePassphrase(context, userId)
-        val keyJson = JSONObject().apply {
-            put("v", 1)
-            put("userId", userId ?: JSONObject.NULL)
-            put("passphrase", android.util.Base64.encodeToString(passphrase, android.util.Base64.NO_WRAP))
-        }.toString().toByteArray()
+        val (keyPayload, keyMime) = buildKeyPayload(userId)
 
         val scopedKeyName = keyName(userId)
         val keyQuery = "name='$scopedKeyName' and '$folderId' in parents and trashed=false"
@@ -164,9 +180,9 @@ class DriveBackupManager(private val context: Context) {
         val existingKeyId = if (keyArr != null && keyArr.length() > 0) keyArr.getJSONObject(0).getString("id") else null
 
         if (existingKeyId != null) {
-            DriveApiClient.updateBytes(accessToken, existingKeyId, keyJson, "application/json")
+            DriveApiClient.updateBytes(accessToken, existingKeyId, keyPayload, keyMime)
         } else {
-            DriveApiClient.createBytes(accessToken, scopedKeyName, keyJson, "application/json", folderId)
+            DriveApiClient.createBytes(accessToken, scopedKeyName, keyPayload, keyMime, folderId)
         }
         uploadMetadata(accessToken, userId, entryCount, folderId)
 
@@ -290,37 +306,27 @@ class DriveBackupManager(private val context: Context) {
             }
         }
 
-        android.util.Log.i(
-            "DriveBackup",
-            "Found ${candidates.size} backup candidate(s): ${
-                candidates.joinToString { "${it.source}(name=${it.db.name}, db=${it.db.fileId}, key=${it.key != null}, meta=${it.metadata != null}, entries=${it.entryCount ?: "unknown"})" }
-            }"
-        )
         candidates
     }
 
-    suspend fun restore(accessToken: String, userId: String?): Boolean = withContext(Dispatchers.IO) {
+    suspend fun restore(accessToken: String, userId: String?, providedPassphrase: String? = null): Boolean = withContext(Dispatchers.IO) {
         val dbFile = getDbFile(userId)
-        android.util.Log.i("DriveBackup", "Restore started for user: $userId")
 
         val candidates = findBackupCandidates(accessToken, userId)
             .sortedByDescending { it.db.modifiedAtMillis }
         if (candidates.isEmpty()) {
-            android.util.Log.e("DriveBackup", "No database backup found anywhere.")
             throw IOException("Drive access worked, but no Kryptos database file was visible. Try Restore again and approve both Drive prompts, or use Back up from the device that still has your entries.")
         }
 
         var restored: Pair<BackupPair, ByteArray>? = null
         var restoredPassphrase: ByteArray? = null
         for (candidate in candidates) {
-            val passphrase = readPassphrase(accessToken, candidate.key, userId)
-            android.util.Log.i("DriveBackup", "Checking ${candidate.source} backup modified at ${candidate.db.modifiedAtMillis}.")
+            val passphrase = readPassphrase(accessToken, candidate.key, userId, providedPassphrase)
             val downloadUrl = URL("https://www.googleapis.com/drive/v3/files/${candidate.db.fileId}?alt=media")
             val dbBytes = DriveApiClient.requestBytes(accessToken, "GET", downloadUrl)
             if (dbBytes.isEmpty()) continue
 
             val entryCount = countEntriesInBackup(dbBytes, passphrase, candidate.isBundle)
-            android.util.Log.i("DriveBackup", "${candidate.source} backup contains $entryCount entries.")
             if (entryCount > 0) {
                 restored = candidate to dbBytes
                 restoredPassphrase = passphrase
@@ -342,23 +348,34 @@ class DriveBackupManager(private val context: Context) {
         } else {
             dbFile.writeBytes(dbBytes)
         }
-        android.util.Log.i("DriveBackup", "Restore complete from ${restoredBackup.source}. DB size: ${dbBytes.size}")
         
         true
     }
 
-    private suspend fun readPassphrase(accessToken: String, keyEntry: BackupInfo?, userId: String?): ByteArray {
+    private suspend fun readPassphrase(accessToken: String, keyEntry: BackupInfo?, userId: String?, providedPassphrase: String?): ByteArray {
         if (keyEntry == null) {
-            android.util.Log.w("DriveBackup", "Restore found database but NO KEY. Attempting with local key.")
             return KeyManager.getDatabasePassphrase(context, userId)
         }
         return try {
-            android.util.Log.i("DriveBackup", "Reading key from ${keyEntry.fileId}")
             val url = URL("https://www.googleapis.com/drive/v3/files/${keyEntry.fileId}?alt=media")
-            val obj = JSONObject(DriveApiClient.request(accessToken, "GET", url))
+            val data = DriveApiClient.requestBytes(accessToken, "GET", url)
+            if (BackupKeyProtection.isWrapped(data)) {
+                backupPassphrase(userId)?.let { local ->
+                    BackupKeyProtection.unwrap(local, data)?.let { return it }
+                }
+                providedPassphrase?.takeIf { it.isNotEmpty() }?.let { entered ->
+                    BackupKeyProtection.unwrap(entered, data)?.let { return it }
+                }
+                throw if (providedPassphrase != null) {
+                    BackupPassphraseIncorrectException()
+                } else {
+                    BackupPassphraseRequiredException()
+                }
+            }
+            val obj = JSONObject(String(data, Charsets.UTF_8))
             android.util.Base64.decode(obj.getString("passphrase"), android.util.Base64.NO_WRAP)
         } catch (e: Exception) {
-            android.util.Log.e("DriveBackup", "Key restoration failed", e)
+            if (e is BackupPassphraseRequiredException || e is BackupPassphraseIncorrectException) throw e
             throw IOException("Could not restore encryption key. Data is unrecoverable without it.")
         }
     }
@@ -373,8 +390,7 @@ class DriveBackupManager(private val context: Context) {
                     if (cursor.moveToFirst()) cursor.getInt(0) else 0
                 }
             }
-        } catch (e: Exception) {
-            android.util.Log.w("DriveBackup", "Could not inspect downloaded backup.", e)
+        } catch (_: Exception) {
             0
         } finally {
             tempDir.deleteRecursively()

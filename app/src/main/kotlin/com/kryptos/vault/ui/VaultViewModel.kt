@@ -41,14 +41,11 @@ class VaultViewModel(
     }
 
     suspend fun upsert(entry: VaultEntry): Long {
-        android.util.Log.e("VaultViewModel", "upsert: starting for title='${entry.title}', id=${entry.id}")
         val id = repo.upsert(entry)
-        android.util.Log.e("VaultViewModel", "upsert: repo done, new id=$id. Scheduling expiry...")
         try {
             ExpiryScheduler.scheduleFor(appContext, entry.copy(id = id))
-            android.util.Log.e("VaultViewModel", "upsert: ExpiryScheduler done.")
         } catch (t: Throwable) {
-            android.util.Log.e("VaultViewModel", "upsert: ExpiryScheduler FAILED but continuing", t)
+            // Saving should not fail just because reminder scheduling failed.
         }
         return id
     }
