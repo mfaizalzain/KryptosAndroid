@@ -49,6 +49,8 @@ import com.kryptos.vault.security.AuthManager
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
+import androidx.compose.ui.res.stringResource
+import com.fmz.kryptos.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -307,7 +309,7 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete vault and account?") },
+            title = { Text(stringResource(R.string.delete_vault_and_account)) },
             text = {
                 Text(
                     "This will permanently wipe every entry, encryption keys, and sign you out of your account on this device. " +
@@ -319,10 +321,10 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                     confirmDelete = false
                     app.nukeAllData()
                     android.os.Process.killProcess(android.os.Process.myPid())
-                }) { Text("Delete Everything", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.delete_everything), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) { Text("Cancel") }
+                TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -330,7 +332,7 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
     if (confirmRestore) {
         AlertDialog(
             onDismissRequest = { confirmRestore = false },
-            title = { Text("Restore from Drive?") },
+            title = { Text(stringResource(R.string.restore_from_drive)) },
             text = {
                 Text(
                     "Replaces the current local vault with the latest Drive backup."
@@ -340,10 +342,10 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                 TextButton(onClick = {
                     confirmRestore = false
                     runDriveFlow(BackupAction.RESTORE)
-                }) { Text("Restore") }
+                }) { Text(stringResource(R.string.restore)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmRestore = false }) { Text("Cancel") }
+                TextButton(onClick = { confirmRestore = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }

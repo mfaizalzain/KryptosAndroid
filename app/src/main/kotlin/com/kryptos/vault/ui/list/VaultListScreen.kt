@@ -84,6 +84,7 @@ import com.kryptos.vault.ui.account.AccountSheet
 import com.kryptos.vault.ui.cards.CompactHeroCard
 import com.kryptos.vault.ui.components.NativeAdCard
 import kotlin.math.absoluteValue
+import com.fmz.kryptos.R
 
 private const val STACK_THRESHOLD = 1
 
@@ -186,7 +187,7 @@ fun VaultListScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                text = { Text("Add Entry") },
+                text = { Text(stringResource(R.string.add_entry)) },
                 icon = { 
                     Icon(
                         Icons.Filled.Add, 

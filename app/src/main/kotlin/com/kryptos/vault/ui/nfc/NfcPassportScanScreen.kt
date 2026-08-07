@@ -60,6 +60,8 @@ import com.kryptos.vault.nfc.PassportScan
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.res.stringResource
+import com.fmz.kryptos.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -229,8 +231,8 @@ fun NfcPassportScanScreen(
                 OutlinedTextField(
                     value = docNumber,
                     onValueChange = { docNumber = it.uppercase().filter { c -> c.isLetterOrDigit() } },
-                    label = { Text("Passport Number") },
-                    supportingText = { Text("As printed on the passport photo page", color = Color.White.copy(alpha = 0.4f)) },
+                    label = { Text(stringResource(R.string.passport_number)) },
+                    supportingText = { Text(stringResource(R.string.as_printed_on_the_passport_photo_page), color = Color.White.copy(alpha = 0.4f)) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = textFieldColors,
                     singleLine = true
@@ -243,7 +245,7 @@ fun NfcPassportScanScreen(
                     OutlinedTextField(
                         value = dob,
                         onValueChange = { dob = it.filter(Char::isDigit).take(6) },
-                        label = { Text("DOB (YYMMDD)") },
+                        label = { Text(stringResource(R.string.dob_yymmdd)) },
                         modifier = Modifier.weight(1f),
                         colors = textFieldColors,
                         singleLine = true
@@ -251,7 +253,7 @@ fun NfcPassportScanScreen(
                     OutlinedTextField(
                         value = expiry,
                         onValueChange = { expiry = it.filter(Char::isDigit).take(6) },
-                        label = { Text("Expiry (YYMMDD)") },
+                        label = { Text(stringResource(R.string.expiry_yymmdd)) },
                         modifier = Modifier.weight(1f),
                         colors = textFieldColors,
                         singleLine = true

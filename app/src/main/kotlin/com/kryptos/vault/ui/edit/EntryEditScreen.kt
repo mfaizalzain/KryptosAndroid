@@ -49,6 +49,8 @@ import org.json.JSONObject
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import androidx.compose.ui.res.stringResource
+import com.fmz.kryptos.R
 
 object ScanResultKeys {
     const val PARSED_FIELDS_JSON = "scan_parsed_fields_json"
@@ -273,7 +275,7 @@ fun EntryEditScreen(
                         )
                     } else {
                         TextButton(onClick = { doSave() }) {
-                            Text("SAVE", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.save), fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -373,7 +375,7 @@ fun EntryEditScreen(
                                             modifier = Modifier.size(18.dp),
                                         )
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Scan document")
+                                        Text(stringResource(R.string.scan_document))
                                     }
                                 }
                                 if (supportsNfcScan(template)) {
@@ -390,7 +392,7 @@ fun EntryEditScreen(
                                             modifier = Modifier.size(18.dp),
                                         )
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Scan NFC")
+                                        Text(stringResource(R.string.scan_nfc))
                                     }
                                 }
                                 FilledTonalButton(
@@ -447,9 +449,9 @@ fun EntryEditScreen(
                         title = it
                         if (it.isNotBlank()) titleError = false
                     },
-                    label = { Text("Title") },
+                    label = { Text(stringResource(R.string.title)) },
                     isError = titleError,
-                    supportingText = if (titleError) { { Text("Title is required") } } else null,
+                    supportingText = if (titleError) { { Text(stringResource(R.string.title_is_required)) } } else null,
                     shape = RoundedCornerShape(20.dp),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -490,7 +492,7 @@ fun EntryEditScreen(
             item {
                 AssistChip(
                     onClick = { fields.add("Field" to "") },
-                    label = { Text("Add field") },
+                    label = { Text(stringResource(R.string.add_field)) },
                     leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
             }
@@ -507,19 +509,19 @@ fun EntryEditScreen(
         duplicateToConfirm?.let { dup ->
             AlertDialog(
                 onDismissRequest = { duplicateToConfirm = null },
-                title = { Text("Potential duplicate") },
+                title = { Text(stringResource(R.string.potential_duplicate)) },
                 text = {
-                    Text("An entry with similar details already exists (\"${dup.title}\"). Save this anyway?")
+                    Text(stringResource(R.string.duplicate_entry_warning, dup.title))
                 },
                 confirmButton = {
                     TextButton(onClick = {
                         duplicateToConfirm = null
                         doSave(force = true)
-                    }) { Text("Save anyway") }
+                    }) { Text(stringResource(R.string.save_anyway)) }
                 },
                 dismissButton = {
                     TextButton(onClick = { duplicateToConfirm = null }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             )
@@ -539,10 +541,10 @@ fun EntryEditScreen(
                             fields[index] = fields[index].first to formatted
                         }
                         datePickerTargetIndex = null
-                    }) { Text("OK") }
+                    }) { Text(stringResource(R.string.ok)) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { datePickerTargetIndex = null }) { Text("Cancel") }
+                    TextButton(onClick = { datePickerTargetIndex = null }) { Text(stringResource(R.string.cancel)) }
                 }
             ) {
                 DatePicker(state = datePickerState)

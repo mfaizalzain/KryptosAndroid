@@ -51,6 +51,7 @@ import com.kryptos.vault.ui.cards.HeroCard
 import com.kryptos.vault.ui.scan.QrGenerator
 import com.kryptos.vault.ui.scan.QrSharer
 import org.json.JSONObject
+import com.fmz.kryptos.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -143,9 +144,9 @@ fun EntryDetailScreen(
         if (confirmDelete) {
             AlertDialog(
                 onDismissRequest = { confirmDelete = false },
-                title = { Text("Delete this entry?") },
+                title = { Text(stringResource(R.string.delete_this_entry)) },
                 text = {
-                    Text("\"${current.title.ifBlank { "Untitled" }}\" will be permanently removed from your vault. This cannot be undone.")
+                    Text(stringResource(R.string.delete_entry_warning, current.title.ifBlank { "Untitled" }))
                 },
                 confirmButton = {
                     TextButton(onClick = {
@@ -153,12 +154,12 @@ fun EntryDetailScreen(
                         viewModel.delete(current)
                         onBack()
                     }) {
-                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { confirmDelete = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 },
             )
@@ -211,7 +212,7 @@ fun EntryDetailScreen(
                 ) {
                     Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Share entry")
+                    Text(stringResource(R.string.share_entry))
                 }
             }
 
@@ -382,7 +383,7 @@ private fun QrCodeDialog(data: String, genericData: String?, title: String, onDi
                 ) {
                     Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Share QR image")
+                    Text(stringResource(R.string.share_qr_image))
                 }
                 if (genericData != null) {
                     TextButton(onClick = { showKryptosPayload = !showKryptosPayload }) {
@@ -390,7 +391,7 @@ private fun QrCodeDialog(data: String, genericData: String?, title: String, onDi
                     }
                 }
                 TextButton(onClick = onDismiss) {
-                    Text("Close")
+                    Text(stringResource(R.string.close))
                 }
             }
         }

@@ -31,6 +31,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kryptos.vault.data.Template
+import androidx.compose.ui.res.stringResource
+import com.fmz.kryptos.R
 
 /**
  * Single editable field row: name (for custom fields), value input with
@@ -81,7 +83,7 @@ internal fun EditableFieldRow(
             OutlinedTextField(
                 value = name,
                 onValueChange = onNameChange,
-                label = { Text("Field name") },
+                label = { Text(stringResource(R.string.field_name)) },
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -95,7 +97,7 @@ internal fun EditableFieldRow(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            label = { if (!isDefault) Text("Value") },
+            label = { if (!isDefault) Text(stringResource(R.string.value)) },
             shape = RoundedCornerShape(20.dp),
             trailingIcon = if (isDateField(name, template)) {
                 {

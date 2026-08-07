@@ -47,6 +47,8 @@ import coil.compose.AsyncImage
 import com.kryptos.vault.security.AuthManager
 import java.text.DateFormat
 import java.util.Date
+import androidx.compose.ui.res.stringResource
+import com.fmz.kryptos.R
 
 @Composable
 internal fun Section(title: String, content: @Composable () -> Unit) {
@@ -179,7 +181,7 @@ internal fun SupportSection(
             horizontalArrangement = Arrangement.End
         ) {
             TextButton(onClick = onRestorePurchases) {
-                Text("Restore purchases")
+                Text(stringResource(R.string.restore_purchases))
             }
         }
     } else {
@@ -249,7 +251,7 @@ internal fun BackupSection(
                     onClick = onRefresh,
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
                 ) {
-                    Text("Check Drive", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.check_drive), style = MaterialTheme.typography.labelLarge)
                 }
             }
         }
@@ -266,7 +268,7 @@ internal fun BackupSection(
         ) {
             Icon(Icons.Filled.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
-            Text("Back up")
+            Text(stringResource(R.string.back_up))
         }
         OutlinedButton(
             onClick = onRestore,
@@ -276,7 +278,7 @@ internal fun BackupSection(
         ) {
             Icon(Icons.Filled.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
-            Text("Restore")
+            Text(stringResource(R.string.restore))
         }
     }
     if (working != null && working != "Signing out…") {
@@ -335,6 +337,6 @@ internal fun DangerZoneSection(onDelete: () -> Unit) {
     ) {
         Icon(Icons.Filled.DeleteForever, contentDescription = null, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(12.dp))
-        Text("Delete vault and account")
+        Text(stringResource(R.string.delete_vault_and_account_1))
     }
 }

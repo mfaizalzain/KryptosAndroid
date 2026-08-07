@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Kryptos</string>
     <string name="biometric_title">Unlock Kryptos</string>
@@ -8,4 +9,38 @@
     <string name="vault_empty">Your vault is empty.\nTap the button below to secure your first document.</string>
     <string name="vault_no_match">No entries match \"%1$s\".</string>
     <string name="clipboard_security_note">Tap any field to copy. The clipboard clears automatically after 30 seconds for your security.</string>
+    <string name="add_entry">Add Entry</string>
+    <string name="add_field">Add field</string>
+    <string name="as_printed_on_the_passport_photo_page">As printed on the passport photo page</string>
+    <string name="back_up">Back up</string>
+    <string name="camera_permission_is_required_to_scan_qr_codes">Camera permission is required to scan QR codes.</string>
+    <string name="cancel">Cancel</string>
+    <string name="check_drive">Check Drive</string>
+    <string name="close">Close</string>
+    <string name="delete">Delete</string>
+    <string name="delete_entry_warning">\"%1$s\" will be permanently removed from your vault. This cannot be undone.</string>
+    <string name="delete_everything">Delete Everything</string>
+    <string name="delete_this_entry">Delete this entry?</string>
+    <string name="delete_vault_and_account">Delete vault and account?</string>
+    <string name="delete_vault_and_account_1">Delete vault and account</string>
+    <string name="dob_yymmdd">DOB (YYMMDD)</string>
+    <string name="duplicate_entry_warning">An entry with similar details already exists (\"%1$s\"). Save this anyway?</string>
+    <string name="expiry_yymmdd">Expiry (YYMMDD)</string>
+    <string name="field_name">Field name</string>
+    <string name="ok">OK</string>
+    <string name="passport_number">Passport Number</string>
+    <string name="potential_duplicate">Potential duplicate</string>
+    <string name="restore">Restore</string>
+    <string name="restore_from_drive">Restore from Drive?</string>
+    <string name="restore_purchases">Restore purchases</string>
+    <string name="save">SAVE</string>
+    <string name="save_anyway">Save anyway</string>
+    <string name="scan_document">Scan document</string>
+    <string name="scan_nfc">Scan NFC</string>
+    <string name="scan_qr_code">Scan QR Code</string>
+    <string name="share_entry">Share entry</string>
+    <string name="share_qr_image">Share QR image</string>
+    <string name="title">Title</string>
+    <string name="title_is_required">Title is required</string>
+    <string name="value">Value</string>
 </resources>
