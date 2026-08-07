@@ -465,107 +465,27 @@ fun EntryEditScreen(
             items(fields.size) { i ->
                 val name = fields[i].first
                 val isDefault = defaultFieldsFor(template).any { it.equals(name, ignoreCase = true) }
-                
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = if (isDefault) name.uppercase() else "CUSTOM FIELD",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp,
-                            modifier = Modifier.padding(start = 4.dp)
-                        )
-                        IconButton(
-                            onClick = { fields.removeAt(i) },
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Close,
-                                contentDescription = "Remove field",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                modifier = Modifier.size(16.dp)
-                            )
+
+                EditableFieldRow(
+                    name = name,
+                    value = fields[i].second,
+                    template = template,
+                    isDefault = isDefault,
+                    onNameChange = { fields[i] = it to fields[i].second },
+                    onValueChange = { input ->
+                        val currentName = fields[i].first
+                        val isExpiry = template == Template.PAYMENT_CARD && (currentName.contains("expiry", ignoreCase = true) || currentName.contains("expires", ignoreCase = true))
+
+                        val filtered = if (isNumericField(currentName, template) || isExpiry) {
+                            input.filter { it.isDigit() }.let { if (isExpiry) it.take(4) else it }
+                        } else {
+                            input
                         }
-                    }
-
-                    if (!isDefault) {
-                        OutlinedTextField(
-                            value = fields[i].first,
-                            onValueChange = { fields[i] = it to fields[i].second },
-                            label = { Text("Field name") },
-                            shape = RoundedCornerShape(20.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                            keyboardActions = KeyboardActions(
-                                onNext = { focusManager.moveFocus(FocusDirection.Down) },
-                            ),
-                        )
-                    }
-
-                    OutlinedTextField(
-                        value = fields[i].second,
-                        onValueChange = { input ->
-                            val currentName = fields[i].first
-                            val isExpiry = template == Template.PAYMENT_CARD && (currentName.contains("expiry", ignoreCase = true) || currentName.contains("expires", ignoreCase = true))
-                            
-                            val filtered = if (isNumericField(currentName, template) || isExpiry) {
-                                input.filter { it.isDigit() }.let { if (isExpiry) it.take(4) else it }
-                            } else {
-                                input
-                            }
-                            fields[i] = currentName to filtered
-                        },
-                        label = { if (!isDefault) Text("Value") },
-                        shape = RoundedCornerShape(20.dp),
-                        trailingIcon = if (isDateField(fields[i].first, template)) {
-                            {
-                                IconButton(onClick = { datePickerTargetIndex = i }) {
-                                    Icon(Icons.Default.CalendarToday, contentDescription = "Pick date")
-                                }
-                            }
-                        } else null,
-                        visualTransformation = if (template == Template.PAYMENT_CARD && (fields[i].first.contains("expiry", ignoreCase = true) || fields[i].first.contains("expires", ignoreCase = true))) {
-                            ExpiryVisualTransformation()
-                        } else VisualTransformation.None,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = if (isNumericField(fields[i].first, template) || (template == Template.PAYMENT_CARD && fields[i].first.contains("expiry", ignoreCase = true))) KeyboardType.Number else KeyboardType.Text,
-                            imeAction = if (i < fields.size - 1) ImeAction.Next else ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Down) },
-                            onDone = { focusManager.clearFocus() },
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .onFocusChanged {
-                                if (it.isFocused && isDateField(fields[i].first, template)) {
-                                    datePickerTargetIndex = i
-                                    focusManager.clearFocus()
-                                }
-                            },
-                        readOnly = isDateField(fields[i].first, template)
-                    )
-
-                    if (isDateField(fields[i].first, template) && fields[i].second.isNotBlank()) {
-                        Text(
-                            text = "Kryptos will notify you before this expires.",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 4.dp, top = 2.dp)
-                        )
-                    }
-                    
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 4.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                    )
-                }
+                        fields[i] = currentName to filtered
+                    },
+                    onRemove = { fields.removeAt(i) },
+                    onPickDate = { datePickerTargetIndex = i },
+                )
             }
             item {
                 AssistChip(
@@ -629,199 +549,4 @@ fun EntryEditScreen(
             }
         }
     }
-}
-
-private fun templateIcon(t: Template): ImageVector = when (t) {
-    Template.ID_CARD -> Icons.Default.Badge
-    Template.PASSPORT -> Icons.Default.Public
-    Template.DRIVERS_LICENSE -> Icons.Default.DirectionsCar
-    Template.BIRTH_CERTIFICATE -> Icons.Default.ChildCare
-    Template.PAYMENT_CARD -> Icons.Default.CreditCard
-    Template.BANK_ACCOUNT -> Icons.Default.AccountBalance
-    Template.TAX_NUMBER -> Icons.Default.Description
-    Template.API_KEY -> Icons.Default.VpnKey
-    Template.NOTE -> Icons.Default.Description
-    Template.QR_CODE -> Icons.Default.QrCode
-}
-
-private class ExpiryVisualTransformation : VisualTransformation {
-    override fun filter(text: AnnotatedString): TransformedText {
-        val digits = text.text.filter { it.isDigit() }.take(4)
-        var out = ""
-        for (i in digits.indices) {
-            out += digits[i]
-            if (i == 1 && digits.length > 2) out += "/"
-        }
-
-        val offsetMapping = object : OffsetMapping {
-            override fun originalToTransformed(offset: Int): Int {
-                if (offset <= 2) return offset
-                return offset + 1
-            }
-
-            override fun transformedToOriginal(offset: Int): Int {
-                if (offset <= 2) return offset
-                return offset - 1
-            }
-        }
-
-        return TransformedText(AnnotatedString(out), offsetMapping)
-    }
-}
-
-private fun isDateField(name: String, template: Template): Boolean {
-    val n = name.lowercase()
-    if (template == Template.PAYMENT_CARD && (n.contains("expiry") || n.contains("expires"))) return false
-    return n.contains("date") || n.contains("expiry") || n.contains("expires") || n.contains("dob")
-}
-
-private fun isNumericField(name: String, template: Template): Boolean {
-    val n = name.lowercase()
-    if (template == Template.PAYMENT_CARD && (n.contains("expiry") || n.contains("expires"))) return true
-    return n == "number" || n.contains("cvv") || n.contains("pin") || n.contains("cvc") || n == "account number"
-}
-
-private fun supportsCameraScan(t: Template): Boolean = when (t) {
-    Template.ID_CARD,
-    Template.PASSPORT,
-    Template.DRIVERS_LICENSE,
-    Template.BIRTH_CERTIFICATE,
-    Template.PAYMENT_CARD,
-    Template.BANK_ACCOUNT,
-    Template.TAX_NUMBER -> true
-    Template.API_KEY,
-    Template.NOTE,
-    Template.QR_CODE -> false
-}
-
-private fun supportsNfcScan(t: Template): Boolean = t == Template.PASSPORT || t == Template.PAYMENT_CARD
-
-private fun supportsImportPanel(t: Template): Boolean =
-    supportsCameraScan(t) || supportsNfcScan(t) || t == Template.API_KEY || t == Template.NOTE || t == Template.QR_CODE
-
-private fun prettyTemplate(t: Template): String = when (t) {
-    Template.ID_CARD -> "ID card"
-    Template.PASSPORT -> "Passport"
-    Template.DRIVERS_LICENSE -> "Driver's license"
-    Template.BIRTH_CERTIFICATE -> "Birth certificate"
-    Template.PAYMENT_CARD -> "Payment card"
-    Template.BANK_ACCOUNT -> "Bank"
-    Template.TAX_NUMBER -> "Tax number"
-    Template.API_KEY -> "API key"
-    Template.NOTE -> "Note"
-    Template.QR_CODE -> "QR code"
-}
-
-private val TemplateSaver: Saver<Template, String> = Saver(
-    save = { it.name },
-    restore = { runCatching { Template.valueOf(it) }.getOrDefault(Template.ID_CARD) },
-)
-
-private val FieldsListSaver: Saver<SnapshotStateList<Pair<String, String>>, Any> =
-    listSaver(
-        save = { list -> list.flatMap { listOf(it.first, it.second) } },
-        restore = { flat ->
-            val list = mutableStateListOf<Pair<String, String>>()
-            var i = 0
-            val flatList = flat as List<*>
-            while (i + 1 < flatList.size) {
-                val first = flatList[i] as? String ?: ""
-                val second = flatList[i + 1] as? String ?: ""
-                list.add(first to second)
-                i += 2
-            }
-            list
-        },
-    )
-
-private fun defaultFieldsFor(template: Template): List<String> = when (template) {
-    Template.ID_CARD -> listOf("Full name", "ID number", "Date of birth", "Nationality", "Expiry")
-    Template.PASSPORT -> listOf("Surname", "Given names", "Passport number", "Nationality", "Date of birth", "Sex", "Expiry")
-    Template.DRIVERS_LICENSE -> listOf("Full name", "License number", "Class", "Date of birth", "Expiry", "Country/State")
-    Template.BIRTH_CERTIFICATE -> listOf("Full name", "Date of birth", "Place of birth", "Father's name", "Mother's name", "Registration number", "Date of issue")
-    Template.PAYMENT_CARD -> listOf("Issuer", "Cardholder", "Number", "Expiry", "CVV")
-    Template.BANK_ACCOUNT -> listOf("Bank", "Account holder", "Account number", "IBAN", "SWIFT/BIC", "PIN")
-    Template.TAX_NUMBER -> listOf("Full name", "Tax number", "Country")
-    Template.API_KEY -> listOf("Service", "Environment", "Key", "Secret")
-    Template.NOTE -> listOf("Content")
-    Template.QR_CODE -> QrPayloads.defaultFields(QrPayloadType.TEXT).map { it.first }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun QrTypePanel(
-    selected: QrPayloadType,
-    onSelect: (QrPayloadType) -> Unit,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        ),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text(
-                "QR content type",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                "Choose a standard format so other phones can open contacts, Wi-Fi, messages, maps, events, and payment addresses directly.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                QrPayloadType.entries.forEach { type ->
-                    FilterChip(
-                        selected = selected == type,
-                        onClick = { onSelect(type) },
-                        label = { Text(type.label) },
-                        leadingIcon = {
-                            Icon(
-                                type.icon(),
-                                contentDescription = null,
-                                modifier = Modifier.size(FilterChipDefaults.IconSize),
-                            )
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                    )
-                }
-            }
-        }
-    }
-}
-
-private fun fieldsForSave(template: Template, fields: List<Pair<String, String>>): List<Pair<String, String>> =
-    if (template == Template.QR_CODE) QrPayloads.withGeneratedData(fields) else fields
-
-private fun QrPayloadType.defaultQrTitle(): String = when (this) {
-    QrPayloadType.TEXT -> "QR code"
-    QrPayloadType.CONTACT -> "Contact QR"
-    QrPayloadType.WIFI -> "Wi-Fi QR"
-    QrPayloadType.EMAIL -> "Email QR"
-    QrPayloadType.PHONE -> "Phone QR"
-    QrPayloadType.SMS -> "SMS QR"
-    QrPayloadType.LOCATION -> "Location QR"
-    QrPayloadType.CALENDAR -> "Calendar QR"
-    QrPayloadType.PAYMENT -> "Payment QR"
-}
-
-private fun QrPayloadType.icon(): ImageVector = when (this) {
-    QrPayloadType.TEXT -> Icons.Default.TextFields
-    QrPayloadType.CONTACT -> Icons.Default.ContactPhone
-    QrPayloadType.WIFI -> Icons.Default.Wifi
-    QrPayloadType.EMAIL -> Icons.Default.Email
-    QrPayloadType.PHONE -> Icons.Default.Phone
-    QrPayloadType.SMS -> Icons.Default.Sms
-    QrPayloadType.LOCATION -> Icons.Default.Place
-    QrPayloadType.CALENDAR -> Icons.Default.Event
-    QrPayloadType.PAYMENT -> Icons.Default.Payments
 }

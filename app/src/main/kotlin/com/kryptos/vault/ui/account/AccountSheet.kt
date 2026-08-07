@@ -1,29 +1,45 @@
 package com.kryptos.vault.ui.account
 
 import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.Scope
@@ -33,8 +49,6 @@ import com.kryptos.vault.security.AuthManager
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
-import java.text.DateFormat
-import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -221,294 +235,71 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
             }
 
             // --- Account section ---
-            val current = account
-            if (current != null) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        modifier = Modifier.size(88.dp)
-                    ) {
-                        if (!current.photoUrl.isNullOrBlank()) {
-                            AsyncImage(
-                                model = current.photoUrl,
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize().clip(CircleShape),
-                            )
-                        } else {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Filled.AccountCircle,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    modifier = Modifier.size(56.dp),
-                                )
-                            }
-                        }
+            AccountHeader(
+                account = account,
+                working = working,
+                onSignOut = {
+                    scope.launch {
+                        working = "Signing out…"
+                        auth.signOut()
+                        account = null
+                        working = null
+                        onSignOut()
                     }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            current.displayName ?: current.email ?: "Signed in",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        current.email?.takeIf { it != current.displayName }?.let {
-                            Text(
-                                it,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            scope.launch {
-                                working = "Signing out…"
-                                auth.signOut()
-                                account = null
-                                working = null
-                                onSignOut()
-                            }
-                        },
-                        enabled = working == null,
-                        shape = RoundedCornerShape(28.dp),
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                    ) {
-                        if (working == "Signing out…") {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        } else {
-                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
-                        }
-                        Spacer(Modifier.width(12.dp))
-                        Text(if (working == "Signing out…") "Signing out…" else "Sign out")
-                    }
-                }
-            }
+                },
+            )
 
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
 
             // --- Support section ---
             Section("Support") {
-                if (!adsRemoved) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                val activity = ctx.findActivity()
-                                if (activity == null) {
-                                    feedback = "Internal error: Activity not found."
-                                } else {
-                                    val launched = app.billingManager.purchaseRemoveAds(activity)
-                                    if (!launched) {
-                                        feedback = "Couldn't start purchase. Try again in a moment."
-                                    }
-                                }
-                            },
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Filled.Block,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(28.dp)
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    "Remove Ads",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Text(
-                                    "One-time purchase to hide ads in the app.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                )
+                SupportSection(
+                    adsRemoved = adsRemoved,
+                    onRemoveAds = {
+                        val activity = ctx.findActivity()
+                        if (activity == null) {
+                            feedback = "Internal error: Activity not found."
+                        } else {
+                            val launched = app.billingManager.purchaseRemoveAds(activity)
+                            if (!launched) {
+                                feedback = "Couldn't start purchase. Try again in a moment."
                             }
-                            Icon(
-                                Icons.Filled.ChevronRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
                         }
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        TextButton(onClick = { app.billingManager.restorePurchases() }) {
-                            Text("Restore purchases")
-                        }
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Filled.CheckCircle,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            "Ads removed — thanks for supporting Kryptos!",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
+                    },
+                    onRestorePurchases = { app.billingManager.restorePurchases() },
+                )
             }
 
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
 
             // --- Cloud backup ---
             Section("Cloud backup") {
-                Text(
-                    "Backups include your encrypted documents and the unique key needed to unlock them.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                BackupSection(
+                    account = account,
+                    working = working,
+                    feedback = feedback,
+                    lastBackupAtMillis = backup.getLastBackupAtMillis(account?.id),
+                    onRefresh = { runDriveFlow(BackupAction.REFRESH) },
+                    onBackup = { runDriveFlow(BackupAction.BACKUP) },
+                    onRestore = { confirmRestore = true },
                 )
-                val last = backup.getLastBackupAtMillis(account?.id)
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                if (last == 0L) "No local backup date found."
-                                else "Last known backup: ${DateFormat.getDateTimeInstance().format(Date(last))}",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                            if (last == 0L) {
-                                Text(
-                                    "Check your Google Drive for existing data.",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                        if (last == 0L && current != null) {
-                            TextButton(
-                                onClick = { runDriveFlow(BackupAction.REFRESH) },
-                                contentPadding = PaddingValues(0.dp)
-                            ) {
-                                Text("Check Drive", style = MaterialTheme.typography.labelLarge)
-                            }
-                        }
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Button(
-                        onClick = { runDriveFlow(BackupAction.BACKUP) },
-                        enabled = current != null && working == null,
-                        shape = RoundedCornerShape(28.dp),
-                        modifier = Modifier.weight(1f).height(52.dp),
-                    ) {
-                        Icon(Icons.Filled.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Back up")
-                    }
-                    OutlinedButton(
-                        onClick = { confirmRestore = true },
-                        enabled = current != null && working == null,
-                        shape = RoundedCornerShape(28.dp),
-                        modifier = Modifier.weight(1f).height(52.dp),
-                    ) {
-                        Icon(Icons.Filled.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Restore")
-                    }
-                }
-                if (working != null && working != "Signing out…") {
-                    Text(working!!, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                }
-                feedback?.let {
-                    Text(it, style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.secondary)
-                }
             }
 
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
 
-            // --- Notifications ---
+            // --- General ---
             Section("General") {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            "Expiry Reminders",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            "Get notified before your documents and cards expire.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Switch(
-                        checked = remindersEnabled,
-                        onCheckedChange = { app.billingManager.setRemindersEnabled(it) }
-                    )
-                }
+                GeneralSection(
+                    remindersEnabled = remindersEnabled,
+                    onToggleReminders = { app.billingManager.setRemindersEnabled(it) },
+                )
             }
 
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
 
             // --- Danger zone ---
             Section("Danger zone") {
-                Text(
-                    "Permanently deletes every entry, encryption keys, and sign you out of your account on this device.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Button(
-                    onClick = { confirmDelete = true },
-                    shape = RoundedCornerShape(28.dp),
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                    ),
-                ) {
-                    Icon(Icons.Filled.DeleteForever, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Text("Delete vault and account")
-                }
+                DangerZoneSection(onDelete = { confirmDelete = true })
             }
         }
     }
@@ -555,76 +346,5 @@ fun AccountSheet(onDismiss: () -> Unit, onSignOut: () -> Unit) {
                 TextButton(onClick = { confirmRestore = false }) { Text("Cancel") }
             },
         )
-    }
-}
-
-private enum class BackupAction { REFRESH, BACKUP, RESTORE, BACKUP_OWN }
-
-private fun runDriveAction(
-    scope: kotlinx.coroutines.CoroutineScope,
-    backup: DriveBackupManager,
-    accessToken: String,
-    action: BackupAction,
-    userId: String?,
-    app: KryptosApp,
-    onWorking: (String?) -> Unit,
-    onFeedback: (String?) -> Unit,
-) {
-    scope.launch {
-        try {
-            when (action) {
-                BackupAction.REFRESH -> {
-                    backup.refreshLastBackupDate(accessToken, userId)
-                    onFeedback(null)
-                }
-                BackupAction.BACKUP -> {
-                    backup.backup(accessToken, userId)
-                    onFeedback("Backup complete.")
-                }
-                BackupAction.BACKUP_OWN -> {
-                    backup.backupToOwnDrive(accessToken, userId)
-                    onFeedback("Backup to My Drive complete.")
-                }
-                BackupAction.RESTORE -> {
-                    onWorking("Restoring vault...")
-                    app.closeDatabase()
-                    val ok = try {
-                        backup.restore(accessToken, userId)
-                    } catch (e: Exception) {
-                        android.util.Log.e("AccountSheet", "Restore failed", e)
-                        onFeedback("Restore failed: ${e.localizedMessage}")
-                        false
-                    }
-                    if (ok) {
-                        onFeedback("Restore successful. Restarting app…")
-                        kotlinx.coroutines.delay(1500)
-                        android.os.Process.killProcess(android.os.Process.myPid())
-                    } else {
-                        onFeedback("No backup found in Drive.")
-                    }
-                }
-            }
-        } catch (t: Throwable) {
-            onFeedback(t.localizedMessage ?: "Drive operation failed.")
-        } finally {
-            onWorking(null)
-        }
-    }
-}
-
-private fun Context.findActivity(): Activity? {
-    var context = this
-    while (context is ContextWrapper) {
-        if (context is Activity) return context
-        context = context.baseContext
-    }
-    return null
-}
-
-@Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        content()
     }
 }
