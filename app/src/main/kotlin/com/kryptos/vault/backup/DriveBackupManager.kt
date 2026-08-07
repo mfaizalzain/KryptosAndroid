@@ -21,9 +21,8 @@ import javax.net.ssl.HttpsURLConnection
 /**
  * Uploads the SQLCipher-encrypted vault database to the user's private Drive **AppData** folder.
  */
-class DriveBackupManager(private val context: Context) {
 
-    data class BackupInfo(val fileId: String, val modifiedAtMillis: Long, val name: String = BACKUP_NAME)
+class DriveBackupManager(private val context: Context) {
     private data class BackupPair(
         val db: BackupInfo,
         val key: BackupInfo?,
@@ -32,6 +31,7 @@ class DriveBackupManager(private val context: Context) {
         val entryCount: Int?,
         val isBundle: Boolean,
     )
+
 
     private val prefs by lazy {
         val masterKey = MasterKey.Builder(context)
@@ -45,6 +45,7 @@ class DriveBackupManager(private val context: Context) {
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
         )
     }
+
 
     fun getLastBackupAtMillis(userId: String?): Long {
         val key = if (userId == null) KEY_LAST_BACKUP else "${KEY_LAST_BACKUP}_$userId"
@@ -62,26 +63,6 @@ class DriveBackupManager(private val context: Context) {
         return context.getDatabasePath(dbName)
     }
 
-    private fun userSuffix(userId: String?): String? =
-        userId?.replace(Regex("[^a-zA-Z0-9]"), "_")
-
-    private fun bundleName(userId: String?) = userSuffix(userId)?.let { "kryptos_$it.backup" } ?: BUNDLE_NAME
-    private fun databaseName(userId: String?) = userSuffix(userId)?.let { "kryptos_$it.db" } ?: BACKUP_NAME
-    private fun keyName(userId: String?) = userSuffix(userId)?.let { "kryptos_$it.key" } ?: KEY_NAME
-    private fun metaName(userId: String?) = userSuffix(userId)?.let { "kryptos_$it.meta.json" } ?: META_NAME
-
-    suspend fun findExisting(accessToken: String, name: String = BACKUP_NAME, space: String = "appDataFolder"): BackupInfo? = withContext(Dispatchers.IO) {
-        android.util.Log.d("DriveBackup", "Searching for: $name in $space")
-        val query = "name='$name' and trashed=false"
-        val url = URL("https://www.googleapis.com/drive/v3/files?spaces=$space&q=${java.net.URLEncoder.encode(query, "UTF-8")}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc")
-        
-        val response = try { request(accessToken, "GET", url) } catch (e: Exception) { return@withContext null }
-        val arr = JSONObject(response).optJSONArray("files") ?: return@withContext null
-        if (arr.length() == 0) null else {
-            val o = arr.getJSONObject(0)
-            BackupInfo(o.getString("id"), parseIso(o.optString("modifiedTime", "")), o.optString("name", name))
-        }
-    }
 
     suspend fun refreshLastBackupDate(accessToken: String, userId: String?) = withContext(Dispatchers.IO) {
         val existing = findLatestBackup(accessToken, userId)?.db
@@ -90,6 +71,7 @@ class DriveBackupManager(private val context: Context) {
             setLastBackupAtMillis(userId, existing.modifiedAtMillis)
         }
     }
+
 
     suspend fun backup(accessToken: String, userId: String?): String = withContext(Dispatchers.IO) {
         val dbFile = getDbFile(userId)
@@ -108,12 +90,12 @@ class DriveBackupManager(private val context: Context) {
         val backupBytes = createBackupBundle(dbFile)
         android.util.Log.i("DriveBackup", "Starting backup bundle of ${backupBytes.size} bytes...")
         val backupName = bundleName(userId)
-        val existing = findExisting(accessToken, backupName)
+        val existing = DriveApiClient.findExisting(accessToken, backupName)
         val fileId = if (existing != null) {
-            updateBytes(accessToken, existing.fileId, backupBytes, "application/zip")
+            DriveApiClient.updateBytes(accessToken, existing.fileId, backupBytes, "application/zip")
             existing.fileId
         } else {
-            createBytes(accessToken, backupName, backupBytes, "application/zip", "appDataFolder")
+            DriveApiClient.createBytes(accessToken, backupName, backupBytes, "application/zip", "appDataFolder")
         }
 
         // Key backup
@@ -125,11 +107,11 @@ class DriveBackupManager(private val context: Context) {
         }.toString().toByteArray()
         
         val scopedKeyName = keyName(userId)
-        val keyExisting = findExisting(accessToken, scopedKeyName)
+        val keyExisting = DriveApiClient.findExisting(accessToken, scopedKeyName)
         if (keyExisting != null) {
-            updateBytes(accessToken, keyExisting.fileId, keyJson, "application/json")
+            DriveApiClient.updateBytes(accessToken, keyExisting.fileId, keyJson, "application/json")
         } else {
-            createBytes(accessToken, scopedKeyName, keyJson, "application/json", "appDataFolder")
+            DriveApiClient.createBytes(accessToken, scopedKeyName, keyJson, "application/json", "appDataFolder")
         }
         uploadMetadata(accessToken, userId, entryCount, "appDataFolder")
 
@@ -137,6 +119,7 @@ class DriveBackupManager(private val context: Context) {
         android.util.Log.i("DriveBackup", "Backup success.")
         fileId
     }
+
 
     suspend fun backupToOwnDrive(accessToken: String, userId: String?): String = withContext(Dispatchers.IO) {
         val dbFile = getDbFile(userId)
@@ -148,21 +131,21 @@ class DriveBackupManager(private val context: Context) {
 
         if (!dbFile.exists()) throw IOException("No vault file found.")
 
-        val folderId = getOrCreateKryptosFolder(accessToken)
+        val folderId = DriveApiClient.getOrCreateKryptosFolder(accessToken)
         
         val backupBytes = createBackupBundle(dbFile)
         val backupName = bundleName(userId)
         val query = "name='$backupName' and '$folderId' in parents and trashed=false"
         val url = URL("https://www.googleapis.com/drive/v3/files?q=${java.net.URLEncoder.encode(query, "UTF-8")}&fields=files(id)")
-        val response = request(accessToken, "GET", url)
+        val response = DriveApiClient.request(accessToken, "GET", url)
         val arr = JSONObject(response).optJSONArray("files")
         val existingId = if (arr != null && arr.length() > 0) arr.getJSONObject(0).getString("id") else null
 
         val fileId = if (existingId != null) {
-            updateBytes(accessToken, existingId, backupBytes, "application/zip")
+            DriveApiClient.updateBytes(accessToken, existingId, backupBytes, "application/zip")
             existingId
         } else {
-            createBytes(accessToken, backupName, backupBytes, "application/zip", folderId)
+            DriveApiClient.createBytes(accessToken, backupName, backupBytes, "application/zip", folderId)
         }
 
         // Key backup (Crucial for Pro users to restore on fresh install!)
@@ -176,14 +159,14 @@ class DriveBackupManager(private val context: Context) {
         val scopedKeyName = keyName(userId)
         val keyQuery = "name='$scopedKeyName' and '$folderId' in parents and trashed=false"
         val keyUrl = URL("https://www.googleapis.com/drive/v3/files?q=${java.net.URLEncoder.encode(keyQuery, "UTF-8")}&fields=files(id)")
-        val keyResp = request(accessToken, "GET", keyUrl)
+        val keyResp = DriveApiClient.request(accessToken, "GET", keyUrl)
         val keyArr = JSONObject(keyResp).optJSONArray("files")
         val existingKeyId = if (keyArr != null && keyArr.length() > 0) keyArr.getJSONObject(0).getString("id") else null
 
         if (existingKeyId != null) {
-            updateBytes(accessToken, existingKeyId, keyJson, "application/json")
+            DriveApiClient.updateBytes(accessToken, existingKeyId, keyJson, "application/json")
         } else {
-            createBytes(accessToken, scopedKeyName, keyJson, "application/json", folderId)
+            DriveApiClient.createBytes(accessToken, scopedKeyName, keyJson, "application/json", folderId)
         }
         uploadMetadata(accessToken, userId, entryCount, folderId)
 
@@ -191,47 +174,6 @@ class DriveBackupManager(private val context: Context) {
         fileId
     }
 
-    private suspend fun findKryptosFolder(accessToken: String): String? {
-        val query = "name='$FOLDER_NAME' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-        val url = URL("https://www.googleapis.com/drive/v3/files?q=${java.net.URLEncoder.encode(query, "UTF-8")}&fields=files(id)")
-        val response = try { request(accessToken, "GET", url) } catch (e: Exception) { return null }
-        val arr = JSONObject(response).optJSONArray("files")
-        return if (arr != null && arr.length() > 0) arr.getJSONObject(0).getString("id") else null
-    }
-
-    private suspend fun getOrCreateKryptosFolder(accessToken: String): String {
-        findKryptosFolder(accessToken)?.let { return it }
-
-        val metadata = JSONObject().apply {
-            put("name", FOLDER_NAME)
-            put("mimeType", "application/vnd.google-apps.folder")
-        }.toString().toByteArray()
-        val createUrl = URL("https://www.googleapis.com/drive/v3/files")
-        return JSONObject(request(accessToken, "POST", createUrl, metadata, "application/json")).getString("id")
-    }
-
-    private suspend fun createBytes(accessToken: String, name: String, bytes: ByteArray, mime: String, parent: String): String {
-        val boundary = "KryptosBoundary${System.currentTimeMillis()}"
-        val metadata = JSONObject().apply {
-            put("name", name)
-            put("parents", org.json.JSONArray().put(parent))
-            put("mimeType", mime)
-        }.toString()
-        
-        val body = ByteArrayOutputStream().apply {
-            write("--$boundary\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n$metadata\r\n--$boundary\r\nContent-Type: $mime\r\n\r\n".toByteArray())
-            write(bytes)
-            write("\r\n--$boundary--\r\n".toByteArray())
-        }.toByteArray()
-
-        val url = URL("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id")
-        return JSONObject(request(accessToken, "POST", url, body, "multipart/related; boundary=$boundary")).getString("id")
-    }
-
-    private suspend fun updateBytes(accessToken: String, fileId: String, bytes: ByteArray, mime: String) {
-        val url = URL("https://www.googleapis.com/upload/drive/v3/files/$fileId?uploadType=media")
-        request(accessToken, "PATCH", url, bytes, mime)
-    }
 
     private fun createBackupBundle(dbFile: File): ByteArray {
         val output = ByteArrayOutputStream()
@@ -261,60 +203,16 @@ class DriveBackupManager(private val context: Context) {
 
         val scopedMetaName = metaName(userId)
         val existing = if (parent == "appDataFolder") {
-            findExisting(accessToken, scopedMetaName, "appDataFolder")
+            DriveApiClient.findExisting(accessToken, scopedMetaName, "appDataFolder")
         } else {
-            findExistingInFolder(accessToken, scopedMetaName, parent)
+            DriveApiClient.findExistingInFolder(accessToken, scopedMetaName, parent)
         }
 
         if (existing != null) {
-            updateBytes(accessToken, existing.fileId, metadataJson, "application/json")
+            DriveApiClient.updateBytes(accessToken, existing.fileId, metadataJson, "application/json")
         } else {
-            createBytes(accessToken, scopedMetaName, metadataJson, "application/json", parent)
+            DriveApiClient.createBytes(accessToken, scopedMetaName, metadataJson, "application/json", parent)
         }
-    }
-
-    private suspend fun findExistingInFolder(accessToken: String, name: String, folderId: String): BackupInfo? = withContext(Dispatchers.IO) {
-        val query = "name='$name' and '$folderId' in parents and trashed=false"
-        val url = URL("https://www.googleapis.com/drive/v3/files?q=${java.net.URLEncoder.encode(query, "UTF-8")}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc")
-        val response = try { request(accessToken, "GET", url) } catch (e: Exception) { return@withContext null }
-        val arr = JSONObject(response).optJSONArray("files") ?: return@withContext null
-        if (arr.length() == 0) null else {
-            val o = arr.getJSONObject(0)
-            BackupInfo(o.getString("id"), parseIso(o.optString("modifiedTime", "")), o.optString("name", name))
-        }
-    }
-
-    private suspend fun findNewestDatabaseLike(accessToken: String, space: String, userId: String?): BackupInfo? = withContext(Dispatchers.IO) {
-        val query = "trashed=false and name contains 'kryptos'"
-        val url = URL("https://www.googleapis.com/drive/v3/files?spaces=$space&q=${java.net.URLEncoder.encode(query, "UTF-8")}&fields=files(id,name,modifiedTime,mimeType)&orderBy=modifiedTime desc&pageSize=20")
-        val response = try { request(accessToken, "GET", url) } catch (e: Exception) { return@withContext null }
-        val arr = JSONObject(response).optJSONArray("files") ?: return@withContext null
-        newestDatabaseFrom(arr, userId)
-    }
-
-    private suspend fun findNewestDatabaseLikeInFolder(accessToken: String, folderId: String, userId: String?): BackupInfo? = withContext(Dispatchers.IO) {
-        val query = "trashed=false and '$folderId' in parents and name contains 'kryptos'"
-        val url = URL("https://www.googleapis.com/drive/v3/files?q=${java.net.URLEncoder.encode(query, "UTF-8")}&fields=files(id,name,modifiedTime,mimeType)&orderBy=modifiedTime desc&pageSize=20")
-        val response = try { request(accessToken, "GET", url) } catch (e: Exception) { return@withContext null }
-        val arr = JSONObject(response).optJSONArray("files") ?: return@withContext null
-        newestDatabaseFrom(arr, userId)
-    }
-
-    private fun newestDatabaseFrom(arr: org.json.JSONArray, userId: String?): BackupInfo? {
-        val userScopedNames = setOf(bundleName(userId), databaseName(userId))
-        for (i in 0 until arr.length()) {
-            val o = arr.getJSONObject(i)
-            val name = o.optString("name", "")
-            val isLegacy = userId == null && (name == BUNDLE_NAME || name == BACKUP_NAME)
-            if (name in userScopedNames || isLegacy) {
-                return BackupInfo(
-                    fileId = o.getString("id"),
-                    modifiedAtMillis = parseIso(o.optString("modifiedTime", "")),
-                    name = name,
-                )
-            }
-        }
-        return null
     }
 
     private suspend fun findLatestBackup(accessToken: String, userId: String?): BackupPair? = withContext(Dispatchers.IO) {
@@ -330,63 +228,63 @@ class DriveBackupManager(private val context: Context) {
         val scopedKeyName = keyName(userId)
         val scopedMetaName = metaName(userId)
 
-        val appDataDb = findExisting(accessToken, scopedBundleName, "appDataFolder")
-            ?: findExisting(accessToken, scopedDatabaseName, "appDataFolder")
-            ?: findExisting(accessToken, BUNDLE_NAME, "appDataFolder")
-            ?: findExisting(accessToken, BACKUP_NAME, "appDataFolder")
-            ?: findNewestDatabaseLike(accessToken, "appDataFolder", userId)
+        val appDataDb = DriveApiClient.findExisting(accessToken, scopedBundleName, "appDataFolder")
+            ?: DriveApiClient.findExisting(accessToken, scopedDatabaseName, "appDataFolder")
+            ?: DriveApiClient.findExisting(accessToken, BUNDLE_NAME, "appDataFolder")
+            ?: DriveApiClient.findExisting(accessToken, BACKUP_NAME, "appDataFolder")
+            ?: DriveApiClient.findNewestDatabaseLike(accessToken, "appDataFolder", userId)
         if (appDataDb != null) {
-            val metadata = findExisting(accessToken, scopedMetaName, "appDataFolder")
-                ?: findExisting(accessToken, META_NAME, "appDataFolder")
+            val metadata = DriveApiClient.findExisting(accessToken, scopedMetaName, "appDataFolder")
+                ?: DriveApiClient.findExisting(accessToken, META_NAME, "appDataFolder")
             candidates += BackupPair(
                 db = appDataDb,
-                key = findExisting(accessToken, scopedKeyName, "appDataFolder")
-                    ?: findExisting(accessToken, KEY_NAME, "appDataFolder"),
+                key = DriveApiClient.findExisting(accessToken, scopedKeyName, "appDataFolder")
+                    ?: DriveApiClient.findExisting(accessToken, KEY_NAME, "appDataFolder"),
                 metadata = metadata,
                 source = "hidden Drive AppData",
-                entryCount = readEntryCount(accessToken, metadata),
+                entryCount = DriveApiClient.readEntryCount(accessToken, metadata),
                 isBundle = appDataDb.name == scopedBundleName || appDataDb.name == BUNDLE_NAME,
             )
         }
 
-        val folderId = findKryptosFolder(accessToken)
+        val folderId = DriveApiClient.findKryptosFolder(accessToken)
         if (folderId != null) {
-            val visibleDb = findExistingInFolder(accessToken, scopedBundleName, folderId)
-                ?: findExistingInFolder(accessToken, scopedDatabaseName, folderId)
-                ?: findExistingInFolder(accessToken, BUNDLE_NAME, folderId)
-                ?: findExistingInFolder(accessToken, BACKUP_NAME, folderId)
-                ?: findNewestDatabaseLikeInFolder(accessToken, folderId, userId)
+            val visibleDb = DriveApiClient.findExistingInFolder(accessToken, scopedBundleName, folderId)
+                ?: DriveApiClient.findExistingInFolder(accessToken, scopedDatabaseName, folderId)
+                ?: DriveApiClient.findExistingInFolder(accessToken, BUNDLE_NAME, folderId)
+                ?: DriveApiClient.findExistingInFolder(accessToken, BACKUP_NAME, folderId)
+                ?: DriveApiClient.findNewestDatabaseLikeInFolder(accessToken, folderId, userId)
             if (visibleDb != null) {
-                val metadata = findExistingInFolder(accessToken, scopedMetaName, folderId)
-                    ?: findExistingInFolder(accessToken, META_NAME, folderId)
+                val metadata = DriveApiClient.findExistingInFolder(accessToken, scopedMetaName, folderId)
+                    ?: DriveApiClient.findExistingInFolder(accessToken, META_NAME, folderId)
                 candidates += BackupPair(
                     db = visibleDb,
-                    key = findExistingInFolder(accessToken, scopedKeyName, folderId)
-                        ?: findExistingInFolder(accessToken, KEY_NAME, folderId),
+                    key = DriveApiClient.findExistingInFolder(accessToken, scopedKeyName, folderId)
+                        ?: DriveApiClient.findExistingInFolder(accessToken, KEY_NAME, folderId),
                     metadata = metadata,
                     source = "visible KryptosBackups folder",
-                    entryCount = readEntryCount(accessToken, metadata),
+                    entryCount = DriveApiClient.readEntryCount(accessToken, metadata),
                     isBundle = visibleDb.name == scopedBundleName || visibleDb.name == BUNDLE_NAME,
                 )
             }
         }
 
         if (candidates.none { it.source.startsWith("visible") }) {
-            val visibleDb = findExisting(accessToken, scopedBundleName, "drive")
-                ?: findExisting(accessToken, scopedDatabaseName, "drive")
-                ?: findExisting(accessToken, BUNDLE_NAME, "drive")
-                ?: findExisting(accessToken, BACKUP_NAME, "drive")
-                ?: findNewestDatabaseLike(accessToken, "drive", userId)
+            val visibleDb = DriveApiClient.findExisting(accessToken, scopedBundleName, "drive")
+                ?: DriveApiClient.findExisting(accessToken, scopedDatabaseName, "drive")
+                ?: DriveApiClient.findExisting(accessToken, BUNDLE_NAME, "drive")
+                ?: DriveApiClient.findExisting(accessToken, BACKUP_NAME, "drive")
+                ?: DriveApiClient.findNewestDatabaseLike(accessToken, "drive", userId)
             if (visibleDb != null) {
-                val metadata = findExisting(accessToken, scopedMetaName, "drive")
-                    ?: findExisting(accessToken, META_NAME, "drive")
+                val metadata = DriveApiClient.findExisting(accessToken, scopedMetaName, "drive")
+                    ?: DriveApiClient.findExisting(accessToken, META_NAME, "drive")
                 candidates += BackupPair(
                     db = visibleDb,
-                    key = findExisting(accessToken, scopedKeyName, "drive")
-                        ?: findExisting(accessToken, KEY_NAME, "drive"),
+                    key = DriveApiClient.findExisting(accessToken, scopedKeyName, "drive")
+                        ?: DriveApiClient.findExisting(accessToken, KEY_NAME, "drive"),
                     metadata = metadata,
                     source = "visible Drive search",
-                    entryCount = readEntryCount(accessToken, metadata),
+                    entryCount = DriveApiClient.readEntryCount(accessToken, metadata),
                     isBundle = visibleDb.name == scopedBundleName || visibleDb.name == BUNDLE_NAME,
                 )
             }
@@ -399,16 +297,6 @@ class DriveBackupManager(private val context: Context) {
             }"
         )
         candidates
-    }
-
-    private suspend fun readEntryCount(accessToken: String, metadata: BackupInfo?): Int? {
-        if (metadata == null) return null
-        return try {
-            val url = URL("https://www.googleapis.com/drive/v3/files/${metadata.fileId}?alt=media")
-            JSONObject(request(accessToken, "GET", url)).optInt("entryCount")
-        } catch (e: Exception) {
-            null
-        }
     }
 
     suspend fun restore(accessToken: String, userId: String?): Boolean = withContext(Dispatchers.IO) {
@@ -428,7 +316,7 @@ class DriveBackupManager(private val context: Context) {
             val passphrase = readPassphrase(accessToken, candidate.key, userId)
             android.util.Log.i("DriveBackup", "Checking ${candidate.source} backup modified at ${candidate.db.modifiedAtMillis}.")
             val downloadUrl = URL("https://www.googleapis.com/drive/v3/files/${candidate.db.fileId}?alt=media")
-            val dbBytes = requestBytes(accessToken, "GET", downloadUrl)
+            val dbBytes = DriveApiClient.requestBytes(accessToken, "GET", downloadUrl)
             if (dbBytes.isEmpty()) continue
 
             val entryCount = countEntriesInBackup(dbBytes, passphrase, candidate.isBundle)
@@ -467,7 +355,7 @@ class DriveBackupManager(private val context: Context) {
         return try {
             android.util.Log.i("DriveBackup", "Reading key from ${keyEntry.fileId}")
             val url = URL("https://www.googleapis.com/drive/v3/files/${keyEntry.fileId}?alt=media")
-            val obj = JSONObject(request(accessToken, "GET", url))
+            val obj = JSONObject(DriveApiClient.request(accessToken, "GET", url))
             android.util.Base64.decode(obj.getString("passphrase"), android.util.Base64.NO_WRAP)
         } catch (e: Exception) {
             android.util.Log.e("DriveBackup", "Key restoration failed", e)
@@ -513,51 +401,9 @@ class DriveBackupManager(private val context: Context) {
         }
     }
 
-    private suspend fun request(accessToken: String, method: String, url: URL, body: ByteArray? = null, contentType: String? = null): String {
-        return String(requestBytes(accessToken, method, url, body, contentType))
-    }
-
-    private suspend fun requestBytes(accessToken: String, method: String, url: URL, body: ByteArray? = null, contentType: String? = null): ByteArray = withContext(Dispatchers.IO) {
-        android.util.Log.d("DriveBackup", "Request: $method $url")
-        var lastErr: Exception? = null
-        repeat(3) { attempt ->
-            try {
-                val conn = (url.openConnection() as HttpsURLConnection).apply {
-                    requestMethod = method
-                    setRequestProperty("Authorization", "Bearer $accessToken")
-                    if (contentType != null) setRequestProperty("Content-Type", contentType)
-                    connectTimeout = 20000
-                    readTimeout = 30000
-                    if (body != null) {
-                        doOutput = true
-                        outputStream.use { it.write(body) }
-                    }
-                }
-                val code = conn.responseCode
-                val res = if (code in 200..299) conn.inputStream.use { it.readBytes() } 
-                          else conn.errorStream?.use { it.readBytes() } ?: "Error $code".toByteArray()
-                
-                if (code in 200..299) return@withContext res
-                throw IOException("Drive API $code: ${String(res)}")
-            } catch (e: Exception) {
-                lastErr = e
-                android.util.Log.w("DriveBackup", "Attempt ${attempt+1} failed: ${e.message}")
-                kotlinx.coroutines.delay(2000L * (attempt + 1))
-            }
-        }
-        throw lastErr ?: IOException("Network error")
-    }
-
-    private fun parseIso(s: String): Long = runCatching { java.time.Instant.parse(s).toEpochMilli() }.getOrDefault(0L)
-
     companion object {
         const val DRIVE_APPDATA_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
         const val DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file"
-        private const val BUNDLE_NAME = "kryptos.backup"
-        private const val BACKUP_NAME = "kryptos.db"
-        private const val KEY_NAME = "kryptos.key"
-        private const val META_NAME = "kryptos.meta.json"
-        private const val FOLDER_NAME = "KryptosBackups"
         private const val KEY_LAST_BACKUP = "last_backup"
     }
 }
