@@ -1,6 +1,20 @@
 # Kryptos (Android)
 
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.3-7F52FF?logo=kotlin&logoColor=white)]()
+[![Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)]()
+[![Android](https://img.shields.io/badge/Android-API%2026%2B-3DDC84?logo=android&logoColor=white)]()
+
 A privacy-first digital vault for your identity documents, payment cards, and sensitive records — built with Kotlin and Jetpack Compose. Store everything encrypted on-device, back up to your own Google Drive, and unlock with biometrics.
+
+> **Companion app:** [Kryptos (iOS)](https://github.com/mfaizalzain/KryptosiOS) — the same zero-knowledge vault for iPhone.
+
+## 📱 Screenshots
+
+<p align="center">
+  <img src="marketing/store/screenshot-1.png" width="200" alt="Kryptos vault list">
+  <img src="marketing/store/screenshot-2.png" width="200" alt="Biometric lock screen">
+  <img src="marketing/store/screenshot-3.png" width="200" alt="Entry detail">
+</p>
 
 ## ✨ Features
 
@@ -11,7 +25,7 @@ A privacy-first digital vault for your identity documents, payment cards, and se
 - **Smart document scanning**:
   - **AI-powered OCR** — extract fields from physical documents via Google ML Kit + Document Scanner.
   - **NFC chip reading** — read ePassport chips (JMRTD) and EMV payment cards directly via NFC.
-  - **QR duplicator** — scan and store existing QR codes; generate codes for contacts (vCard), Wi-Fi, email, SMS, geo, calendar, and payments.
+  - **QR duplicator** — scan and store existing QR codes; generate codes for contacts (vCard), Wi-Fi, email, SMS, geo, calendar, and payments; share entries to another Kryptos device fully offline.
 - **Cloud backup & restore** — encrypted vault + recovery key backed up to a private hidden folder in your Google Drive (`appDataFolder`), per Google account, with cross-device restore.
 - **Expiry reminders** — automatic expiry detection (6 months / 1 month / 1 week ahead) via WorkManager local notifications; toggle per category.
 - **Secure clipboard** — copied values auto-clear after 30 seconds.
@@ -28,12 +42,16 @@ app/src/main/kotlin/com/kryptos/vault/
 │   ├── VaultDatabase.kt / VaultDao.kt / VaultRepository.kt
 │   ├── VaultEntry.kt / FieldsCodec.kt / Converters.kt
 │   ├── KeyManager.kt                 # Android Keystore key handling
+│   ├── SecurePrefs.kt                # Encrypted preferences
 │   └── TemplateShareIds.kt
 ├── backup/
-│   └── DriveBackupManager.kt         # Google Drive backup/restore
+│   ├── DriveBackupManager.kt         # Google Drive backup/restore
+│   ├── DriveApiClient.kt             # Drive REST client
+│   └── BackupKeyProtection.kt        # Recovery-key wrapping
 ├── security/
 │   ├── AuthManager.kt                # Google Sign-In (Credential Manager)
 │   ├── BiometricAuth.kt
+│   ├── PasswordGenerator.kt
 │   └── SecureClipboard.kt            # 30s auto-clear clipboard
 ├── nfc/
 │   ├── PassportNfcReader.kt          # ePassport chip (JMRTD)
@@ -77,6 +95,7 @@ Open the project in Android Studio (or `./gradlew assembleDebug` from the CLI �
 - Drive backups are encrypted and per-account (`kryptos_<userId>.db` + `.key` + `.meta.json`); the recovery key is required to restore on a new device.
 - Clipboard auto-clears 30s after copying any field value.
 - Multiple Google accounts each get an isolated encrypted database.
+- The backup format is documented as a cross-platform contract in [`docs/BACKUP_FORMAT.md`](docs/BACKUP_FORMAT.md).
 
 ## 🧪 Testing
 
@@ -86,6 +105,14 @@ Open the project in Android Studio (or `./gradlew assembleDebug` from the CLI �
 
 Release builds use R8 minification (`isMinifyEnabled = true`) with rules in `app/proguard-rules.pro` — always smoke-test a release build on device after touching NFC/JMRTD or reflection-heavy code.
 
+## 🤝 Contributing
+
+Bug reports, feature requests, and PRs are welcome. Please open an issue first to discuss significant changes — this is a small personal project, so expect a light review cycle.
+
+## ☕ Support
+
+Like Kryptos? [Buy me a coffee](https://www.buymeacoffee.com/faizalmzain). Privacy policy and FAQ: [kryptos.faizalmzain.com](https://kryptos.faizalmzain.com).
+
 ## 📄 License
 
-Private repository — all rights reserved. Copyright © 2024–2026 Faizal Zain.
+Public repository — all rights reserved. Copyright © 2024–2026 Faizal Zain.
