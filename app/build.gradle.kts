@@ -144,7 +144,7 @@ dependencies {
     implementation(libs.billing.ktx)
     implementation(libs.zxing.core)
     implementation(libs.androidx.work.runtime.ktx)
-    implementation("com.google.guava:guava:33.3.1-android")
+    implementation("com.google.guava:guava:33.7.1-android")
 
     debugImplementation(libs.androidx.ui.tooling)
 
