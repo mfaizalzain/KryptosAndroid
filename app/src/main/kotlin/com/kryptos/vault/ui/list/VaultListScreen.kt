@@ -1,8 +1,8 @@
 package com.kryptos.vault.ui.list
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
@@ -38,14 +39,15 @@ import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.WorkspacePremium
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -60,7 +62,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -68,12 +70,9 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.kryptos.vault.KryptosApp
 import com.kryptos.vault.data.FieldsCodec
@@ -83,6 +82,11 @@ import com.kryptos.vault.ui.VaultViewModel
 import com.kryptos.vault.ui.account.AccountSheet
 import com.kryptos.vault.ui.cards.CompactHeroCard
 import com.kryptos.vault.ui.components.NativeAdCard
+import com.kryptos.vault.ui.theme.AppShapeChip
+import com.kryptos.vault.ui.theme.BrandGold
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import kotlin.math.absoluteValue
 import com.fmz.kryptos.R
 
@@ -104,19 +108,25 @@ fun VaultListScreen(
     val photoUrl = auth.currentAccount?.photoUrl
     var showAccount by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
+    var activeCategory by remember { mutableStateOf<Template?>(null) }
 
-    val filtered = remember(entries, query) {
-        val q = query.trim().lowercase()
-        if (q.isEmpty()) entries
-        else entries.filter { it.matches(q) }
-    }
-
-    val grouped = remember(filtered) {
+    val grouped = remember(entries) {
         Template.entries.mapNotNull { t ->
-            val es = filtered.filter { it.template == t }
+            val es = entries.filter { it.template == t }
             if (es.isEmpty()) null else t to es
         }
     }
+
+    val filtered = remember(entries, query, activeCategory) {
+        val q = query.trim().lowercase()
+        entries.filter { e ->
+            val catOk = activeCategory == null || e.template == activeCategory
+            val queryOk = q.isEmpty() || e.matches(q)
+            catOk && queryOk
+        }
+    }
+
+    val expiringSoon = remember(entries) { entries.count { it.isExpiringSoon() } }
 
     Scaffold(
         topBar = {
@@ -130,7 +140,7 @@ fun VaultListScreen(
                         modifier = Modifier
                             .padding(start = 12.dp)
                             .size(45.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(14.dp))
                             .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -143,42 +153,45 @@ fun VaultListScreen(
                     }
                 },
                 title = {
-                    Text(
-                        "Kryptos",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column {
+                        Text(
+                            "Kryptos",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "Encrypted · Zero-knowledge",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 },
                 actions = {
                     IconButton(onClick = { onQrScan() }) {
-                        Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan QR")
+                        Icon(
+                            Icons.Filled.QrCodeScanner,
+                            contentDescription = stringResource(R.string.scan_qr_code)
+                        )
                     }
                     IconButton(
                         onClick = { showAccount = true },
                         modifier = Modifier
                             .padding(end = 12.dp)
-                            .size(48.dp)
-                            .border(
-                                width = 2.dp,
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                shape = CircleShape
-                            )
+                            .size(46.dp)
+                            .border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape)
                     ) {
                         if (!photoUrl.isNullOrBlank()) {
                             AsyncImage(
                                 model = photoUrl,
                                 contentDescription = "Account",
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(2.dp)
-                                    .clip(CircleShape),
+                                modifier = Modifier.fillMaxSize().padding(2.dp).clip(CircleShape)
                             )
                         } else {
                             Icon(
                                 Icons.Filled.AccountCircle,
                                 contentDescription = "Account",
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(36.dp),
+                                modifier = Modifier.size(34.dp)
                             )
                         }
                     }
@@ -188,102 +201,83 @@ fun VaultListScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 text = { Text(stringResource(R.string.add_entry)) },
-                icon = { 
-                    Icon(
-                        Icons.Filled.Add, 
-                        contentDescription = null
-                    ) 
-                },
+                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 onClick = { onAdd() },
-                shape = RoundedCornerShape(20.dp),
-                containerColor = MaterialTheme.colorScheme.primary,
+                shape = RoundedCornerShape(18.dp),
+                containerColor = BrandGold,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             )
         },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
+            modifier = Modifier.fillMaxSize().padding(padding),
         ) {
-            val keyboardController = LocalSoftwareKeyboardController.current
-            val focusManager = LocalFocusManager.current
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                placeholder = { Text(stringResource(com.fmz.kryptos.R.string.search_vault_placeholder)) },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                trailingIcon = {
-                    if (query.isNotEmpty()) {
-                        IconButton(onClick = { query = "" }) {
-                            Icon(Icons.Filled.Close, contentDescription = stringResource(com.fmz.kryptos.R.string.search_clear))
-                        }
-                    }
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = {
-                    keyboardController?.hide()
-                    focusManager.clearFocus()
-                }),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    cursorColor = MaterialTheme.colorScheme.primary,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+            // Hero summary header
+            VaultHeader(entries = entries, grouped = grouped, expiringSoon = expiringSoon)
+
+            SearchField(
+                query = query,
+                onQueryChange = { query = it },
+                modifier = Modifier.padding(horizontal = 16.dp),
             )
 
-            if (entries.isEmpty()) {
-                EmptyState(
-                    stringResource(com.fmz.kryptos.R.string.vault_empty),
-                    Modifier.weight(1f)
+            if (entries.isNotEmpty()) {
+                CategoryChips(
+                    grouped = grouped,
+                    activeCategory = activeCategory,
+                    onCategory = { activeCategory = it },
+                    modifier = Modifier.padding(top = 4.dp),
                 )
-            } else if (filtered.isEmpty()) {
-                EmptyState(
-                    stringResource(com.fmz.kryptos.R.string.vault_no_match, query),
-                    Modifier.weight(1f)
+            }
+
+            when {
+                entries.isEmpty() -> EmptyState(
+                    icon = Icons.Filled.Shield,
+                    title = stringResource(com.fmz.kryptos.R.string.vault_empty_title),
+                    subtitle = stringResource(com.fmz.kryptos.R.string.vault_empty),
+                    modifier = Modifier.weight(1f)
                 )
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(
-                        bottom = 88.dp,
-                        top = 8.dp,
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    grouped.forEach { (template, items) ->
-                        item(key = "header_${template.name}") {
-                            CategoryHeader(
-                                template = template,
-                                count = items.size,
-                            )
+                filtered.isEmpty() -> EmptyState(
+                    icon = Icons.Filled.Search,
+                    title = stringResource(com.fmz.kryptos.R.string.vault_no_match_title),
+                    subtitle = stringResource(com.fmz.kryptos.R.string.vault_no_match, query),
+                    modifier = Modifier.weight(1f)
+                )
+                else -> {
+                    val activeGroups = remember(filtered) {
+                        Template.entries.mapNotNull { t ->
+                            val es = filtered.filter { it.template == t }
+                            if (es.isEmpty()) null else t to es
                         }
-                        if (items.size > STACK_THRESHOLD) {
-                            item(key = "stack_${template.name}") {
-                                EntryStack(entries = items, onOpen = onOpen)
+                    }
+                    LazyColumn(
+                        contentPadding = PaddingValues(bottom = 96.dp, top = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        activeGroups.forEach { (template, items) ->
+                            item(key = "header_" + template.name) {
+                                CategoryHeader(template = template, count = items.size)
                             }
-                        } else {
-                            items(items, key = { "row_${it.id}" }) { entry ->
-                                Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                                    HeroCardTile(entry = entry, onClick = { onOpen(entry.id) })
+                            if (items.size > STACK_THRESHOLD) {
+                                item(key = "stack_" + template.name) {
+                                    EntryStack(entries = items, onOpen = onOpen)
+                                }
+                            } else {
+                                items(items, key = { "row" + it.id }) { entry ->
+                                    Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                                        HeroCardTile(entry = entry, onClick = { onOpen(entry.id) })
+                                    }
                                 }
                             }
                         }
-                    }
-                    // Native ad at the bottom of the list
-                    if (!adsRemoved) {
-                        item {
-                            NativeAdCard(
-                                adUnitId = "ca-app-pub-1016705366714872/4650414807",
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                            )
+                        if (!adsRemoved) {
+                            item {
+                                NativeAdCard(
+                                    adUnitId = "ca-app-pub-1016705366714872/4650414807",
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -302,6 +296,150 @@ fun VaultListScreen(
 }
 
 @Composable
+private fun VaultHeader(
+    entries: List<VaultEntry>,
+    grouped: List<Pair<Template, List<VaultEntry>>>,
+    expiringSoon: Int,
+) {
+    val subtitle = buildString {
+        append(entries.size)
+        append(if (entries.size == 1) " item" else " items")
+        if (grouped.isNotEmpty()) {
+            append(" · ")
+            append(grouped.size)
+            append(" categories")
+        }
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                "My Vault",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (expiringSoon > 0) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.errorContainer,
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        expiringSoon.toString() + " expiring",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+        }
+    }
+}
+
+// --- Search field --------------------------------------------------------
+@Composable
+private fun SearchField(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = modifier.fillMaxWidth().height(52.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+        ) {
+            Icon(
+                Icons.Filled.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(Modifier.width(12.dp))
+            BasicTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                modifier = Modifier.weight(1f),
+            )
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.search_clear),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryChips(
+    grouped: List<Pair<Template, List<VaultEntry>>>,
+    activeCategory: Template?,
+    onCategory: (Template?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyRow(
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        item {
+            FilterChip(
+                selected = activeCategory == null,
+                onClick = { onCategory(null) },
+                label = { Text("All") },
+                shape = AppShapeChip,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            )
+        }
+        items(grouped, key = { it.first.name }) { (template, items) ->
+            FilterChip(
+                selected = activeCategory == template,
+                onClick = { onCategory(if (activeCategory == template) null else template) },
+                label = { Text(labelFor(template)) },
+                shape = AppShapeChip,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            )
+        }
+    }
+}
+
+@Composable
 private fun CategoryHeader(template: Template, count: Int) {
     Row(
         modifier = Modifier
@@ -310,16 +448,16 @@ private fun CategoryHeader(template: Template, count: Int) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Surface(
-            modifier = Modifier.size(32.dp),
-            shape = RoundedCornerShape(8.dp),
-            color = MaterialTheme.colorScheme.secondaryContainer
+            modifier = Modifier.size(34.dp),
+            shape = RoundedCornerShape(11.dp),
+            color = MaterialTheme.colorScheme.primaryContainer
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     iconFor(template),
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(19.dp),
                 )
             }
         }
@@ -340,31 +478,49 @@ private fun CategoryHeader(template: Template, count: Int) {
                 count.toString(),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                modifier = Modifier.padding(horizontal = 9.dp, vertical = 2.dp)
             )
         }
     }
 }
 
 @Composable
-private fun EmptyState(message: String, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize().padding(32.dp),
-        contentAlignment = Alignment.Center,
-    ) {
+private fun EmptyState(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                Icons.Filled.Description,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.outlineVariant
-            )
-            Spacer(Modifier.height(16.dp))
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(96.dp),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(44.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
+            }
+            Spacer(Modifier.height(20.dp))
             Text(
-                message,
-                style = MaterialTheme.typography.bodyLarge,
+                title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = TextAlign.Center,
             )
         }
     }
@@ -374,9 +530,10 @@ private fun EmptyState(message: String, modifier: Modifier = Modifier) {
 private fun HeroCardTile(entry: VaultEntry, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
-        shadowElevation = 3.dp,
-        modifier = Modifier.fillMaxWidth()
+        shape = RoundedCornerShape(22.dp),
+        shadowElevation = 6.dp,
+        tonalElevation = 0.dp,
+        modifier = Modifier.fillMaxWidth(),
     ) {
         DefaultHeroCard(entry)
     }
@@ -408,39 +565,27 @@ private fun EntryStack(entries: List<VaultEntry>, onOpen: (Long) -> Unit) {
         ) { page ->
             val rawOffset = pagerState.currentPage - page + pagerState.currentPageOffsetFraction
             val absOffset = rawOffset.absoluteValue.coerceIn(0f, 2f)
-            
-            // Subtle scale and alpha based on distance from center
-            val scale = 1f - (absOffset.coerceAtMost(1f) * 0.12f)
-            val alpha = 1f - (absOffset.coerceAtMost(1f) * 0.5f)
-            
-            // Visual "tuck" effect: neighbors tilt or shift slightly
-            val rotation = if (rawOffset > 0) rawOffset * 2f else rawOffset * 2f
-
+            val scale by animateFloatAsState(1f - (absOffset.coerceAtMost(1f) * 0.06f))
+            val alpha by animateFloatAsState(1f - (absOffset.coerceAtMost(1f) * 0.45f))
             Box(
-                Modifier
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                        this.alpha = alpha
-                        rotationZ = rotation
-                        // Slight vertical offset for neighbors to create a "depth" look
-                        translationY = absOffset * 8.dp.toPx()
-                    },
+                Modifier.graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    this.alpha = alpha
+                    translationY = absOffset * 6.dp.toPx()
+                },
             ) {
                 HeroCardTile(entry = entries[page], onClick = { onOpen(entries[page].id) })
             }
         }
-        
+
         if (entries.size > 1) {
             Spacer(Modifier.height(12.dp))
-            Row(
-                Modifier.height(8.dp).fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
+            Row(Modifier.height(8.dp).fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                 repeat(entries.size) { iteration ->
-                    val color = if (pagerState.currentPage == iteration) 
-                        MaterialTheme.colorScheme.primary 
-                    else 
+                    val color = if (pagerState.currentPage == iteration)
+                        MaterialTheme.colorScheme.primary
+                    else
                         MaterialTheme.colorScheme.outlineVariant
                     Box(
                         modifier = Modifier
@@ -487,4 +632,25 @@ private fun VaultEntry.matches(q: String): Boolean {
     return FieldsCodec.decode(fieldsJson).any { (k, v) ->
         k.lowercase().contains(q) || v.lowercase().contains(q)
     }
+}
+
+/** Best-effort expiry detection for the home-screen "expiring soon" signal. */
+private fun VaultEntry.isExpiringSoon(): Boolean {
+    val expiry = FieldsCodec.decode(fieldsJson)
+        .firstOrNull { it.first.lowercase().contains("expiry") || it.first.lowercase().contains("expires") }
+        ?.second?.trim() ?: return false
+    if (expiry.isEmpty()) return false
+    val formatters = listOf(
+        DateTimeFormatter.ofPattern("MM/yy"),
+        DateTimeFormatter.ofPattern("MM/yyyy"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+        DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+        DateTimeFormatter.ofPattern("yyMM"),
+    )
+    val date = formatters.firstNotNullOfOrNull { fmt ->
+        runCatching { LocalDate.parse(expiry, fmt) }.getOrNull()
+    } ?: runCatching { LocalDate.parse(expiry) }.getOrNull() ?: return false
+    val today = LocalDate.now()
+    if (date.isBefore(today)) return false
+    return ChronoUnit.DAYS.between(today, date) <= 180
 }

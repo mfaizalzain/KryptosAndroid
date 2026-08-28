@@ -202,7 +202,7 @@ fun ScanScreen(
                             }) { 
                                 Text(
                                     text = "Use", 
-                                    color = Color(0xFF00E5FF),
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp
                                 ) 

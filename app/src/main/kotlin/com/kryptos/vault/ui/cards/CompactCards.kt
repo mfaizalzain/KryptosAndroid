@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kryptos.vault.data.Template
 import com.kryptos.vault.ui.scan.QrGenerator
+import com.kryptos.vault.ui.theme.BrandGold
 
 @Composable
 internal fun CompactIdentityCard(
@@ -60,19 +61,19 @@ internal fun CompactIdentityCard(
     Row(
         modifier = Modifier
             .fillMaxSize()
-            .padding(14.dp),
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         PhotoSlot(
             attachment,
             Modifier
-                .width(58.dp)
+                .width(60.dp)
                 .fillMaxHeight(),
         )
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(5.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
                 title.ifBlank {
@@ -83,7 +84,7 @@ internal fun CompactIdentityCard(
                     }
                 },
                 color = Color.White,
-                fontSize = 19.sp,
+                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -91,14 +92,14 @@ internal fun CompactIdentityCard(
             LabelValue(
                 label = if (template == Template.PASSPORT) "Number" else "Identifier",
                 value = number,
-                labelColor = Color.White.copy(alpha = 0.68f),
+                labelColor = Color.White.copy(alpha = 0.66f),
                 valueColor = Color.White,
                 valueSp = 17,
             )
             LabelValue(
                 label = "Name",
                 value = name.ifBlank { title },
-                labelColor = Color.White.copy(alpha = 0.68f),
+                labelColor = Color.White.copy(alpha = 0.66f),
                 valueColor = Color.White,
                 valueSp = 16,
             )
@@ -116,7 +117,7 @@ internal fun CompactDocumentCard(
     Row(
         modifier = Modifier
             .fillMaxSize()
-            .padding(14.dp),
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
@@ -128,7 +129,7 @@ internal fun CompactDocumentCard(
             Text(
                 title.ifBlank { compactFallbackTitle(template) },
                 color = Color.White,
-                fontSize = 19.sp,
+                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -147,7 +148,7 @@ internal fun CompactDocumentCard(
                     LabelValue(
                         label = label,
                         value = value,
-                        labelColor = Color.White.copy(alpha = 0.68f),
+                        labelColor = Color.White.copy(alpha = 0.66f),
                         valueColor = Color.White,
                         valueSp = 16,
                     )
@@ -162,7 +163,7 @@ internal fun CompactPaymentCard(title: String, fields: List<Pair<String, String>
     Row(
         modifier = Modifier
             .fillMaxSize()
-            .padding(14.dp),
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
@@ -176,7 +177,7 @@ internal fun CompactPaymentCard(title: String, fields: List<Pair<String, String>
                     Text(
                         title.ifBlank { fields.value("Issuer").ifBlank { "Payment Card" } },
                         color = Color.White,
-                        fontSize = 19.sp,
+                        style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -195,8 +196,8 @@ internal fun CompactPaymentCard(title: String, fields: List<Pair<String, String>
                 Icon(
                     Icons.Filled.CreditCard,
                     contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(22.dp),
+                    tint = Color.White.copy(alpha = 0.9f),
+                    modifier = Modifier.size(24.dp),
                 )
             }
             Text(
@@ -212,7 +213,7 @@ internal fun CompactPaymentCard(title: String, fields: List<Pair<String, String>
                 LabelValue(
                     label = "Cardholder",
                     value = fields.value("Cardholder"),
-                    labelColor = Color.White.copy(alpha = 0.68f),
+                    labelColor = Color.White.copy(alpha = 0.66f),
                     valueColor = Color.White,
                     valueSp = 13,
                 )
@@ -220,7 +221,7 @@ internal fun CompactPaymentCard(title: String, fields: List<Pair<String, String>
                 LabelValue(
                     label = "Expires",
                     value = formattedExpiry(fields.value("Expiry")),
-                    labelColor = Color.White.copy(alpha = 0.68f),
+                    labelColor = Color.White.copy(alpha = 0.66f),
                     valueColor = Color.White,
                     valueSp = 13,
                     mono = true,
@@ -242,7 +243,7 @@ internal fun CompactSecretCard(
     Row(
         modifier = Modifier
             .fillMaxSize()
-            .padding(14.dp),
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
@@ -254,7 +255,7 @@ internal fun CompactSecretCard(
             Text(
                 title,
                 color = Color.White,
-                fontSize = 19.sp,
+                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -270,7 +271,7 @@ internal fun CompactSecretCard(
             LabelValue(
                 label = secondaryLabel,
                 value = secondaryValue,
-                labelColor = Color.White.copy(alpha = 0.68f),
+                labelColor = Color.White.copy(alpha = 0.66f),
                 valueColor = Color.White,
                 valueSp = 14,
             )
@@ -284,7 +285,7 @@ internal fun CompactNoteCard(title: String, fields: List<Pair<String, String>>, 
     Row(
         modifier = Modifier
             .fillMaxSize()
-            .padding(14.dp),
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
@@ -296,7 +297,7 @@ internal fun CompactNoteCard(title: String, fields: List<Pair<String, String>>, 
             Text(
                 title.ifBlank { "Secure Note" },
                 color = textColor,
-                fontSize = 19.sp,
+                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -330,14 +331,14 @@ internal fun CompactQrCard(title: String, fields: List<Pair<String, String>>) {
     Row(
         modifier = Modifier
             .fillMaxSize()
-            .padding(14.dp),
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Box(
             modifier = Modifier
                 .size(72.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(12.dp))
                 .background(Color.White),
             contentAlignment = Alignment.Center,
         ) {
@@ -354,7 +355,7 @@ internal fun CompactQrCard(title: String, fields: List<Pair<String, String>>) {
                 Icon(
                     Icons.Filled.QrCode,
                     contentDescription = null,
-                    tint = Color(0xFF145087),
+                    tint = Color(0xFF12557A),
                     modifier = Modifier.size(38.dp),
                 )
             }
@@ -366,7 +367,7 @@ internal fun CompactQrCard(title: String, fields: List<Pair<String, String>>) {
             Text(
                 title.ifBlank { "QR Code" },
                 color = Color.White,
-                fontSize = 19.sp,
+                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -398,10 +399,10 @@ private fun CompactIconSlot(template: Template, attachment: ByteArray?) {
     }
     Box(
         modifier = Modifier
-            .width(58.dp)
+            .width(60.dp)
             .fillMaxHeight()
-            .clip(RoundedCornerShape(10.dp))
-            .background(Color.White.copy(alpha = 0.18f)),
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.White.copy(alpha = 0.16f)),
         contentAlignment = Alignment.Center,
     ) {
         val currentBmp = bmp
@@ -422,10 +423,9 @@ private fun CompactIconSlot(template: Template, attachment: ByteArray?) {
                     else -> Icons.Filled.Description
                 },
                 contentDescription = null,
-                tint = heroContentColor(template).copy(alpha = 0.78f),
-                modifier = Modifier.size(28.dp),
+                tint = heroContentColor(template).copy(alpha = 0.8f),
+                modifier = Modifier.size(30.dp),
             )
         }
     }
 }
-

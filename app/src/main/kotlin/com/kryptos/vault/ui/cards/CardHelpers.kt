@@ -18,7 +18,7 @@ internal fun compactFallbackTitle(template: Template): String = when (template) 
 }
 
 internal fun heroContentColor(template: Template): Color =
-    if (template == Template.NOTE) Color(0xFF3F2B00) else Color.White
+    if (template == Template.NOTE) Color(0xFF2B230A) else Color.White
 
 internal fun primaryFieldsFor(template: Template): List<String> = when (template) {
     Template.ID_CARD -> listOf("ID number", "Full name", "Date of birth")
@@ -32,4 +32,3 @@ internal fun primaryFieldsFor(template: Template): List<String> = when (template
     Template.NOTE -> listOf("Content")
     Template.QR_CODE -> listOf("Data", "Content")
 }
-

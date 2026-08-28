@@ -17,7 +17,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Fingerprint
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -51,7 +50,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.Brush
@@ -60,6 +58,13 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.material3.CircularProgressIndicator
+import com.kryptos.vault.ui.theme.BrandGold
+import com.kryptos.vault.ui.theme.BrandGoldDeep
+import com.kryptos.vault.ui.theme.BrandGoldOnDeep
+import com.kryptos.vault.ui.theme.Slate900
+import com.kryptos.vault.ui.theme.Slate800
+import com.kryptos.vault.ui.theme.Slate200
 
 @Composable
 fun LockScreen(onUnlocked: () -> Unit) {
@@ -73,7 +78,6 @@ fun LockScreen(onUnlocked: () -> Unit) {
     var signingIn by remember { mutableStateOf(false) }
     var signInError by remember { mutableStateOf<String?>(null) }
 
-    // Coroutine-driven shake animation for security container
     val shakeAnim = remember { androidx.compose.animation.core.Animatable(0f) }
 
     fun authenticate() {
@@ -86,7 +90,6 @@ fun LockScreen(onUnlocked: () -> Unit) {
                 onFailure = {
                     attempts++
                     scope.launch {
-                        // Shake physics: rapid oscillations decaying back to center
                         repeat(3) {
                             shakeAnim.animateTo(24f, animationSpec = androidx.compose.animation.core.tween(50))
                             shakeAnim.animateTo(-24f, animationSpec = androidx.compose.animation.core.tween(50))
@@ -112,11 +115,10 @@ fun LockScreen(onUnlocked: () -> Unit) {
         if (account != null) authenticate()
     }
 
-    // Rich premium custom matte slate dark gradient mesh
     val backgroundBrush = Brush.verticalGradient(
         colors = listOf(
-            Color(0xFF0F131D),
-            Color(0xFF1C2230)
+            Slate900,
+            Slate800
         )
     )
 
@@ -136,12 +138,10 @@ fun LockScreen(onUnlocked: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Header Area
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Pulsing concentric security shield
                     val transition = rememberInfiniteTransition(label = "Shield Pulsing")
                     val wave1 by transition.animateFloat(
                         initialValue = 1f,
@@ -186,20 +186,17 @@ fun LockScreen(onUnlocked: () -> Unit) {
                             .size(160.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        val baseHaloColor = Color(0xFF8F9CAE) // Muted matte slate gray accent
-                        val goldHaloColor = Color(0xFFD4AF37) // Warm premium gold accent
+                        val haloColor = Color(0xFF8F9CAE)
                         Canvas(modifier = Modifier.fillMaxSize()) {
                             val baseRadius = 56.dp.toPx()
-                            // Wave 1 - Matte Slate
                             drawCircle(
-                                color = baseHaloColor,
+                                color = haloColor,
                                 radius = baseRadius * wave1,
                                 alpha = alpha1,
                                 style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
                             )
-                            // Wave 2 - Gold
                             drawCircle(
-                                color = goldHaloColor,
+                                color = BrandGold,
                                 radius = baseRadius * wave2,
                                 alpha = alpha2,
                                 style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
@@ -208,9 +205,9 @@ fun LockScreen(onUnlocked: () -> Unit) {
 
                         Surface(
                             shape = RoundedCornerShape(32.dp),
-                            color = Color(0xFF2E3547), // Muted matte slate card base
+                            color = Color(0xFF2E3547),
                             modifier = Modifier.size(112.dp),
-                            border = BorderStroke(1.5.dp, Color(0xFFD4AF37).copy(alpha = 0.35f)), // Gold accent border
+                            border = BorderStroke(1.5.dp, BrandGold.copy(alpha = 0.35f)),
                             shadowElevation = 12.dp
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -241,7 +238,6 @@ fun LockScreen(onUnlocked: () -> Unit) {
 
                 Spacer(Modifier.height(64.dp))
 
-                // Middle Area (Account or Onboarding)
                 Box(
                     modifier = Modifier.weight(1f, fill = false),
                     contentAlignment = Alignment.Center
@@ -262,7 +258,6 @@ fun LockScreen(onUnlocked: () -> Unit) {
 
                 Spacer(Modifier.height(64.dp))
 
-                // Footer Area (Actions)
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -279,13 +274,13 @@ fun LockScreen(onUnlocked: () -> Unit) {
                                 .height(56.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color.White,
-                                contentColor = Color(0xFF1F1F1F)
+                                contentColor = Slate900
                             ),
-                            border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
+                            border = BorderStroke(1.dp, Slate200),
                             elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
                         ) {
                             if (signingIn) {
-                                androidx.compose.material3.CircularProgressIndicator(
+                                CircularProgressIndicator(
                                     modifier = Modifier.size(20.dp),
                                     strokeWidth = 2.dp,
                                     color = MaterialTheme.colorScheme.primary
@@ -314,8 +309,8 @@ fun LockScreen(onUnlocked: () -> Unit) {
                             onClick = ::authenticate,
                             shape = RoundedCornerShape(28.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFD4AF37),
-                                contentColor = Color(0xFF0F131D)
+                                containerColor = BrandGoldDeep,
+                                contentColor = BrandGoldOnDeep
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -342,7 +337,6 @@ private fun GoogleIcon(modifier: Modifier = Modifier) {
         val scale = size.width / 24f
         scale(scale, scale, Offset.Zero) {
             val p = Path()
-            // Blue
             p.moveTo(22.56f, 12.25f)
             p.cubicTo(22.56f, 11.47f, 22.49f, 10.72f, 22.36f, 10f)
             p.lineTo(12f, 10f)
@@ -353,8 +347,6 @@ private fun GoogleIcon(modifier: Modifier = Modifier) {
             p.lineTo(19.28f, 20.34f)
             p.cubicTo(21.36f, 18.42f, 22.56f, 15.6f, 22.56f, 12.25f)
             drawPath(p, Color(0xFF4285F4))
-
-            // Green
             p.reset()
             p.moveTo(12f, 23f)
             p.cubicTo(15.24f, 23f, 17.95f, 21.92f, 19.93f, 20.09f)
@@ -365,8 +357,6 @@ private fun GoogleIcon(modifier: Modifier = Modifier) {
             p.lineTo(1.23f, 15.83f)
             p.cubicTo(3.21f, 19.68f, 7.31f, 23f, 12f, 23f)
             drawPath(p, Color(0xFF34A853))
-
-            // Yellow
             p.reset()
             p.moveTo(4.8f, 13.06f)
             p.cubicTo(4.54f, 12.29f, 4.4f, 11.46f, 4.4f, 10.6f)
@@ -377,8 +367,6 @@ private fun GoogleIcon(modifier: Modifier = Modifier) {
             p.cubicTo(0f, 12.48f, 0.44f, 14.25f, 1.23f, 15.83f)
             p.lineTo(4.8f, 13.06f)
             drawPath(p, Color(0xFFFBBC05))
-
-            // Red
             p.reset()
             p.moveTo(12f, 4.61f)
             p.cubicTo(13.76f, 4.61f, 15.34f, 5.21f, 16.58f, 6.4f)

@@ -50,6 +50,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kryptos.vault.data.FieldsCodec
 import com.kryptos.vault.nfc.CardNfcReader
+import com.kryptos.vault.ui.theme.BrandGold
+import com.kryptos.vault.ui.theme.BrandGoldDeep
+import com.kryptos.vault.ui.theme.BrandGoldOnDeep
+import com.kryptos.vault.ui.theme.BrandGoldSoft
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -165,7 +169,7 @@ fun NfcCardScanScreen(
                     Text(
                         text = "SECURE CHIP READER",
                         style = MaterialTheme.typography.labelLarge,
-                        color = Color(0xFFD4AF37), // Luxury gold accent
+                        color = BrandGoldDeep, // Luxury gold accent
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 2.sp
                     )
@@ -265,7 +269,7 @@ fun NfcCardScanScreen(
                     )
 
                     // Radar waves drawn on canvas
-                    val radarColor = if (working) Color(0xFFD4AF37) else Color(0xFF8F9CAE) // Muted matte slate or warm gold
+                    val radarColor = if (working) BrandGold else Color(0xFF8F9CAE) // Muted matte slate or warm gold
                     Canvas(modifier = Modifier.fillMaxSize()) {
                         val baseRadius = 80.dp.toPx()
                         drawCircle(
@@ -294,7 +298,7 @@ fun NfcCardScanScreen(
                         color = Color(0x158F9CAE), // Matte slate glassmorphic base
                         modifier = Modifier
                             .size(190.dp, 120.dp)
-                            .border(BorderStroke(1.5.dp, Color(0xFFD4AF37).copy(alpha = 0.35f)), RoundedCornerShape(16.dp)), // Premium gold outline
+                            .border(BorderStroke(1.5.dp, BrandGold.copy(alpha = 0.35f)), RoundedCornerShape(16.dp)), // Premium gold outline
                         shadowElevation = 8.dp
                     ) {
                         Box(modifier = Modifier.fillMaxSize()) {
@@ -354,7 +358,7 @@ fun NfcCardScanScreen(
                                         brush = Brush.horizontalGradient(
                                             colors = listOf(
                                                 Color.Transparent,
-                                                Color(0xFFD4AF37),
+                                                BrandGold,
                                                 Color.Transparent
                                             )
                                         ),
@@ -376,17 +380,17 @@ fun NfcCardScanScreen(
                     // Status Badge Container
                     val badgeBorderColor = when {
                         error != null -> Color(0xFFFF5252).copy(alpha = 0.4f)
-                        working -> Color(0xFFD4AF37).copy(alpha = 0.4f)
+                        working -> BrandGold.copy(alpha = 0.4f)
                         else -> Color(0xFF8F9CAE).copy(alpha = 0.4f)
                     }
                     val badgeBgColor = when {
                         error != null -> Color(0x15FF5252)
-                        working -> Color(0x15D4AF37)
+                        working -> Color(0x15C9A227)
                         else -> Color(0x158F9CAE)
                     }
                     val statusColor = when {
                         error != null -> Color(0xFFFF5252)
-                        working -> Color(0xFFD4AF37)
+                        working -> BrandGold
                         else -> Color(0xFF8F9CAE)
                     }
 

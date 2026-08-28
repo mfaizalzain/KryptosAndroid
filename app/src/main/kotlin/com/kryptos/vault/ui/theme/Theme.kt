@@ -39,19 +39,19 @@ private val LightColorScheme = lightColorScheme(
     surfaceVariant = SurfaceVariantLight,
     onSurfaceVariant = OnSurfaceVariantLight,
     outline = OutlineLight,
-    outlineVariant = Color(0xFFCBD5E1),         // Slate 300
+    outlineVariant = OutlineVariantLight,
     surfaceTint = PrimaryLight,
-    inverseSurface = Color(0xFF1E293B),
-    inverseOnSurface = Color(0xFFF1F5F9),
-    inversePrimary = Color(0xFFE2C175),
-    scrim = Color(0xFF000000),
+    inverseSurface = Slate800,
+    inverseOnSurface = Slate100,
+    inversePrimary = InversePrimaryLight,
+    scrim = ScrimBlack,
     surfaceBright = Color(0xFFFFFFFF),
-    surfaceDim = Color(0xFFE2E8F0),
+    surfaceDim = Slate200,
     surfaceContainerLowest = Color(0xFFFFFFFF),
-    surfaceContainerLow = Color(0xFFF8FAFC),    // Slate 50
-    surfaceContainer = Color(0xFFF1F5F9),       // Slate 100
-    surfaceContainerHigh = Color(0xFFE2E8F0),   // Slate 200
-    surfaceContainerHighest = Color(0xFFCBD5E1),// Slate 300
+    surfaceContainerLow = Slate50,
+    surfaceContainer = Slate100,
+    surfaceContainerHigh = Slate200,
+    surfaceContainerHighest = Slate300,
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -78,19 +78,19 @@ private val DarkColorScheme = darkColorScheme(
     surfaceVariant = SurfaceVariantDark,
     onSurfaceVariant = OnSurfaceVariantDark,
     outline = OutlineDark,
-    outlineVariant = Color(0xFF334155),         // Slate 700
+    outlineVariant = OutlineVariantDark,
     surfaceTint = PrimaryDark,
-    inverseSurface = Color(0xFFE2E8F0),
-    inverseOnSurface = Color(0xFF1E293B),
-    inversePrimary = Color(0xFF9F7E3B),
-    scrim = Color(0xFF000000),
-    surfaceBright = Color(0xFF323C50),
-    surfaceDim = Color(0xFF0F1219),
-    surfaceContainerLowest = Color(0xFF0A0D14),
-    surfaceContainerLow = Color(0xFF161B25),
-    surfaceContainer = Color(0xFF1E2431),
-    surfaceContainerHigh = Color(0xFF283142),
-    surfaceContainerHighest = Color(0xFF323C50),
+    inverseSurface = Slate200,
+    inverseOnSurface = Slate800,
+    inversePrimary = InversePrimaryDark,
+    scrim = ScrimBlack,
+    surfaceBright = Color(0xFF2A3446),
+    surfaceDim = BackgroundDark,
+    surfaceContainerLowest = Color(0xFF0B0E15),
+    surfaceContainerLow = Color(0xFF121722),
+    surfaceContainer = SurfaceDark,
+    surfaceContainerHigh = Color(0xFF1E2636),
+    surfaceContainerHighest = Color(0xFF232C3B),
 )
 
 @Composable
@@ -116,6 +116,7 @@ fun KryptosTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = Shapes,
     ) {
         CompositionLocalProvider(LocalTextSelectionColors provides selectionColors) {
             content()

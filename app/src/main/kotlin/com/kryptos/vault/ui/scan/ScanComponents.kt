@@ -51,8 +51,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.graphics.Bitmap
 import com.kryptos.vault.data.Template
+import com.kryptos.vault.ui.theme.BrandGold
+import com.kryptos.vault.ui.theme.BrandGoldDeep
+import com.kryptos.vault.ui.theme.BrandGoldOnDeep
 
-/// Holographic scanner targeting frame / document preview with glow + laser sweep.
+private val ScanGold = BrandGold
+
 @Composable
 internal fun ScannerFrame(bmp: Bitmap?, busy: Boolean, template: Template) {
                 Box(
@@ -62,7 +66,7 @@ internal fun ScannerFrame(bmp: Bitmap?, busy: Boolean, template: Template) {
                     contentAlignment = Alignment.Center
                 ) {
                     val glowTransition = rememberInfiniteTransition(label = "ScannerGlow")
-                    
+
                     val glowOffset by glowTransition.animateFloat(
                         initialValue = 0f,
                         targetValue = 1f,
@@ -75,9 +79,9 @@ internal fun ScannerFrame(bmp: Bitmap?, busy: Boolean, template: Template) {
 
                     val borderGlowBrush = Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFF00E5FF),
-                            Color(0xFF00FF87),
-                            Color(0xFF00E5FF)
+                            BrandGold.copy(alpha = 0.9f),
+                            BrandGold.copy(alpha = 0.45f),
+                            BrandGold.copy(alpha = 0.9f)
                         ),
                         start = Offset(0f, 0f),
                         end = Offset(1000f * glowOffset, 1000f)
@@ -94,7 +98,6 @@ internal fun ScannerFrame(bmp: Bitmap?, busy: Boolean, template: Template) {
                     )
 
                     if (bmp != null) {
-                        // Document Preview with Glowing Border
                         Surface(
                             shape = RoundedCornerShape(24.dp),
                             color = Color(0x10FFFFFF),
@@ -111,14 +114,13 @@ internal fun ScannerFrame(bmp: Bitmap?, busy: Boolean, template: Template) {
                                     contentScale = ContentScale.Crop
                                 )
 
-                                // Gliding neon horizontal laser sweep animation
                                 Canvas(modifier = Modifier.fillMaxSize()) {
                                     val y = size.height * laserY
                                     drawLine(
                                         brush = Brush.horizontalGradient(
                                             colors = listOf(
                                                 Color.Transparent,
-                                                Color(0xFF00E5FF),
+                                                ScanGold,
                                                 Color.Transparent
                                             )
                                         ),
@@ -130,7 +132,7 @@ internal fun ScannerFrame(bmp: Bitmap?, busy: Boolean, template: Template) {
                                     drawRect(
                                         brush = Brush.verticalGradient(
                                             colors = listOf(
-                                                Color(0x2200E5FF),
+                                                Color(0x22C9A227),
                                                 Color.Transparent
                                             )
                                         ),
@@ -141,7 +143,6 @@ internal fun ScannerFrame(bmp: Bitmap?, busy: Boolean, template: Template) {
                             }
                         }
                     } else {
-                        // Futuristic HUD Targeting Frame
                         Surface(
                             shape = RoundedCornerShape(24.dp),
                             color = Color(0x06FFFFFF),
@@ -153,7 +154,6 @@ internal fun ScannerFrame(bmp: Bitmap?, busy: Boolean, template: Template) {
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
                             ) {
-                                // Dynamic radar sweep line if busy
                                 if (busy) {
                                     Canvas(modifier = Modifier.fillMaxSize()) {
                                         val y = size.height * laserY
@@ -161,7 +161,7 @@ internal fun ScannerFrame(bmp: Bitmap?, busy: Boolean, template: Template) {
                                             brush = Brush.horizontalGradient(
                                                 colors = listOf(
                                                     Color.Transparent,
-                                                    Color(0xFF00E5FF),
+                                                    ScanGold,
                                                     Color.Transparent
                                                 )
                                             ),
@@ -172,26 +172,21 @@ internal fun ScannerFrame(bmp: Bitmap?, busy: Boolean, template: Template) {
                                     }
                                 }
 
-                                // Interactive HUD crosshairs
                                 Canvas(modifier = Modifier.fillMaxSize()) {
                                     val length = 20.dp.toPx()
                                     val stroke = 3.dp.toPx()
                                     val margin = 16.dp.toPx()
-                                    val bracketColor = if (busy) Color(0xFFD4AF37) else Color(0xFF00E5FF).copy(alpha = 0.5f)
+                                    val bracketColor = if (busy) BrandGoldDeep else BrandGold.copy(alpha = 0.5f)
 
-                                    // Top-Left
                                     drawLine(bracketColor, Offset(margin, margin), Offset(margin + length, margin), strokeWidth = stroke)
                                     drawLine(bracketColor, Offset(margin, margin), Offset(margin, margin + length), strokeWidth = stroke)
-                                    
-                                    // Top-Right
+
                                     drawLine(bracketColor, Offset(size.width - margin, margin), Offset(size.width - margin - length, margin), strokeWidth = stroke)
                                     drawLine(bracketColor, Offset(size.width - margin, margin), Offset(size.width - margin, margin + length), strokeWidth = stroke)
-                                    
-                                    // Bottom-Left
+
                                     drawLine(bracketColor, Offset(margin, size.height - margin), Offset(margin + length, size.height - margin), strokeWidth = stroke)
                                     drawLine(bracketColor, Offset(margin, size.height - margin), Offset(margin, size.height - margin - length), strokeWidth = stroke)
-                                    
-                                    // Bottom-Right
+
                                     drawLine(bracketColor, Offset(size.width - margin, size.height - margin), Offset(size.width - margin - length, size.height - margin), strokeWidth = stroke)
                                     drawLine(bracketColor, Offset(size.width - margin, size.height - margin), Offset(size.width - margin, size.height - margin - length), strokeWidth = stroke)
                                 }
@@ -201,20 +196,20 @@ internal fun ScannerFrame(bmp: Bitmap?, busy: Boolean, template: Template) {
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         verticalArrangement = Arrangement.Center
                                     ) {
-                                        androidx.compose.material3.CircularProgressIndicator(
-                                            color = Color(0xFFD4AF37),
+                                        CircularProgressIndicator(
+                                            color = BrandGold,
                                             modifier = Modifier.size(32.dp),
                                             strokeWidth = 3.dp
                                         )
                                         Spacer(Modifier.height(12.dp))
                                         Text(
-                                            text = "PROCESSING SECURE SCAN…",
+                                            text = "PROCESSING SECURE SCAN\u2026",
                                             style = MaterialTheme.typography.bodyMedium.copy(
                                                 fontFamily = FontFamily.Monospace,
                                                 fontWeight = FontWeight.Bold,
                                                 letterSpacing = 1.sp
                                             ),
-                                            color = Color(0xFFD4AF37)
+                                            color = BrandGold
                                         )
                                     }
                                 } else {
@@ -226,7 +221,7 @@ internal fun ScannerFrame(bmp: Bitmap?, busy: Boolean, template: Template) {
                                         Icon(
                                             Icons.Filled.DocumentScanner,
                                             contentDescription = null,
-                                            tint = Color(0xFF00E5FF).copy(alpha = 0.6f),
+                                            tint = BrandGold.copy(alpha = 0.6f),
                                             modifier = Modifier.size(48.dp)
                                         )
                                         Spacer(Modifier.height(16.dp))
@@ -248,10 +243,8 @@ internal fun ScannerFrame(bmp: Bitmap?, busy: Boolean, template: Template) {
                 }
 }
 
-/// Auto-fill recognition preview (parsed fields or raw extracted text).
 @Composable
 internal fun AutoFillPreview(parsed: Map<String, String>, capturedBitmap: Bitmap?, rawText: String) {
-                // Auto-fill Detection Results
                 if (parsed.isNotEmpty()) {
                     Text(
                         text = "AUTO-FILL RECOGNITION PREVIEW",
@@ -260,7 +253,7 @@ internal fun AutoFillPreview(parsed: Map<String, String>, capturedBitmap: Bitmap
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.5.sp
                         ),
-                        color = Color(0xFF00E5FF),
+                        color = BrandGoldDeep,
                         modifier = Modifier.padding(top = 8.dp)
                     )
 
@@ -271,8 +264,8 @@ internal fun AutoFillPreview(parsed: Map<String, String>, capturedBitmap: Bitmap
                         parsed.forEach { (k, v) ->
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
-                                color = Color(0x0C00E5FF),
-                                border = BorderStroke(1.dp, Color(0xFF00E5FF).copy(alpha = 0.15f)),
+                                color = Color(0x14C9A227),
+                                border = BorderStroke(1.dp, BrandGold.copy(alpha = 0.18f)),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Row(
@@ -320,7 +313,7 @@ internal fun AutoFillPreview(parsed: Map<String, String>, capturedBitmap: Bitmap
                             )
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                text = rawText.take(300) + if (rawText.length > 300) "…" else "",
+                                text = rawText.take(300) + if (rawText.length > 300) "\u2026" else "",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.White.copy(alpha = 0.7f),
                                 lineHeight = 18.sp
@@ -330,10 +323,8 @@ internal fun AutoFillPreview(parsed: Map<String, String>, capturedBitmap: Bitmap
                 }
 }
 
-/// Primary scan action buttons (rescan / cancel).
 @Composable
 internal fun ScanControls(capturedBitmap: Bitmap?, onRescan: () -> Unit, onCancel: () -> Unit) {
-                // Control Action Buttons
                 Column(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -342,8 +333,8 @@ internal fun ScanControls(capturedBitmap: Bitmap?, onRescan: () -> Unit, onCance
                         onClick = onRescan,
                         shape = RoundedCornerShape(28.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF00E5FF),
-                            contentColor = Color(0xFF070B14)
+                            containerColor = BrandGoldDeep,
+                            contentColor = BrandGoldOnDeep
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -368,12 +359,12 @@ internal fun ScanControls(capturedBitmap: Bitmap?, onRescan: () -> Unit, onCance
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
-                    ) { 
+                    ) {
                         Text(
                             text = if (capturedBitmap == null) "Cancel" else "Discard",
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleMedium
-                        ) 
+                        )
                     }
                 }
 }

@@ -56,6 +56,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kryptos.vault.data.FieldsCodec
 import com.kryptos.vault.nfc.PassportNfcReader
+import com.kryptos.vault.ui.theme.BrandGold
+import com.kryptos.vault.ui.theme.BrandGoldDeep
+import com.kryptos.vault.ui.theme.BrandGoldOnDeep
+import com.kryptos.vault.ui.theme.BrandGoldSoft
 import com.kryptos.vault.nfc.PassportScan
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -219,13 +223,13 @@ fun NfcPassportScanScreen(
 
                 // Custom gold & matte slate text fields
                 val textFieldColors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFFD4AF37), // Warm gold focus accent
+                    focusedBorderColor = BrandGold, // Warm gold focus accent
                     unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
-                    focusedLabelColor = Color(0xFFD4AF37),
+                    focusedLabelColor = BrandGold,
                     unfocusedLabelColor = Color.White.copy(alpha = 0.5f),
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
-                    cursorColor = Color(0xFFD4AF37)
+                    cursorColor = BrandGold
                 )
 
                 OutlinedTextField(
@@ -322,7 +326,7 @@ fun NfcPassportScanScreen(
                     // Wave colors based on state
                     val radarColor = when {
                         !readyToScan -> Color.White.copy(alpha = 0.12f)
-                        working -> Color(0xFFD4AF37) // Warm gold
+                        working -> BrandGold // Warm gold
                         else -> Color(0xFF8F9CAE) // Muted matte slate gray
                     }
 
@@ -359,7 +363,7 @@ fun NfcPassportScanScreen(
                             .border(
                                 BorderStroke(
                                     1.5.dp, 
-                                    if (readyToScan) Color(0xFFD4AF37).copy(alpha = 0.35f) else Color.White.copy(alpha = 0.1f)
+                                    if (readyToScan) BrandGold.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.1f)
                                 ), 
                                 RoundedCornerShape(12.dp)
                             ),
@@ -384,7 +388,7 @@ fun NfcPassportScanScreen(
                                     Icons.Filled.Nfc,
                                     contentDescription = null,
                                     modifier = Modifier.size(24.dp),
-                                    tint = if (readyToScan) Color(0xFFD4AF37) else Color.White.copy(alpha = 0.2f)
+                                    tint = if (readyToScan) BrandGold else Color.White.copy(alpha = 0.2f)
                                 )
                             }
 
@@ -396,7 +400,7 @@ fun NfcPassportScanScreen(
                                         brush = Brush.horizontalGradient(
                                             colors = listOf(
                                                 Color.Transparent,
-                                                Color(0xFFD4AF37),
+                                                BrandGold,
                                                 Color.Transparent
                                             )
                                         ),
@@ -420,14 +424,14 @@ fun NfcPassportScanScreen(
 
                 val terminalColor = when {
                     !readyToScan -> Color.White.copy(alpha = 0.4f)
-                    working -> Color(0xFFD4AF37) // Warm gold
+                    working -> BrandGold // Warm gold
                     status != null && status!!.contains("failed", ignoreCase = true) -> Color(0xFFFF5252)
                     else -> Color(0xFF8F9CAE) // Muted matte slate gray
                 }
 
                 val terminalBg = when {
                     !readyToScan -> Color.White.copy(alpha = 0.03f)
-                    working -> Color(0x15D4AF37)
+                    working -> Color(0x15C9A227)
                     status != null && status!!.contains("failed", ignoreCase = true) -> Color(0x15FF5252)
                     else -> Color(0x158F9CAE)
                 }

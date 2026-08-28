@@ -1,4 +1,5 @@
 package com.kryptos.vault.ui.cards
+
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -106,20 +107,16 @@ fun CompactHeroCard(
         modifier
             .fillMaxWidth()
             .height(132.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(heroShape(template))
             .background(compactBackground(template))
-            .border(
-                1.5.dp, 
-                Color.White.copy(alpha = 0.45f), 
-                RoundedCornerShape(14.dp)
-            ),
+            .border(1.dp, Color.White.copy(alpha = 0.14f), heroShape(template)),
     ) {
         Box(
             Modifier
                 .fillMaxSize()
                 .background(
                     Brush.linearGradient(
-                        listOf(Color.White.copy(alpha = 0.18f), Color.Transparent),
+                        listOf(Color.White.copy(alpha = 0.14f), Color.Transparent),
                     ),
                 ),
         )
@@ -165,7 +162,7 @@ private fun FullHeroCard(
     Box(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
+            .clip(heroShape(template))
             .background(compactBackground(template)),
     ) {
         Box(
@@ -173,7 +170,7 @@ private fun FullHeroCard(
                 .fillMaxSize()
                 .background(
                     Brush.linearGradient(
-                        listOf(Color.White.copy(alpha = 0.18f), Color.Transparent),
+                        listOf(Color.White.copy(alpha = 0.14f), Color.Transparent),
                     ),
                 ),
         )
@@ -206,7 +203,7 @@ private fun FullHeroCard(
                             Icon(
                                 Icons.Filled.CreditCard,
                                 contentDescription = null,
-                                tint = contentColor,
+                                tint = contentColor.copy(alpha = 0.9f),
                                 modifier = Modifier.size(26.dp),
                             )
                         }
@@ -272,20 +269,36 @@ internal fun List<Pair<String, String>>.firstNonBlank(vararg names: String): Str
 
 internal val Mono = FontFamily.Monospace
 
+private fun heroShape(template: Template) =
+    if (template == Template.PAYMENT_CARD) RoundedCornerShape(26.dp) else RoundedCornerShape(22.dp)
+
 private fun compactBackground(template: Template): Brush = Brush.linearGradient(
-    when (template) {
-        Template.ID_CARD -> listOf(Color(0xFF0D337F), Color(0xFF1155D8))
-        Template.PASSPORT -> listOf(Color(0xFF10162F), Color(0xFF1B356E))
-        Template.DRIVERS_LICENSE -> listOf(Color(0xFF0A4D73), Color(0xFF1B8CA6))
-        Template.BIRTH_CERTIFICATE -> listOf(Color(0xFF0D5A50), Color(0xFF2F8B73))
-        Template.PAYMENT_CARD -> listOf(Color(0xFF151424), Color(0xFF2E174F), Color(0xFF65306F))
-        Template.BANK_ACCOUNT -> listOf(Color(0xFF0D5264), Color(0xFF17777A))
-        Template.TAX_NUMBER -> listOf(Color(0xFF713019), Color(0xFFA6521F))
-        Template.API_KEY -> listOf(Color(0xFF141821), Color(0xFF3B4252))
-        Template.NOTE -> listOf(Color(0xFFF0B429), Color(0xFFFFD166))
-        Template.QR_CODE -> listOf(Color(0xFF145087), Color(0xFF1A91C7))
+    0f to when (template) {
+        Template.ID_CARD -> Color(0xFF1B3A7A)
+        Template.PASSPORT -> Color(0xFF182442)
+        Template.DRIVERS_LICENSE -> Color(0xFF0F5F70)
+        Template.BIRTH_CERTIFICATE -> Color(0xFF14614F)
+        Template.PAYMENT_CARD -> Color(0xFF22152E)
+        Template.BANK_ACCOUNT -> Color(0xFF0E5A63)
+        Template.TAX_NUMBER -> Color(0xFF7A3A1C)
+        Template.API_KEY -> Color(0xFF1A222E)
+        Template.NOTE -> Color(0xFFC9A227)
+        Template.QR_CODE -> Color(0xFF12557A)
+    },
+    1f to when (template) {
+        Template.ID_CARD -> Color(0xFF2A56B4)
+        Template.PASSPORT -> Color(0xFF2B4A80)
+        Template.DRIVERS_LICENSE -> Color(0xFF1F93A6)
+        Template.BIRTH_CERTIFICATE -> Color(0xFF2E8E70)
+        Template.PAYMENT_CARD -> Color(0xFF4A2460)
+        Template.BANK_ACCOUNT -> Color(0xFF17777A)
+        Template.TAX_NUMBER -> Color(0xFFA6521F)
+        Template.API_KEY -> Color(0xFF3B4252)
+        Template.NOTE -> Color(0xFFE2C175)
+        Template.QR_CODE -> Color(0xFF1A91C7)
     },
 )
+
 
 @Composable
 private fun FullHeroSlot(
@@ -309,7 +322,7 @@ private fun FullHeroSlot(
         Box(
             modifier = Modifier
                 .size(104.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(16.dp))
                 .background(Color.White),
             contentAlignment = Alignment.Center,
         ) {
@@ -326,7 +339,7 @@ private fun FullHeroSlot(
                 Icon(
                     Icons.Filled.QrCode,
                     contentDescription = null,
-                    tint = Color(0xFF145087),
+                    tint = Color(0xFF12557A),
                     modifier = Modifier.size(54.dp),
                 )
             }
@@ -347,8 +360,8 @@ private fun FullHeroSlot(
             modifier = Modifier
                 .width(92.dp)
                 .height(118.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(Color.White.copy(alpha = 0.18f)),
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.White.copy(alpha = 0.16f)),
             contentAlignment = Alignment.Center,
         ) {
             val currentBmp = bmp
@@ -398,7 +411,7 @@ private fun FullLabelValue(
             overflow = TextOverflow.Ellipsis,
         )
         Text(
-            value.ifBlank { "—" },
+            value.ifBlank { "\u2014" },
             color = valueColor,
             fontSize = 17.sp,
             fontFamily = if (mono) Mono else FontFamily.Default,
@@ -443,9 +456,9 @@ private fun shouldUseMono(name: String): Boolean {
 }
 
 private fun maskSecret(value: String): String =
-    if (value.isBlank()) "••••••••••••••••" else "•".repeat(value.length.coerceAtMost(18))
+    if (value.isBlank()) "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" else "\u2022".repeat(value.length.coerceAtMost(18))
 
 internal fun formattedExpiry(value: String): String {
     val digits = value.filter { it.isDigit() }
-    return if (digits.length == 4) "${digits.take(2)}/${digits.takeLast(2)}" else value
+    return if (digits.length == 4) digits.take(2) + "/" + digits.takeLast(2) else value
 }

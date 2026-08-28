@@ -1,6 +1,8 @@
 package com.kryptos.vault.ui.detail
 
 import android.graphics.BitmapFactory
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -18,12 +20,41 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
@@ -35,10 +66,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.kryptos.vault.data.FieldsCodec
 import com.kryptos.vault.data.Template
@@ -46,10 +79,12 @@ import com.kryptos.vault.data.shareId
 import com.kryptos.vault.data.VaultEntry
 import com.kryptos.vault.security.SecureClipboard
 import com.kryptos.vault.ui.VaultViewModel
-import com.kryptos.vault.ui.components.NativeAdCard
 import com.kryptos.vault.ui.cards.HeroCard
+import com.kryptos.vault.ui.cards.Mono
+import com.kryptos.vault.ui.components.NativeAdCard
 import com.kryptos.vault.ui.scan.QrGenerator
 import com.kryptos.vault.ui.scan.QrSharer
+import com.kryptos.vault.ui.theme.AppShapeSheet
 import org.json.JSONObject
 import com.fmz.kryptos.R
 
@@ -68,6 +103,7 @@ fun EntryDetailScreen(
     val revealed = remember { mutableStateMapOf<Int, Boolean>() }
     var confirmDelete by remember { mutableStateOf(false) }
     var qrData by remember { mutableStateOf<String?>(null) }
+    var showRaw by remember { mutableStateOf(false) }
 
     fun sharePayload(current: VaultEntry): String {
         val allFields = FieldsCodec.decode(current.fieldsJson)
@@ -110,7 +146,7 @@ fun EntryDetailScreen(
                 ),
                 title = {
                     Text(
-                        entry?.title?.ifBlank { "Entry Details" } ?: "Loading...",
+                        "Entry Details",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -123,17 +159,11 @@ fun EntryDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        val current = entry ?: return@IconButton
-                        qrData = sharePayload(current)
-                    }) {
-                        Icon(Icons.Default.QrCode, contentDescription = "Share entry")
+                    IconButton(onClick = { confirmDelete = true }) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                     }
                     IconButton(onClick = onEdit) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit")
-                    }
-                    IconButton(onClick = { confirmDelete = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Filled.Edit, contentDescription = "Edit")
                     }
                 },
             )
@@ -182,35 +212,30 @@ fun EntryDetailScreen(
         LazyColumn(
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding() + 8.dp,
-                bottom = padding.calculateBottomPadding() + 32.dp,
-                start = 24.dp, end = 24.dp,
+                bottom = padding.calculateBottomPadding() + 40.dp,
+                start = 20.dp, end = 20.dp,
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
-                Surface(
-                    shape = RoundedCornerShape(28.dp),
-                    shadowElevation = 4.dp,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    HeroCard(
-                        template = current.template,
-                        title = current.title,
-                        fields = allFields,
-                        attachment = current.attachment,
-                        onCopy = { label, value -> SecureClipboard.copy(ctx, label, value) },
-                        onShare = { _, _ -> qrData = sharePayload(current) }
-                    )
-                }
+                HeroCard(
+                    template = current.template,
+                    title = current.title,
+                    fields = allFields,
+                    attachment = current.attachment,
+                    onCopy = { label, value -> SecureClipboard.copy(ctx, label, value) },
+                    onShare = { _, _ -> qrData = sharePayload(current) },
+                    interactive = true,
+                )
             }
 
             item {
                 Button(
                     onClick = { qrData = sharePayload(current) },
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.share_entry))
                 }
@@ -218,18 +243,13 @@ fun EntryDetailScreen(
 
             current.attachment?.let { bytes ->
                 item {
-                    Text(
-                        text = "ORIGINAL ATTACHMENT",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 8.dp, start = 4.dp)
-                    )
+                    SectionLabel("Original attachment")
                 }
                 item {
                     val configuration = LocalConfiguration.current
                     val density = LocalDensity.current
                     val targetWidthPx = with(density) {
-                        (configuration.screenWidthDp.dp - 48.dp).toPx().toInt().coerceAtLeast(1)
+                        (configuration.screenWidthDp.dp - 40.dp).toPx().toInt().coerceAtLeast(1)
                     }
                     var bmp by remember(bytes) { mutableStateOf<android.graphics.Bitmap?>(null) }
                     LaunchedEffect(bytes, targetWidthPx) {
@@ -241,7 +261,7 @@ fun EntryDetailScreen(
                     val currentBmp = bmp
                     if (currentBmp != null) {
                         Card(
-                            shape = RoundedCornerShape(24.dp),
+                            shape = RoundedCornerShape(22.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
                         ) {
                             Image(
@@ -251,7 +271,7 @@ fun EntryDetailScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .aspectRatio(currentBmp.width.toFloat() / currentBmp.height.toFloat())
-                                    .clip(RoundedCornerShape(24.dp)),
+                                    .clip(RoundedCornerShape(22.dp)),
                             )
                         }
                     }
@@ -260,23 +280,35 @@ fun EntryDetailScreen(
 
             if (detailFields.isNotEmpty()) {
                 item {
-                    Text(
-                        text = "DETAILS",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 8.dp, start = 4.dp)
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        SectionLabel("Details")
+                        Spacer(Modifier.weight(1f))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (detailFields.any { looksSecretFor(current.template, it.first) }) {
+                                Text(
+                                    if (showRaw) "Hiding" else "Showing",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
-            items(detailFields.size) { i ->
-                val (name, value) = detailFields[i]
+            itemsIndexed(detailFields) { i, (name, value) ->
                 val isSecret = looksSecretFor(current.template, name)
-                val show = !isSecret || (revealed[i] == true)
+                val show = !isSecret || (revealed[i] == true) || showRaw
                 FieldCard(
                     name = name,
-                    value = if (show) value else "•".repeat(value.length.coerceAtMost(16)),
-                    showToggle = isSecret,
+                    value = if (show) value else "\u2022".repeat(value.length.coerceAtMost(16)),
+                    showToggle = isSecret && !showRaw,
                     revealed = show,
                     onToggle = { revealed[i] = !(revealed[i] ?: false) },
                     onCopy = { SecureClipboard.copy(ctx, name, value) },
@@ -284,9 +316,9 @@ fun EntryDetailScreen(
             }
 
             item {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    stringResource(com.fmz.kryptos.R.string.clipboard_security_note),
+                    stringResource(R.string.clipboard_security_note),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -308,6 +340,110 @@ fun EntryDetailScreen(
 }
 
 @Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text = text.uppercase(),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 0.5.sp,
+        modifier = Modifier.padding(start = 4.dp, top = 8.dp),
+    )
+}
+
+@Composable
+private fun FieldCard(
+    name: String,
+    value: String,
+    showToggle: Boolean,
+    revealed: Boolean,
+    onToggle: () -> Unit,
+    onCopy: () -> Unit,
+) {
+    Card(
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .clickable(onClick = onCopy),
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(start = 18.dp, end = 8.dp, top = 14.dp, bottom = 14.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    name,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.4.sp,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    value,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontFamily = if (shouldUseMonoField(name)) Mono else FontFamily.Default,
+                )
+            }
+            if (showToggle) {
+                IconButton(onClick = onToggle) {
+                    Icon(
+                        if (revealed) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                        contentDescription = if (revealed) "Hide" else "Reveal",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            } else {
+                Icon(
+                    Icons.Filled.ContentCopy,
+                    contentDescription = "Copy",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .size(18.dp),
+                )
+            }
+        }
+    }
+}
+
+private fun shouldUseMonoField(name: String): Boolean {
+    val lower = name.lowercase()
+    return lower.contains("number") || lower.contains("expiry") || lower.contains("cvv") ||
+        lower.contains("cvc") || lower == "key" || lower.contains("secret") || lower.contains("token") ||
+        lower.contains("pin") || lower.contains("iban")
+}
+
+private fun decodeSampledBitmap(bytes: ByteArray, reqWidth: Int): android.graphics.Bitmap? {
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+    var sample = 1
+    while (bounds.outWidth / (sample * 2) >= reqWidth) sample *= 2
+    val opts = BitmapFactory.Options().apply { inSampleSize = sample }
+    return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
+}
+
+private fun looksSecret(name: String): Boolean {
+    val n = name.lowercase()
+    return listOf(
+        "password", "pin", "cvv", "cvc", "secret", "token", "key", "code", "ssn",
+        "account number", "account no", "iban", "tax number", "tax id"
+    ).any { it in n }
+}
+
+private fun looksSecretFor(template: Template, name: String): Boolean {
+    val n = name.lowercase()
+    if (template == Template.PAYMENT_CARD && (n == "number" || n.contains("card number"))) return true
+    return looksSecret(name)
+}
+
+@Composable
 private fun QrCodeDialog(data: String, genericData: String?, title: String, onDismiss: () -> Unit) {
     val ctx = LocalContext.current
     var showKryptosPayload by remember(data, genericData) { mutableStateOf(genericData == null) }
@@ -319,14 +455,14 @@ private fun QrCodeDialog(data: String, genericData: String?, title: String, onDi
         }
         bitmap = generated
     }
-    
+
     Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        Surface(
+            shape = AppShapeSheet,
+            color = MaterialTheme.colorScheme.surface,
             modifier = Modifier
                 .fillMaxWidth()
-                .widthIn(max = 360.dp)
+                .widthIn(max = 360.dp),
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -381,7 +517,7 @@ private fun QrCodeDialog(data: String, genericData: String?, title: String, onDi
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(28.dp)
                 ) {
-                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.share_qr_image))
                 }
@@ -396,76 +532,4 @@ private fun QrCodeDialog(data: String, genericData: String?, title: String, onDi
             }
         }
     }
-}
-
-@Composable
-private fun FieldCard(
-    name: String,
-    value: String,
-    showToggle: Boolean,
-    revealed: Boolean,
-    onToggle: () -> Unit,
-    onCopy: () -> Unit,
-) {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onCopy),
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    name,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.secondary,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    value,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            if (showToggle) {
-                IconButton(onClick = onToggle) {
-                    Icon(
-                        if (revealed) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                        contentDescription = if (revealed) "Hide" else "Reveal",
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-private fun decodeSampledBitmap(bytes: ByteArray, reqWidth: Int): android.graphics.Bitmap? {
-    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-    var sample = 1
-    while (bounds.outWidth / (sample * 2) >= reqWidth) sample *= 2
-    val opts = BitmapFactory.Options().apply { inSampleSize = sample }
-    return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
-}
-
-private fun looksSecret(name: String): Boolean {
-    val n = name.lowercase()
-    return listOf(
-        "password", "pin", "cvv", "cvc", "secret", "token", "key", "code", "ssn",
-        "account number", "account no", "iban", "tax number", "tax id"
-    ).any { it in n }
-}
-
-private fun looksSecretFor(template: Template, name: String): Boolean {
-    val n = name.lowercase()
-    if (template == Template.PAYMENT_CARD && (n == "number" || n.contains("card number"))) return true
-    return looksSecret(name)
 }

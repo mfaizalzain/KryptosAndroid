@@ -46,8 +46,8 @@ internal fun PhotoSlot(bytes: ByteArray?, modifier: Modifier) {
     }
     Box(
         modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0x33000000)),
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0x28000000)),
         contentAlignment = Alignment.Center,
     ) {
         val currentBmp = bmp
@@ -85,7 +85,7 @@ internal fun LabelValue(
             fontWeight = FontWeight.Medium,
         )
         Text(
-            value.ifBlank { "—" },
+            value.ifBlank { "\u2014" },
             color = valueColor,
             fontSize = valueSp.sp,
             fontFamily = if (mono) Mono else FontFamily.Default,
@@ -101,6 +101,6 @@ internal fun LabelValue(
 
 internal fun maskCardNumber(raw: String): String {
     val digits = raw.filter { it.isDigit() }
-    val last4 = digits.takeLast(4).padStart(4, '•')
-    return "•••• •••• •••• $last4"
+    val last4 = digits.takeLast(4).padStart(4, '\u2022')
+    return "\u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 " + last4
 }
