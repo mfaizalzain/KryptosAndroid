@@ -20,8 +20,8 @@ coroutines = "1.11.0"
 security = "1.1.0"
 credentials = "1.6.0"
 googleid = "1.2.0"
-jmrtd = "0.8.7"
-scuba = "0.0.26"
+jmrtd = "0.8.8"
+scuba = "0.0.27"
 bouncycastle = "1.85.2"
 coil = "2.7.0"
 playServicesAuth = "21.6.0"
@@ -58,8 +58,7 @@ google-id = { module = "com.google.android.libraries.identity.googleid:googleid"
 
 jmrtd = { module = "org.jmrtd:jmrtd", version.ref = "jmrtd" }
 scuba-sc-android = { module = "net.sf.scuba:scuba-sc-android", version.ref = "scuba" }
-bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk15to18", version.ref = "bouncycastle" }
-bouncycastle-util = { module = "org.bouncycastle:bcutil-jdk15to18", version.ref = "bouncycastle" }
+bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
 play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }

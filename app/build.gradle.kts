@@ -135,6 +135,8 @@ dependencies {
         exclude(group = "net.sf.scuba", module = "scuba-smartcards")
     }
     implementation(libs.scuba.sc.android)
+    // Pin BouncyCastle to the CVE-fixed 1.85.2 (jdk18on) that JMRTD transitively uses.
+    implementation(libs.bouncycastle.prov)
 
     implementation(libs.coil.compose)
     implementation(libs.play.services.auth)
