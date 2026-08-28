@@ -1,0 +1,43 @@
+# Dependabot configuration for KryptosAndroid
+# Tracks the app runtime dependencies (gradle ecosystem) to keep them current.
+
+version: 2
+updates:
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "Asia/Kuala_Lumpur"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+    groups:
+      androidx:
+        patterns:
+          - "androidx.*"
+        update-types:
+          - "minor"
+          - "patch"
+      kotlin:
+        patterns:
+          - "org.jetbrains.kotlin*"
+        update-types:
+          - "minor"
+          - "patch"
+      bouncycastle:
+        patterns:
+          - "org.bouncycastle*"
+      netty:
+        patterns:
+          - "io.netty*"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "Asia/Kuala_Lumpur"
+    open-pull-requests-limit: 5
