@@ -92,6 +92,12 @@ kotlin {
 }
 
 dependencies {
+    // Guava 33.3.1-android arrives transitively through androidx and ships in the APK,
+    // so this is shipped code, not build tooling. 33.3.1 is inside the vulnerable range
+    // of the Dependabot advisory; 33.7.2-android is the first patched release. Declared
+    // here so it wins over every transitive request.
+    implementation("com.google.guava:guava:33.7.2-android")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
