@@ -5,9 +5,9 @@ ksp = "2.3.12"
 coreKtx = "1.18.0"
 lifecycle = "2.10.0"
 activity = "1.13.0"
-composeBom = "2026.06.01"
-navigation = "2.9.8"
-room = "2.8.4"
+composeBom = "2026.11.01"
+navigation = "2.10.2"
+room = "2.8.5"
 sqlcipher = "4.17.0"
 sqliteKtx = "2.7.0"
 biometric = "1.1.0"
@@ -15,7 +15,7 @@ mlkitText = "16.0.1"
 mlkitBarcode = "17.3.0"
 zxing = "3.5.4"
 mlkitDocScanner = "16.0.0"
-camerax = "1.6.1"
+camerax = "1.7.0"
 coroutines = "1.11.0"
 security = "1.1.0"
 credentials = "1.6.0"
@@ -25,7 +25,7 @@ scuba = "0.0.27"
 bouncycastle = "1.85.2"
 coil = "2.7.0"
 playServicesAuth = "21.6.0"
-workmanager = "2.11.2"
+workmanager = "2.12.0"
 playServicesAds = "25.4.0"
 billing = "9.1.0"
 
@@ -73,7 +73,7 @@ androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
 androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
-androidx-camera-mlkit-vision = { module = "androidx.camera:camera-mlkit-vision", version = "1.6.1" }
+androidx-camera-mlkit-vision = { module = "androidx.camera:camera-mlkit-vision", version = "1.7.0" }
 
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
